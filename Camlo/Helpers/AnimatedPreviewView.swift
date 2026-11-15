@@ -310,6 +310,7 @@ struct CamloRemotePreview: View {
     let mode: CamloPreviewMode
     let contentMode: UIView.ContentMode
     let placeholderColors: [Color]
+    let bundledFileURL: URL?
 
     @State private var sequence: CamloDecodedSequence? = nil
     @State private var sequenceSignature: Int = 0
@@ -320,17 +321,19 @@ struct CamloRemotePreview: View {
         candidateURLs: [URL],
         mode: CamloPreviewMode = .still(maxPixel: 600),
         contentMode: UIView.ContentMode = .scaleAspectFill,
-        placeholderColors: [Color] = [Color.indigo.opacity(0.28), Color.purple.opacity(0.22)]
+        placeholderColors: [Color] = [Color.indigo.opacity(0.28), Color.purple.opacity(0.22)],
+        bundledFileURL: URL? = nil
     ) {
         self.cacheKey = cacheKey
         self.candidateURLs = candidateURLs
         self.mode = mode
         self.contentMode = contentMode
         self.placeholderColors = placeholderColors
+        self.bundledFileURL = bundledFileURL
     }
 
     private var taskToken: String {
-        "\(cacheKey)|\(mode.hashValue)|\(candidateURLs.first?.absoluteString ?? "")"
+        "\(cacheKey)|\(mode.hashValue)|\(candidateURLs.first?.absoluteString ?? "")|\(bundledFileURL?.lastPathComponent ?? "")"
     }
 
     var body: some View {
@@ -358,20 +361,29 @@ struct CamloRemotePreview: View {
         }
         .task(id: taskToken) {
             didFail = false
-            guard let rawData = await CamloPreviewAssetStore.shared.fetchPreviewData(
-                cacheKey: cacheKey,
-                candidateURLs: candidateURLs
-            ) else {
-                if !Task.isCancelled {
-                    didFail = true
-                }
-                return
+            let targetMode = mode
+            let localURL = bundledFileURL
+            var decoded: CamloDecodedSequence? = nil
+
+            if let localURL {
+                decoded = await Task.detached(priority: .utility) {
+                    guard let data = try? Data(contentsOf: localURL, options: .mappedIfSafe),
+                          data.count >= 64 else {
+                        return nil
+                    }
+                    return CamloKeyframeCodec.decode(data: data, mode: targetMode)
+                }.value
             }
 
-            let targetMode = mode
-            let decoded = await Task.detached(priority: .utility) {
-                CamloKeyframeCodec.decode(data: rawData, mode: targetMode)
-            }.value
+            if decoded == nil,
+               let rawData = await CamloPreviewAssetStore.shared.fetchPreviewData(
+                   cacheKey: cacheKey,
+                   candidateURLs: candidateURLs
+               ) {
+                decoded = await Task.detached(priority: .utility) {
+                    CamloKeyframeCodec.decode(data: rawData, mode: targetMode)
+                }.value
+            }
 
             guard !Task.isCancelled else { return }
             if let decoded {

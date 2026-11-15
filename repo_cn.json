@@ -22,13 +22,13 @@
       "screenshots": [],
       "versions": [
         {
-          "version": "1.2.3",
-          "buildVersion": "16",
-          "date": "2026-11-15T01:30:13Z",
-          "localizedDescription": "## Camlo · 开幕 v1.2.3 (Build 16)\n\n> **亮屏即开幕，上滑即变身 / Wake to unveil. Swipe to transform.**  \n> 支持 **iOS / iPadOS 26.0 – 27.3 beta 1** 免电脑一键直写系统锁屏画廊（基于 `CSStore2` + 原生 C `worse_query` 跨容器访问桥接，100% 独立原生实现）。\n\n---\n\n### ✨ 核心特性与 v1.2.3 亮点\n\n1. **外部 / 金库壁纸写入可见性修复（Community & Vault `.tendies` Visibility）**：\n   - 移除此前对 `7400.WWDC_2022` 包内合法 `keyPath=\"speed\"` 与逐帧动画的误删校验，确保社区包与动态帧包稳定驻留 `PosterBoard`；\n   - 统一将 `com.apple.posterkit.provider.contents.userInfo` 中的 `wallpaperRepresentingIdentifier` 写入整型 (`Int`)，清理碰撞的 `7400.DYNAMIC` 模板 `suggestionMetadata.plist`，恢复非陀螺仪壁纸 `logicalScreenClass` 并降序探测最高版本号 `PRBPosterExtensionDataStore` 扩展目录（金库已有旧包点击写入即可原地自愈）。\n2. **云端多镜像原生下载重构（Cloud Multi-Mirror Downloader）**：\n   - 移除已失效的 `raw.jsdmirror.com`，接入 `ghfast.top` / `gh-proxy.com` / `ghproxy.net` / `cdn.jsdmirror.com` / `fastly.jsdelivr.net` 多线路容灾与大陆地区自动优选默认线路；\n   - 采用原生 `URLSessionDownloadTask` 分块落盘 + `PK\\x03\\x04` ZIP 魔数校验并解耦导入重试环，格式化 `CAPlayground` 毫秒级时间戳为 `yyyy-MM-dd`。\n3. **内置旗舰创作引擎**：\n   - **120Hz 原生 `.ca` 实时交互预览** (`LiveCAPreviewView`)、**陀螺仪 3D 裸眼视差** (`ParameterizedCA`)、**昼夜双生壁纸** (`appearanceAware`)；\n   - **智能时钟配色字体与主屏柔焦配套** (`PosterStyleGenerator`)、**Vision AI 主体抠图遮挡时钟**、**8 款多维粒子流光**、**视频/实况动态融合** 及 **11 套内置高清双态预设**。\n\n---\n\n### 📦 安装说明 & 校验信息\n\n- **产物文件**：`Camlo_v1.2.3_Bilingual.ipa`（14,006,240 bytes）\n- **SHA-256**：`2d4ff70d3f011ed79d8ed41a0c6b1102ea9cd446edaef0618d724b33f0c7bebb`\n- **最低系统**：iOS / iPadOS 26.0+（实测支持至 iOS 27.0 – 27.3 beta 1）\n- **签名要求**：使用 **SideStore / AltStore / Feather / Sideloadly / Impactor / iLoader** 或支持 `App Group` 的个人开发者证书签名安装，以启用免电脑一键直写 `PosterBoard`（无 `App Group` 仍可完整创作并导出 `.tendies`）。",
-          "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.3/Camlo_v1.2.3_Bilingual.ipa",
-          "size": 14006240,
-          "sha256": "2d4ff70d3f011ed79d8ed41a0c6b1102ea9cd446edaef0618d724b33f0c7bebb",
+          "version": "1.2.4",
+          "buildVersion": "17",
+          "date": "2026-11-15T01:57:36Z",
+          "localizedDescription": "v1.2.4 Build 17 — 云端 .tendies 解压真机路径修复 & 官方主题全动态预览 | Cloud .tendies Symlink Fix & Live Official Gallery Previews:\n1. 彻底修复云端/社区 `.tendies` 下载时在真机上误报「检测到非法路径穿越条目，已安全拦截导入」：统一规范化目标根目录与未创建子路径的 `/var` vs `/private/var`（及 `/tmp` vs `/private/tmp`）符号链接前缀校验，同时保留对前置 `/`、`..` 及 `.symlink` 越界条目的严格拦截；扩展目录探索兼容大小写 `Extensions` 与 `ordered-descriptors`。\n   (Fix False Zip-Slip Rejection on iOS Devices: canonicalizes `/var` vs `/private/var` symlink prefixes between created extraction roots and not-yet-created child entries in `TendiesPackager`, while preserving strict traversal/symlink blocking and case-insensitive `Extensions`/`ordered-descriptors` discovery.)\n2. Camlo 官方云端主题全面支持实时动态预览与私有库秒装体验：为全部 10 套官方壁纸包生成轻量级 24 位多关键帧 WebP 动态预览（`wallpapers/previews/*.webp`，呈现无缝动态循环与滑动变身+时钟破框遮挡效果），并在云端卡片、详情页及 `120Hz 原生 Core Animation 交互试穿` 链路中接入实时动态渲染与 `OfficialGallerySeed.bundle` 离线/私有仓库兜底。\n   (Live Dynamic Previews for Camlo Official Packs: adds 24-bit animated WebP previews for all 10 official motion-loop and Clock-Depth morph themes across grid cards and detail sheets, 1-tap `120Hz Interactive .ca Try-On`, and `OfficialGallerySeed.bundle` offline/private-beta fallback.)",
+          "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.4/Camlo_v1.2.4_Bilingual.ipa",
+          "size": 43217564,
+          "sha256": "47c5efc07f9645618e498dcc77c0a729240adc92a9bf25b3b116b37f12aed49d",
           "minOSVersion": "26.0"
         }
       ],
@@ -40,12 +40,12 @@
           "NSPhotoLibraryUsageDescription": "用于选择锁屏变身图片、视频或实况照片制作动态壁纸。"
         }
       },
-      "version": "1.2.3",
-      "buildVersion": "16",
-      "versionDate": "2026-11-15T01:30:13Z",
-      "versionDescription": "## Camlo · 开幕 v1.2.3 (Build 16)\n\n> **亮屏即开幕，上滑即变身 / Wake to unveil. Swipe to transform.**  \n> 支持 **iOS / iPadOS 26.0 – 27.3 beta 1** 免电脑一键直写系统锁屏画廊（基于 `CSStore2` + 原生 C `worse_query` 跨容器访问桥接，100% 独立原生实现）。\n\n---\n\n### ✨ 核心特性与 v1.2.3 亮点\n\n1. **外部 / 金库壁纸写入可见性修复（Community & Vault `.tendies` Visibility）**：\n   - 移除此前对 `7400.WWDC_2022` 包内合法 `keyPath=\"speed\"` 与逐帧动画的误删校验，确保社区包与动态帧包稳定驻留 `PosterBoard`；\n   - 统一将 `com.apple.posterkit.provider.contents.userInfo` 中的 `wallpaperRepresentingIdentifier` 写入整型 (`Int`)，清理碰撞的 `7400.DYNAMIC` 模板 `suggestionMetadata.plist`，恢复非陀螺仪壁纸 `logicalScreenClass` 并降序探测最高版本号 `PRBPosterExtensionDataStore` 扩展目录（金库已有旧包点击写入即可原地自愈）。\n2. **云端多镜像原生下载重构（Cloud Multi-Mirror Downloader）**：\n   - 移除已失效的 `raw.jsdmirror.com`，接入 `ghfast.top` / `gh-proxy.com` / `ghproxy.net` / `cdn.jsdmirror.com` / `fastly.jsdelivr.net` 多线路容灾与大陆地区自动优选默认线路；\n   - 采用原生 `URLSessionDownloadTask` 分块落盘 + `PK\\x03\\x04` ZIP 魔数校验并解耦导入重试环，格式化 `CAPlayground` 毫秒级时间戳为 `yyyy-MM-dd`。\n3. **内置旗舰创作引擎**：\n   - **120Hz 原生 `.ca` 实时交互预览** (`LiveCAPreviewView`)、**陀螺仪 3D 裸眼视差** (`ParameterizedCA`)、**昼夜双生壁纸** (`appearanceAware`)；\n   - **智能时钟配色字体与主屏柔焦配套** (`PosterStyleGenerator`)、**Vision AI 主体抠图遮挡时钟**、**8 款多维粒子流光**、**视频/实况动态融合** 及 **11 套内置高清双态预设**。\n\n---\n\n### 📦 安装说明 & 校验信息\n\n- **产物文件**：`Camlo_v1.2.3_Bilingual.ipa`（14,006,240 bytes）\n- **SHA-256**：`2d4ff70d3f011ed79d8ed41a0c6b1102ea9cd446edaef0618d724b33f0c7bebb`\n- **最低系统**：iOS / iPadOS 26.0+（实测支持至 iOS 27.0 – 27.3 beta 1）\n- **签名要求**：使用 **SideStore / AltStore / Feather / Sideloadly / Impactor / iLoader** 或支持 `App Group` 的个人开发者证书签名安装，以启用免电脑一键直写 `PosterBoard`（无 `App Group` 仍可完整创作并导出 `.tendies`）。",
-      "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.3/Camlo_v1.2.3_Bilingual.ipa",
-      "size": 14006240
+      "version": "1.2.4",
+      "buildVersion": "17",
+      "versionDate": "2026-11-15T01:57:36Z",
+      "versionDescription": "v1.2.4 Build 17 — 云端 .tendies 解压真机路径修复 & 官方主题全动态预览 | Cloud .tendies Symlink Fix & Live Official Gallery Previews:\n1. 彻底修复云端/社区 `.tendies` 下载时在真机上误报「检测到非法路径穿越条目，已安全拦截导入」：统一规范化目标根目录与未创建子路径的 `/var` vs `/private/var`（及 `/tmp` vs `/private/tmp`）符号链接前缀校验，同时保留对前置 `/`、`..` 及 `.symlink` 越界条目的严格拦截；扩展目录探索兼容大小写 `Extensions` 与 `ordered-descriptors`。\n   (Fix False Zip-Slip Rejection on iOS Devices: canonicalizes `/var` vs `/private/var` symlink prefixes between created extraction roots and not-yet-created child entries in `TendiesPackager`, while preserving strict traversal/symlink blocking and case-insensitive `Extensions`/`ordered-descriptors` discovery.)\n2. Camlo 官方云端主题全面支持实时动态预览与私有库秒装体验：为全部 10 套官方壁纸包生成轻量级 24 位多关键帧 WebP 动态预览（`wallpapers/previews/*.webp`，呈现无缝动态循环与滑动变身+时钟破框遮挡效果），并在云端卡片、详情页及 `120Hz 原生 Core Animation 交互试穿` 链路中接入实时动态渲染与 `OfficialGallerySeed.bundle` 离线/私有仓库兜底。\n   (Live Dynamic Previews for Camlo Official Packs: adds 24-bit animated WebP previews for all 10 official motion-loop and Clock-Depth morph themes across grid cards and detail sheets, 1-tap `120Hz Interactive .ca Try-On`, and `OfficialGallerySeed.bundle` offline/private-beta fallback.)",
+      "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.4/Camlo_v1.2.4_Bilingual.ipa",
+      "size": 43217564
     }
   ],
   "news": []

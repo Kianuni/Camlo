@@ -32,6 +32,13 @@ ALT_TINT_COLOR = "#6B4EFF"
 ESIGN_TINT_COLOR = "6B4EFF"
 
 DEFAULT_CHANGELOG_BY_VER: dict[str, str] = {
+    "1.2.4": (
+        "v1.2.4 Build 17 — 云端 .tendies 解压真机路径修复 & 官方主题全动态预览 | Cloud .tendies Symlink Fix & Live Official Gallery Previews:\n"
+        "1. 彻底修复云端/社区 `.tendies` 下载时在真机上误报「检测到非法路径穿越条目，已安全拦截导入」：统一规范化目标根目录与未创建子路径的 `/var` vs `/private/var`（及 `/tmp` vs `/private/tmp`）符号链接前缀校验，同时保留对前置 `/`、`..` 及 `.symlink` 越界条目的严格拦截；扩展目录探索兼容大小写 `Extensions` 与 `ordered-descriptors`。\n"
+        "   (Fix False Zip-Slip Rejection on iOS Devices: canonicalizes `/var` vs `/private/var` symlink prefixes between created extraction roots and not-yet-created child entries in `TendiesPackager`, while preserving strict traversal/symlink blocking and case-insensitive `Extensions`/`ordered-descriptors` discovery.)\n"
+        "2. Camlo 官方云端主题全面支持实时动态预览与私有库秒装体验：为全部 10 套官方壁纸包生成轻量级 24 位多关键帧 WebP 动态预览（`wallpapers/previews/*.webp`，呈现无缝动态循环与滑动变身+时钟破框遮挡效果），并在云端卡片、详情页及 `120Hz 原生 Core Animation 交互试穿` 链路中接入实时动态渲染与 `OfficialGallerySeed.bundle` 离线/私有仓库兜底。\n"
+        "   (Live Dynamic Previews for Camlo Official Packs: adds 24-bit animated WebP previews for all 10 official motion-loop and Clock-Depth morph themes across grid cards and detail sheets, 1-tap `120Hz Interactive .ca Try-On`, and `OfficialGallerySeed.bundle` offline/private-beta fallback.)"
+    ),
     "1.2.3": (
         "v1.2.3 Build 16 — 社区/外部壁纸写入可见性修复 & 云端多镜像原生下载重构 | Community .tendies Visibility & Cloud Multi-Mirror Downloader Fix:\n"
         "1. 修复外部导入 / 金库已有 `.tendies` 写入并注销后在锁屏画廊（「收藏」/「专为 iPhone 设计」）找不到的问题：移除 `purgeLegacyBrokenVideoDescriptors` 对合法 `keyPath=\"speed\"` 与离散帧动画的误删，统一将 `userInfo` 中的 `wallpaperRepresentingIdentifier` 写入整型 (`Int`)，清理碰撞的 `7400.DYNAMIC` `suggestionMetadata.plist` 并恢复非陀螺仪壁纸 `logicalScreenClass` 与最高版本号 `PRBPosterExtensionDataStore` 扩展目录定位；金库中之前下载的包在点击写入时自动原地自愈，无需重新下载。\n"

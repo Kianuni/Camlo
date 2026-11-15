@@ -314,7 +314,7 @@ struct CloudGalleryView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(ch == .camloOfficial
-                         ? Bi("Camlo 官方精选 · 零体积 OTA", "Camlo Official OTA Repository")
+                         ? Bi("Camlo 官方精选 · 动态预览与云端库", "Camlo Official · Live & Cloud Gallery")
                          : Bi("\(ch.localizedTitle) · 开源社区直连", "\(ch.localizedTitle) · Open-Source Catalog"))
                         .font(.subheadline.weight(.bold))
                     Text(headerSubtitle(for: ch))
@@ -352,8 +352,8 @@ struct CloudGalleryView: View {
         switch channel {
         case .camloOfficial:
             return Bi(
-                "托管在 Camlo 仓库 wallpapers/，不占 IPA 体积；支持 SHA-256 校验与多镜像竞速。",
-                "Hosted outside IPA in repo wallpapers/; supports SHA-256 check & mirror racing."
+                "内置高清动态预览与离线秒装种子，同时支持仓库 wallpapers/ 云端热更新与 SHA-256 校验。",
+                "Built-in animated previews & offline seed with cloud OTA updates and SHA-256 verification."
             )
         case .caPlayground:
             return Bi(
@@ -458,28 +458,21 @@ struct CloudGalleryView: View {
                     Color.clear
                         .aspectRatio(9.0 / 16.0, contentMode: .fit)
                         .overlay {
-                            if let thumb = manager.cachedThumbnail(for: pack) {
-                                Image(uiImage: thumb)
-                                    .resizable()
-                                    .scaledToFill()
-                            } else {
-                                ZStack {
-                                    LinearGradient(
-                                        colors: [pack.accentColor.opacity(0.36), Color.black.opacity(0.88)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                    ProgressView()
-                                        .tint(.white.opacity(0.9))
-                                }
-                            }
+                            CamloRemotePreview(
+                                cacheKey: "official_card_\(pack.id)",
+                                candidateURLs: pack.previewCandidateURLs,
+                                mode: .motion(maxPixel: 440, maxKeyframes: 24),
+                                contentMode: .scaleAspectFill,
+                                placeholderColors: [pack.accentColor.opacity(0.36), Color.black.opacity(0.88)],
+                                bundledFileURL: pack.bundledPreviewURL
+                            )
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         .clipped()
                         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
                     HStack(spacing: 4) {
-                        Text(pack.localizedBadge)
+                        Label(pack.localizedBadge, systemImage: "play.fill")
                             .font(.system(size: 10, weight: .bold))
                             .padding(.horizontal, 7)
                             .padding(.vertical, 4)
@@ -505,9 +498,6 @@ struct CloudGalleryView: View {
                 }
             }
             .buttonStyle(CamloTapButtonStyle(scaleAmount: 0.97))
-            .task(id: pack.id) {
-                await manager.loadThumbnailIfNeeded(for: pack)
-            }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(pack.localizedTitle)
@@ -811,13 +801,14 @@ struct CloudGalleryView: View {
                         .aspectRatio(9.0 / 16.0, contentMode: .fit)
                         .frame(maxWidth: 240)
                         .overlay {
-                            if let thumb = manager.cachedThumbnail(for: pack) {
-                                Image(uiImage: thumb)
-                                    .resizable()
-                                    .scaledToFill()
-                            } else {
-                                Color(.secondarySystemGroupedBackground)
-                            }
+                            CamloRemotePreview(
+                                cacheKey: "official_sheet_\(pack.id)",
+                                candidateURLs: pack.previewCandidateURLs,
+                                mode: .motion(maxPixel: 720, maxKeyframes: 32),
+                                contentMode: .scaleAspectFill,
+                                placeholderColors: [pack.accentColor.opacity(0.36), Color.black.opacity(0.88)],
+                                bundledFileURL: pack.bundledPreviewURL
+                            )
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                         .clipped()
@@ -897,19 +888,47 @@ struct CloudGalleryView: View {
                             .buttonStyle(CamloTapButtonStyle())
                         }
                     } else {
-                        Button {
-                            previewPack = nil
-                            downloadPack(pack, applyImmediately: true)
-                        } label: {
-                            Label(Bi("下载、校验并直写锁屏", "Download, Verify & Apply"), systemImage: "icloud.and.arrow.down.fill")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                                .foregroundStyle(.white)
+                        VStack(spacing: 10) {
+                            Button {
+                                previewPack = nil
+                                downloadPack(pack, applyImmediately: true)
+                            } label: {
+                                Label(Bi("下载、校验并直写锁屏", "Download, Verify & Apply"), systemImage: "icloud.and.arrow.down.fill")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                    .foregroundStyle(.white)
+                            }
+                            .buttonStyle(CamloTapButtonStyle())
+                            .disabled(manager.activeDownloadID != nil)
+
+                            Button {
+                                previewPack = nil
+                                tryOnOfficialPack(pack)
+                            } label: {
+                                Label(Bi("120Hz 原生 Core Animation 交互试穿", "120Hz Interactive .ca Try-On"), systemImage: "bolt.circle.fill")
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                            .buttonStyle(CamloTapButtonStyle())
+                            .disabled(manager.activeDownloadID != nil)
+
+                            Button {
+                                previewPack = nil
+                                downloadPack(pack, applyImmediately: false)
+                            } label: {
+                                Label(Bi("仅存入本地壁纸金库", "Save to Vault Only"), systemImage: "tray.and.arrow.down")
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                            .buttonStyle(CamloTapButtonStyle())
+                            .disabled(manager.activeDownloadID != nil)
                         }
-                        .buttonStyle(CamloTapButtonStyle())
-                        .disabled(manager.activeDownloadID != nil)
                     }
                 }
                 .padding(16)
@@ -1061,6 +1080,25 @@ struct CloudGalleryView: View {
     }
 
     // MARK: - Download & Apply
+
+    private func tryOnOfficialPack(_ pack: CloudWallpaperPack) {
+        CamloHaptics.impact(.light)
+        Task {
+            do {
+                let imported = try await manager.downloadAndImport(pack: pack)
+                CamloHaptics.notify(.success)
+                inspectItem = imported
+            } catch is CancellationError {
+                return
+            } catch {
+                CamloHaptics.notify(.error)
+                showApplyActions = false
+                alertTitle = Bi("试穿加载失败", "Failed to Load Live Preview")
+                alertMessage = error.localizedDescription
+                showAlert = true
+            }
+        }
+    }
 
     private func downloadPack(_ pack: CloudWallpaperPack, applyImmediately: Bool) {
         CamloHaptics.impact(.light)

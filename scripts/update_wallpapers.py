@@ -16,6 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 WALLPAPERS_DIR = REPO_ROOT / "wallpapers"
 PACKAGES_DIR = WALLPAPERS_DIR / "packages"
 THUMBS_DIR = WALLPAPERS_DIR / "thumbs"
+PREVIEWS_DIR = WALLPAPERS_DIR / "previews"
 METADATA_PATH = WALLPAPERS_DIR / "metadata.json"
 CATALOG_PATH = WALLPAPERS_DIR / "catalog.json"
 README_PATH = WALLPAPERS_DIR / "README.md"
@@ -102,6 +103,13 @@ def main() -> None:
         size_bytes = pkg_file.stat().st_size
         digest = sha256_file(pkg_file)
         motion = entry.get("motion") or {}
+        preview_webp = PREVIEWS_DIR / f"{pack_id}.webp"
+        preview_gif = PREVIEWS_DIR / f"{pack_id}.gif"
+        preview_rel = (
+            f"wallpapers/previews/{pack_id}.webp"
+            if preview_webp.exists()
+            else (f"wallpapers/previews/{pack_id}.gif" if preview_gif.exists() else None)
+        )
 
         catalog_packs.append(
             {
@@ -123,6 +131,7 @@ def main() -> None:
                 "hasClockDepthAssets": bool(inspect_info["hasClockDepthAssets"]),
                 "packagePath": f"wallpapers/packages/{pack_id}.tendies",
                 "thumbPath": f"wallpapers/thumbs/{pack_id}.jpg",
+                "previewPath": preview_rel,
                 "sizeBytes": size_bytes,
                 "sha256": digest,
                 "fps": motion.get("fps"),
@@ -138,6 +147,13 @@ def main() -> None:
             continue
         inspect_info = verify_tendies_zip(extra_pkg)
         thumb_file = THUMBS_DIR / f"{extra_id}.jpg"
+        extra_webp = PREVIEWS_DIR / f"{extra_id}.webp"
+        extra_gif = PREVIEWS_DIR / f"{extra_id}.gif"
+        extra_preview_rel = (
+            f"wallpapers/previews/{extra_id}.webp"
+            if extra_webp.exists()
+            else (f"wallpapers/previews/{extra_id}.gif" if extra_gif.exists() else None)
+        )
         catalog_packs.append(
             {
                 "id": extra_id,
@@ -158,6 +174,7 @@ def main() -> None:
                 "hasClockDepthAssets": bool(inspect_info["hasClockDepthAssets"]),
                 "packagePath": f"wallpapers/packages/{extra_id}.tendies",
                 "thumbPath": f"wallpapers/thumbs/{extra_id}.jpg" if thumb_file.exists() else "",
+                "previewPath": extra_preview_rel,
                 "sizeBytes": extra_pkg.stat().st_size,
                 "sha256": sha256_file(extra_pkg),
                 "fps": None,
@@ -195,7 +212,12 @@ def main() -> None:
     for p in catalog_packs:
         direct_url = f"https://raw.githubusercontent.com/{REPO_SLUG}/main/{p['packagePath']}"
         cn_url = f"https://ghfast.top/{direct_url}"
-        thumb_rel = f"./thumbs/{p['id']}.jpg"
+        if (PREVIEWS_DIR / f"{p['id']}.webp").exists():
+            thumb_rel = f"./previews/{p['id']}.webp"
+        elif (PREVIEWS_DIR / f"{p['id']}.gif").exists():
+            thumb_rel = f"./previews/{p['id']}.gif"
+        else:
+            thumb_rel = f"./thumbs/{p['id']}.jpg"
         size_kb = p["sizeBytes"] / 1024
         size_str = f"{size_kb / 1024:.2f} MB" if size_kb >= 1024 else f"{size_kb:.0f} KB"
         feat = "Clock Depth · CAML" if p["supportsClockDepth"] else f"{p['fps'] or 14} FPS Seamless"

@@ -280,6 +280,23 @@ final class TendiesVaultStore: ObservableObject {
         let keepFolderName: Bool
     }
 
+    nonisolated static func canonicalFileSystemPath(_ rawPath: String) -> String {
+        var p = (rawPath as NSString).standardizingPath
+        if p == "/var" {
+            p = "/private/var"
+        } else if p.hasPrefix("/var/") {
+            p = "/private" + p
+        } else if p == "/tmp" {
+            p = "/private/tmp"
+        } else if p.hasPrefix("/tmp/") {
+            p = "/private" + p
+        }
+        while p.count > 1 && p.hasSuffix("/") {
+            p.removeLast()
+        }
+        return p
+    }
+
     private func extractTendiesArchive(at sourceURL: URL, into destinationRoot: URL) throws {
         let archive: Archive
         do {
@@ -289,8 +306,9 @@ final class TendiesVaultStore: ObservableObject {
         }
 
         try fm.createDirectory(at: destinationRoot, withIntermediateDirectories: true)
-        let canonicalRoot = destinationRoot.standardizedFileURL.path
-        let rootPrefix = canonicalRoot.hasSuffix("/") ? canonicalRoot : canonicalRoot + "/"
+        let resolvedRootPath = Self.canonicalFileSystemPath(destinationRoot.resolvingSymlinksInPath().path)
+        let resolvedRootURL = URL(fileURLWithPath: resolvedRootPath, isDirectory: true)
+        let rootPrefix = resolvedRootPath == "/" ? "/" : resolvedRootPath + "/"
 
         var entryCount = 0
         var totalUncompressed: UInt64 = 0
@@ -311,6 +329,9 @@ final class TendiesVaultStore: ObservableObject {
             }
             let parts = rawParts.filter { $0 != "." }
             guard !parts.isEmpty else { continue }
+            if parts.contains(where: { $0.isEmpty || $0 == ".." || $0.contains("/") || $0.contains("\0") }) {
+                throw NSError(domain: "CamloImport", code: -2, userInfo: [NSLocalizedDescriptionKey: Bi("检测到非法路径穿越条目，已安全拦截导入", "Unsafe path traversal entry rejected")])
+            }
 
             // Skip Finder metadata / AppleDouble resource forks / Camlo legacy markers directly during stream unpack.
             let containsJunk = parts.contains { part in
@@ -322,8 +343,9 @@ final class TendiesVaultStore: ObservableObject {
             }
             if containsJunk { continue }
 
-            let targetURL = parts.reduce(destinationRoot) { $0.appendingPathComponent($1) }.standardizedFileURL
-            guard targetURL.path == canonicalRoot || targetURL.path.hasPrefix(rootPrefix) else {
+            let targetURL = parts.reduce(resolvedRootURL) { $0.appendingPathComponent($1) }.standardizedFileURL
+            let targetPath = Self.canonicalFileSystemPath(targetURL.path)
+            guard targetPath == resolvedRootPath || targetPath.hasPrefix(rootPrefix) else {
                 throw NSError(domain: "CamloImport", code: -2, userInfo: [NSLocalizedDescriptionKey: Bi("检测到非法路径穿越条目，已安全拦截导入", "Unsafe path traversal entry rejected")])
             }
 
@@ -371,9 +393,9 @@ final class TendiesVaultStore: ObservableObject {
             let comps = item.pathComponents
             let lowerName = name.lowercased()
 
-            // Container layout: .../Extensions/<extensionBundleID>/descriptors/<descriptorDir>
-            if lowerName == "descriptors",
-               let extIdx = comps.lastIndex(of: "Extensions"),
+            // Container layout: .../Extensions/<extensionBundleID>/(descriptors|ordered-descriptors)/<descriptorDir>
+            if (lowerName == "descriptors" || lowerName == "ordered-descriptors"),
+               let extIdx = comps.lastIndex(where: { $0.caseInsensitiveCompare("Extensions") == .orderedSame }),
                comps.indices.contains(extIdx + 1) {
                 let providerID = comps[extIdx + 1]
                 if !providerID.isEmpty, !providerID.contains("/"), ![".", ".."].contains(providerID),
@@ -451,7 +473,8 @@ final class TendiesVaultStore: ObservableObject {
 
     private func inferredExtensionIdentifier(for descriptorURL: URL) -> String {
         let comps = descriptorURL.pathComponents
-        if let extIdx = comps.lastIndex(of: "Extensions"), comps.indices.contains(extIdx + 1) {
+        if let extIdx = comps.lastIndex(where: { $0.caseInsensitiveCompare("Extensions") == .orderedSame }),
+           comps.indices.contains(extIdx + 1) {
             let candidate = comps[extIdx + 1]
             if !candidate.isEmpty, !candidate.contains("/"), ![".", ".."].contains(candidate) {
                 return candidate
@@ -469,18 +492,22 @@ final class TendiesVaultStore: ObservableObject {
     }
 
     private func deduplicatedShallowest(_ candidates: [(URL, String)]) -> [(URL, String)] {
-        let sorted = candidates.sorted {
-            $0.0.standardizedFileURL.pathComponents.count < $1.0.standardizedFileURL.pathComponents.count
+        let canonicalEntries = candidates.map { entry -> (url: URL, ext: String, canonicalPath: String) in
+            let path = Self.canonicalFileSystemPath(entry.0.resolvingSymlinksInPath().path)
+            return (entry.0, entry.1, path)
+        }
+        let sorted = canonicalEntries.sorted {
+            URL(fileURLWithPath: $0.canonicalPath).pathComponents.count < URL(fileURLWithPath: $1.canonicalPath).pathComponents.count
         }
         var kept: [(URL, String)] = []
         var keptPaths: [String] = []
         for entry in sorted {
-            let p = entry.0.standardizedFileURL.path
+            let p = entry.canonicalPath
             let isNested = keptPaths.contains { existing in
                 p == existing || p.hasPrefix(existing + "/")
             }
             if !isNested {
-                kept.append(entry)
+                kept.append((entry.url, entry.ext))
                 keptPaths.append(p)
             }
         }

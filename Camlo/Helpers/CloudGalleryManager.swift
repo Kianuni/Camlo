@@ -41,6 +41,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
     let supportsClockDepth: Bool?
     let packagePath: String
     let thumbPath: String
+    let previewPath: String?
     let sizeBytes: Int
     let sha256: String
     let fps: Int?
@@ -69,6 +70,49 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
         Color(camloHex: accentHex ?? "#6A4DF5")
     }
 
+    nonisolated static var officialSeedBundleURL: URL? {
+        Bundle.main.url(forResource: "OfficialGallerySeed", withExtension: "bundle")
+    }
+
+    var effectivePreviewPath: String {
+        if let previewPath, !previewPath.isEmpty {
+            return previewPath
+        }
+        return "wallpapers/previews/\(id).webp"
+    }
+
+    @MainActor
+    var previewCandidateURLs: [URL] {
+        CloudGalleryManager.buildRepoURLs(
+            pathOrURL: effectivePreviewPath,
+            repoSlug: AppSourceManager.shared.effectiveRepoSlug,
+            branch: "main"
+        )
+    }
+
+    var bundledPreviewURL: URL? {
+        guard let seedRoot = Self.officialSeedBundleURL else { return nil }
+        let fm = FileManager.default
+        let candidates = [
+            seedRoot.appendingPathComponent("previews/\(id).webp"),
+            seedRoot.appendingPathComponent("previews/\(id).gif"),
+            seedRoot.appendingPathComponent("thumbs/\(id).jpg")
+        ]
+        return candidates.first { fm.fileExists(atPath: $0.path) }
+    }
+
+    var bundledThumbURL: URL? {
+        guard let seedRoot = Self.officialSeedBundleURL else { return nil }
+        let url = seedRoot.appendingPathComponent("thumbs/\(id).jpg")
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    var bundledPackageURL: URL? {
+        guard let seedRoot = Self.officialSeedBundleURL else { return nil }
+        let url = seedRoot.appendingPathComponent("packages/\(id).tendies")
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
     static let seedFallbackPacks: [CloudWallpaperPack] = [
         CloudWallpaperPack(
             id: "titanium_silk_flow",
@@ -88,6 +132,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             supportsClockDepth: false,
             packagePath: "wallpapers/packages/titanium_silk_flow.tendies",
             thumbPath: "wallpapers/thumbs/titanium_silk_flow.jpg",
+            previewPath: "wallpapers/previews/titanium_silk_flow.webp",
             sizeBytes: 0,
             sha256: "",
             fps: 15,
@@ -112,6 +157,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             supportsClockDepth: false,
             packagePath: "wallpapers/packages/polar_aurora_curtain.tendies",
             thumbPath: "wallpapers/thumbs/polar_aurora_curtain.jpg",
+            previewPath: "wallpapers/previews/polar_aurora_curtain.webp",
             sizeBytes: 0,
             sha256: "",
             fps: 14,
@@ -136,6 +182,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             supportsClockDepth: false,
             packagePath: "wallpapers/packages/sunset_ocean_shimmer.tendies",
             thumbPath: "wallpapers/thumbs/sunset_ocean_shimmer.jpg",
+            previewPath: "wallpapers/previews/sunset_ocean_shimmer.webp",
             sizeBytes: 0,
             sha256: "",
             fps: 14,
@@ -160,6 +207,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             supportsClockDepth: false,
             packagePath: "wallpapers/packages/cyber_neon_rain.tendies",
             thumbPath: "wallpapers/thumbs/cyber_neon_rain.jpg",
+            previewPath: "wallpapers/previews/cyber_neon_rain.webp",
             sizeBytes: 0,
             sha256: "",
             fps: 15,
@@ -184,6 +232,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             supportsClockDepth: false,
             packagePath: "wallpapers/packages/abyssal_jellyfish_glow.tendies",
             thumbPath: "wallpapers/thumbs/abyssal_jellyfish_glow.jpg",
+            previewPath: "wallpapers/previews/abyssal_jellyfish_glow.webp",
             sizeBytes: 0,
             sha256: "",
             fps: 14,
@@ -208,6 +257,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             supportsClockDepth: true,
             packagePath: "wallpapers/packages/neon_ronin_slash.tendies",
             thumbPath: "wallpapers/thumbs/neon_ronin_slash.jpg",
+            previewPath: "wallpapers/previews/neon_ronin_slash.webp",
             sizeBytes: 0,
             sha256: "",
             fps: nil,
@@ -232,6 +282,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             supportsClockDepth: true,
             packagePath: "wallpapers/packages/lunar_earthrise_portal.tendies",
             thumbPath: "wallpapers/thumbs/lunar_earthrise_portal.jpg",
+            previewPath: "wallpapers/previews/lunar_earthrise_portal.webp",
             sizeBytes: 0,
             sha256: "",
             fps: nil,
@@ -256,6 +307,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             supportsClockDepth: true,
             packagePath: "wallpapers/packages/kyoto_sakura_dawn.tendies",
             thumbPath: "wallpapers/thumbs/kyoto_sakura_dawn.jpg",
+            previewPath: "wallpapers/previews/kyoto_sakura_dawn.webp",
             sizeBytes: 0,
             sha256: "",
             fps: nil,
@@ -280,6 +332,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             supportsClockDepth: true,
             packagePath: "wallpapers/packages/frost_dragon_awaken.tendies",
             thumbPath: "wallpapers/thumbs/frost_dragon_awaken.jpg",
+            previewPath: "wallpapers/previews/frost_dragon_awaken.webp",
             sizeBytes: 0,
             sha256: "",
             fps: nil,
@@ -304,6 +357,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             supportsClockDepth: true,
             packagePath: "wallpapers/packages/silver_gt_apex.tendies",
             thumbPath: "wallpapers/thumbs/silver_gt_apex.jpg",
+            previewPath: "wallpapers/previews/silver_gt_apex.webp",
             sizeBytes: 0,
             sha256: "",
             fps: nil,
@@ -511,6 +565,7 @@ final class CloudGalleryManager: ObservableObject {
 
     private init() {
         ensureCacheDirs()
+        loadBundledSeedCatalog()
         loadCachedCatalog()
         loadCachedCommunityCatalogs()
     }
@@ -519,10 +574,24 @@ final class CloudGalleryManager: ObservableObject {
         try? FileManager.default.createDirectory(at: thumbCacheDir, withIntermediateDirectories: true)
     }
 
+    private func loadBundledSeedCatalog() {
+        guard let seedRoot = CloudWallpaperPack.officialSeedBundleURL else { return }
+        let seedCatalogURL = seedRoot.appendingPathComponent("catalog.json")
+        guard let data = try? Data(contentsOf: seedCatalogURL),
+              let decoded = try? JSONDecoder().decode(CloudWallpaperCatalog.self, from: data),
+              !decoded.packs.isEmpty else {
+            return
+        }
+        packs = decoded.packs
+    }
+
     private func loadCachedCatalog() {
         guard let data = try? Data(contentsOf: catalogCacheURL),
               let decoded = try? JSONDecoder().decode(CloudWallpaperCatalog.self, from: data),
               !decoded.packs.isEmpty else {
+            return
+        }
+        if packs.contains(where: { $0.sizeBytes > 0 }) && decoded.packs.allSatisfy({ $0.sizeBytes == 0 }) {
             return
         }
         packs = decoded.packs
@@ -1026,6 +1095,14 @@ final class CloudGalleryManager: ObservableObject {
             }
         }
 
+        // Preserve bundled/cached official catalog cleanly while repo is private (HTTP 404) or device is offline.
+        if !packs.isEmpty && !packs.allSatisfy({ $0.sizeBytes == 0 }) {
+            hasSyncedOnce = true
+            lastSyncedAt = lastSyncedAt ?? Date()
+            syncErrorMessage = nil
+            return
+        }
+
         if let err = lastError {
             syncErrorMessage = Bi(
                 "拉取云端壁纸目录失败：\(err.localizedDescription)（可尝试顶部切换 GitHub 直连或大陆镜像）",
@@ -1047,6 +1124,12 @@ final class CloudGalleryManager: ObservableObject {
             memCache.setObject(img, forKey: pack.id as NSString)
             return img
         }
+        if let bundledThumb = pack.bundledThumbURL,
+           let data = try? Data(contentsOf: bundledThumb),
+           let img = UIImage.downsampledRetina(from: data, maxPixelDimension: 840) {
+            memCache.setObject(img, forKey: pack.id as NSString)
+            return img
+        }
         return nil
     }
 
@@ -1060,6 +1143,18 @@ final class CloudGalleryManager: ObservableObject {
         if inFlightThumbIDs.contains(pack.id) { return }
         inFlightThumbIDs.insert(pack.id)
         defer { inFlightThumbIDs.remove(pack.id) }
+
+        if let bundledThumb = pack.bundledThumbURL {
+            let decodedBundled: UIImage? = await Task.detached(priority: .utility) {
+                guard let data = try? Data(contentsOf: bundledThumb) else { return nil }
+                return UIImage.downsampledRetina(from: data, maxPixelDimension: 840)
+            }.value
+            if let decodedBundled {
+                memCache.setObject(decodedBundled, forKey: pack.id as NSString)
+                thumbnails[pack.id] = decodedBundled
+                return
+            }
+        }
 
         let urls = AppSourceManager.shared.candidateRawURLs(for: pack.thumbPath)
         let targetDiskURL = thumbCacheDir.appendingPathComponent("\(pack.id).jpg")
@@ -1096,6 +1191,17 @@ final class CloudGalleryManager: ObservableObject {
         items.first { $0.cloudPackID == pack.cloudPackID }
     }
 
+    nonisolated private static func copyBundledArchiveToTemp(_ sourceURL: URL, id: String) throws -> URL {
+        let safeID = id.replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: ":", with: "_")
+        let copyURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("seed_\(safeID)_\(UUID().uuidString.prefix(8)).tendies")
+        if FileManager.default.fileExists(atPath: copyURL.path) {
+            try? FileManager.default.removeItem(at: copyURL)
+        }
+        try FileManager.default.copyItem(at: sourceURL, to: copyURL)
+        return copyURL
+    }
+
     func downloadAndImport(pack: CloudWallpaperPack) async throws -> TendiesVaultItem {
         cancelActiveDownload()
         let task = Task<TendiesVaultItem, Error> {
@@ -1109,23 +1215,53 @@ final class CloudGalleryManager: ObservableObject {
                 activeDownloadTask = nil
             }
 
-            let rawCandidates = Self.buildRepoURLs(
-                pathOrURL: pack.packagePath,
-                repoSlug: AppSourceManager.shared.effectiveRepoSlug,
-                branch: "main"
-            )
-            let urls = await CamloEndpointRanker.shared.prioritize(rawCandidates)
-            guard !urls.isEmpty else {
-                throw URLError(.badURL)
+            var resolvedTempURL: URL?
+            if let bundledPkg = pack.bundledPackageURL {
+                let bundledMatches = await Task.detached(priority: .userInitiated) { () -> Bool in
+                    if pack.sha256.isEmpty { return true }
+                    guard let data = try? Data(contentsOf: bundledPkg, options: .mappedIfSafe) else { return false }
+                    let digestHex = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+                    return digestHex.lowercased() == pack.sha256.lowercased()
+                }.value
+
+                if bundledMatches {
+                    downloadProgressByID[pack.id] = 0.45
+                    resolvedTempURL = try Self.copyBundledArchiveToTemp(bundledPkg, id: pack.id)
+                }
             }
 
-            let tempURL = try await downloadVerifiedArchive(
-                from: urls,
-                trackID: pack.id,
-                expectedSize: Int64(pack.sizeBytes),
-                expectedSHA256: pack.sha256.isEmpty ? nil : pack.sha256,
-                isOfficialChannel: true
-            )
+            if resolvedTempURL == nil {
+                let rawCandidates = Self.buildRepoURLs(
+                    pathOrURL: pack.packagePath,
+                    repoSlug: AppSourceManager.shared.effectiveRepoSlug,
+                    branch: "main"
+                )
+                let urls = await CamloEndpointRanker.shared.prioritize(rawCandidates)
+                guard !urls.isEmpty else {
+                    throw URLError(.badURL)
+                }
+                do {
+                    resolvedTempURL = try await downloadVerifiedArchive(
+                        from: urls,
+                        trackID: pack.id,
+                        expectedSize: Int64(pack.sizeBytes),
+                        expectedSHA256: pack.sha256.isEmpty ? nil : pack.sha256,
+                        isOfficialChannel: true
+                    )
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    if let bundledPkg = pack.bundledPackageURL {
+                        resolvedTempURL = try Self.copyBundledArchiveToTemp(bundledPkg, id: pack.id)
+                    } else {
+                        throw error
+                    }
+                }
+            }
+
+            guard let tempURL = resolvedTempURL else {
+                throw URLError(.cannotOpenFile)
+            }
             defer { try? FileManager.default.removeItem(at: tempURL) }
             try Task.checkCancellation()
 

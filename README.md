@@ -6,7 +6,7 @@
   <p><strong>亮屏即开幕，上滑即变身</strong> —— 零门槛「滑动解锁变身 + 动态锁屏」原生 Core Animation (<code>.tendies</code>) 壁纸制作工坊</p>
   <p>支持 iOS / iPadOS 26.x 与 iOS / iPadOS 27.0 – 27.3 beta 1 免电脑一键直写系统锁屏画廊，100% 兼容社区 <code>.tendies</code> 生态互传。</p>
   <p><strong>简体中文</strong> · <a href="./README_EN.md">English Documentation</a> · <a href="https://github.com/Kianuni/Erosion-CN">Erosion-CN 关联工具箱</a></p>
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.3-6A4DF5?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.4-6A4DF5?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
   <a href="https://altdirect.app/?url=https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json"><img alt="Official AltSource" src="https://img.shields.io/badge/%E5%AE%98%E6%96%B9%E6%BA%90-SideStore%20%2F%20AltStore-0EA5E9?style=flat-square"></a>
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square"></a>
@@ -34,7 +34,7 @@
   - **暗夜睁眼 (`AOD Gaze`)**：熄屏常显微光剪影 → 亮屏完全展开 → 上滑二次进化。
 - **无级物理调参**：自由调节 `0.35s – 1.40s` 过渡时长与 `0% – 100%` 弹簧回弹张力，并支持单独指定「熄屏常显 (AOD)」专属画面。
 - **内置 11 套官方精选像素级对齐高清预设（`PresetGallery.bundle`）**：包含 **6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光）与 **5 套潮流创意主题**（星穹剑姬、寒江孤月、暗夜超跑、苍穹机甲、柴犬团子），附带预提取 8-bit 前景/天际线破框蒙版，零选图直接上锁屏！
-- **云端 `.tendies` 壁纸广场（4 大频道 330+ 套 · [`wallpapers/`](./wallpapers/README.md) 零体积 OTA）**：支持 **Camlo 官方（10 套动态与景深包，SHA-256 校验）** + **CAPlayground（183+ 动画库）** + **Nugget 创意（111+ 社区作品）** + **Apple 原厂机型库（32+ 原生包）**，采用 Camlo 原生 `CamloEndpointRanker`（5 分钟 host EWMA 延迟缓存 + `Range: bytes=0-1` 轻量探测）、`CamloRemotePreview` Core Animation 离散关键帧 GIF 预览，并已彻底修复外源壁纸在 iOS 26/27（含 iPhone 18 Pro Max）跨 `versions/0` / `.wallpaperCollection` 打包与 `productTypes` 限制导致的未显示问题；
+- **云端 `.tendies` 壁纸广场（4 大频道 330+ 套 · [`wallpapers/`](./wallpapers/README.md) OTA & 动态预览）**：支持 **Camlo 官方（10 套动态与景深包，全卡片支持动画 WebP 动态预览、`120Hz 原生交互试穿`、`OfficialGallerySeed.bundle` 离线/私有兜底与 SHA-256 校验）** + **CAPlayground（183+ 动画库）** + **Nugget 创意（111+ 社区作品）** + **Apple 原厂机型库（32+ 原生包）**，采用 Camlo 原生 `CamloEndpointRanker`（5 分钟 host EWMA 延迟缓存 + `Range: bytes=0-1` 轻量探测）、`CamloRemotePreview` Core Animation 离散关键帧动画预览，并彻底修复 iOS `/var -> /private/var` 解压路径规范化及外源壁纸跨 `versions/0` / `.wallpaperCollection` 打包兼容；
 - **系统已装锁屏视觉管理与通用 `.tendies` 引擎**：基于 100% Camlo 原生 `SystemPosterStore` 与 ImageIO 磁盘缩略图缓存预览已安装的锁屏模板与配置、按 `RoleIndex` 批量安全清理并自动追踪中文名称；兼容单遍流式解压、多扩展（含 `*CollectionsPoster*` / `*MercuryPoster*`）镜像注入，以及纯 POSIX C `worse_query` App Group `Library/Caches` 原生守卫；
 - **实况动态 × 滑动变身融合 & 交互式锁屏取景裁剪**：支持在「锁屏常态 / 解锁变身」槽位直接导入 **Live Photo 实况照片** 或短视频实现边动边变身（自适应 Jetsam 安全内存预算）；内置真实 `09:41` 时钟与底栏避让预览的交互式拖拽/双指缩放裁剪工作台（支持「超界自由挪动」柔焦延展填充与双槽位一键同步裁剪）。
 
@@ -88,7 +88,7 @@ https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json
 
 ### 方式二：手动下载 IPA 签名安装
 
-1. 前往 [Releases 页面](https://github.com/Kianuni/Camlo/releases/latest) 下载最新的 `Camlo_v1.2.3_Bilingual.ipa`。
+1. 前往 [Releases 页面](https://github.com/Kianuni/Camlo/releases/latest) 下载最新的 `Camlo_v1.2.4_Bilingual.ipa`。
 2. 使用上述签名工具安装至设备；安装后也可在 App 内 **「设备与设置 → 软件源订阅与在线更新」** 切换国内加速镜像或一键检查更新。
 
 ---
@@ -102,7 +102,7 @@ chmod +x ./ipabuild.sh
 ./ipabuild.sh
 ```
 
-编译完成后将在项目根目录生成 `Camlo_v1.2.3_Bilingual.ipa`，并自动同步刷新软件源清单（`apps.json` / `repo.json` / `esign.json` / `repo_cn.json` / `esign_cn.json`）。
+编译完成后将在项目根目录生成 `Camlo_v1.2.4_Bilingual.ipa`，并自动同步刷新软件源清单（`apps.json` / `repo.json` / `esign.json` / `repo_cn.json` / `esign_cn.json`）。
 
 ---
 
