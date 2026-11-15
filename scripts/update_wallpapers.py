@@ -220,7 +220,7 @@ def main() -> None:
             thumb_rel = f"./thumbs/{p['id']}.jpg"
         size_kb = p["sizeBytes"] / 1024
         size_str = f"{size_kb / 1024:.2f} MB" if size_kb >= 1024 else f"{size_kb:.0f} KB"
-        feat = "Clock Depth · CAML" if p["supportsClockDepth"] else f"{p['fps'] or 14} FPS Seamless"
+        feat = "Clock Depth · CAML" if p["supportsClockDepth"] else ("Slide Morph · CAML" if p.get("kind") == "morphPair" or p.get("category") == "morph" else f"{p['fps'] or 14} FPS Seamless")
         lines.append(
             f"| <img src=\"{thumb_rel}\" width=\"54\"/> "
             f"| **{p['titleZh']}**<br/><sub>{p['titleEn']}</sub> "

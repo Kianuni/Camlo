@@ -3,8 +3,8 @@
   "identifier": "com.kianuni.Camlo.esign.cn",
   "news": {
     "title": "Camlo · 开幕 官方更新源",
-    "caption": "最新版本：v1.2.7 · 同步于 2026-11-15 13:47",
-    "date": "2026-11-15 13:47",
+    "caption": "最新版本：v1.2.8 · 同步于 2026-11-15 15:58",
+    "date": "2026-11-15 15:58",
     "tintColor": "6B4EFF",
     "isUnlock": 1,
     "key": "",
@@ -17,14 +17,14 @@
       "name": "Camlo · 开幕",
       "bundleIdentifier": "com.kianuni.Camlo",
       "developerName": "Kianuni",
-      "version": "1.2.7",
-      "versionDate": "2026-11-15 13:46:57",
-      "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.7/Camlo_v1.2.7_Bilingual.ipa",
+      "version": "1.2.8",
+      "versionDate": "2026-11-15 15:58:52",
+      "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.8/Camlo_v1.2.8_Bilingual.ipa",
       "iconURL": "https://ghfast.top/https://raw.githubusercontent.com/Kianuni/Camlo/main/PreviewIcon.png",
-      "size": 9452052,
+      "size": 9463432,
       "isNeedlock": 0,
       "appType": 1,
-      "localizedDescription": "## Camlo · 开幕 v1.2.7 (Build 20)\n\n> **亮屏即开幕，上滑即变身 / Wake to unveil. Swipe to transform.**  \n> 支持 **iOS / iPadOS 26.0 – 27.3 beta 1** 免电脑一键直写系统锁屏画廊。\n\n### ✨ v1.2.7 更新亮点\n\n1. **官方云端壁纸库重塑升级至 20 套大师级意境美学（零 IPA 体积占用）**：\n   - 全面退役早期粗糙风格主题，围绕「凝视感、时间张力与大师意境」全新打造 **20 套** 官方云端 `.tendies` 壁纸（独立托管于仓库 `wallpapers/`，IPA 严格仅内置 6 套获奖风光，保持 **~9.01 MB** 超轻量体积）；\n   - 横跨四大审美维度：**自然极境 & 摄影呼吸循环**（罗弗敦极夜孤屿、乌尤尼苍穹之镜、冥海幽蓝水母、京都苔庭听雨、黑曜流金潮汐、巴塔哥尼亚荒原燃金、贝加尔冰封深渊、迷雾孤柏静水、帕米尔慕士塔格月华）、**深空宇宙诗篇**（韦伯创生之柱、视界孤光黑洞引力环、卡西尼土星春分环影、阿波罗静海地出、荒原星拱仙女座）、**东方传世美学**（千里江山溪山霁雪、敦煌月牙大漠星河）与 **西方油画 & 建筑光影**（吉维尼莫奈睡莲、透纳雾海流霞、特瑞尔苍穹之窗、洞石光之圣殿）；\n   - 升级 `600×1300` 摄影级呼吸循环（PosterBoard Jetsam 安全内存预算内）、修正双态叠化黑底渗色并配套全新 `360×780` 动画 WebP 预览与 `540×1170` 高清缩略图。\n2. **私有仓库内测授权直连（可选 `GitHub Token`）**：\n   - 新增 **「设备与设置 → 软件源订阅 → 高级：自定义 GitHub 仓库路径 → GitHub Token」** 可选配置；在 `Kianuni/Camlo` 保持 **私有（Private）** 测试期间，填入个人 Token 即可在真机直接拉取 20 套官方云端目录、动态预览、下载 `.tendies` 并检查更新；待后续仓库转为公开后，无需任何 Token 即可走大陆镜像与全球 CDN 免配置加速。\n\n### 📦 构建产物校验\n- **文件**：`Camlo_v1.2.7_Bilingual.ipa`（`9452052` bytes / 9.01 MB）\n- **SHA-256**：`6cdb2ae54637344e0c23eb56a2bcec75d55976c887c8d14f5b0362cac1bde184`"
+      "localizedDescription": "1. 官方云端壁纸广场扩容至 50 套馆藏殿堂级杰作：新增 30 套大师纯艺术滑动变身壁纸（锚定伦勃朗、维米尔、卡拉瓦乔、拉图尔、萨金特、委拉斯开兹、达芬奇晕涂、莫奈、梵高、索罗利亚、柯罗、毕沙罗、克里姆特、弗里德里希、哈默修伊、怀斯蛋彩、艾瓦佐夫斯基、惠斯勒、霍默、雷东粉画，以及马远、郭熙、宋徽宗、夏圭、米芾、马麟、八大山人、川濑巴水与北斋馆藏意境），真实粗亚麻布厚涂、透明罩染、古绢裂纹与宣纸枯笔质感，全量零体积托管于 wallpapers/；\n2. 全系 50 套官方壁纸均配备动画 WebP 实时预览、SHA-256 完整性校验、120Hz 原生 .ca 交互试穿与一键直写锁屏，保持 ~9 MB 超轻量安装包。"
     }
   ]
 }

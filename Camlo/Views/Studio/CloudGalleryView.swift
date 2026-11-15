@@ -352,8 +352,8 @@ struct CloudGalleryView: View {
         switch channel {
         case .camloOfficial:
             return Bi(
-                "\(manager.packs.count) 套大师级宇宙、自然与艺术意境壁纸全量托管于仓库 wallpapers/，不占安装包体积，支持 WebP 动态预览与 SHA-256 校验。",
-                "\(manager.packs.count) museum-grade cosmic, nature & fine-art packs hosted in repo wallpapers/ with zero IPA footprint, animated WebP previews, and SHA-256 verification."
+                "\(manager.packs.count) 套馆藏殿堂级古典油画、外光印象派、宋画绢本与宇宙极境壁纸全量托管于仓库 wallpapers/，不占安装包体积，支持 WebP 动态预览与 SHA-256 校验。",
+                "\(manager.packs.count) museum-pantheon Old Master oils, plein-air Impressionism, Song silk scrolls & cosmic packs hosted in repo wallpapers/ with zero IPA footprint, animated WebP previews, and SHA-256 verification."
             )
         case .caPlayground:
             return Bi(
