@@ -6,7 +6,7 @@
   <p><strong>亮屏即开幕，上滑即变身</strong> —— 零门槛「滑动解锁变身 + 动态锁屏」原生 Core Animation (<code>.tendies</code>) 壁纸制作工坊</p>
   <p>支持 iOS / iPadOS 26.x 与 iOS / iPadOS 27.0 – 27.3 beta 1 免电脑一键直写系统锁屏画廊，100% 兼容社区 <code>.tendies</code> 生态互传。</p>
   <p><strong>简体中文</strong> · <a href="./README_EN.md">English Documentation</a> · <a href="https://github.com/Kianuni/Erosion-CN">Erosion-CN 关联工具箱</a></p>
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.5-6A4DF5?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.6-6A4DF5?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
   <a href="https://altdirect.app/?url=https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json"><img alt="Official AltSource" src="https://img.shields.io/badge/%E5%AE%98%E6%96%B9%E6%BA%90-SideStore%20%2F%20AltStore-0EA5E9?style=flat-square"></a>
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square"></a>
@@ -17,7 +17,7 @@
 ## 核心能力升级（v1.2.0）
 
 - **120Hz 原生 `.ca` 实时交互预览 (`LiveCAPreviewView`)**：通过纯原创异常安全 Objective-C `CamloCAStageController`（`CAPackage` + `CAStateController`）与 `MotionTiltManager` 120Hz `CADisplayLink`，在金库透视与云端下载页以真实原生 Core Animation 渲染树试穿 `.tendies`（同时兼容 `LayeredAnimation`、`ParameterizedCA` 与 `Still`），支持 `Sleep`/`Locked`/`Unlock` 过渡、手指横向摆动视差、日夜间切换与主屏对照预览；
-- **陀螺仪 3D 裸眼视差 (`ParameterizedCA`)**：滑动变身与视频工坊支持开启 3D 裸眼空间视差、调节立体深度（`25%–100%`）并一键 3D 摆动演示；导出包含 `wantsDeviceMotion = true` 与 6 组 `<wallpaperParallaxGroups>` 的 `wallpaper.ca`（背景层自动超采样放大防露边，前景破框与粒子平面反相位移）；
+- **陀螺仪 3D 裸眼视差 (`ParameterizedCA`)**：滑动变身与视频工坊支持开启 3D 裸眼空间视差、调节立体深度（`25%–100%`）并一键 3D 摆动演示；导出包含 `wantsDeviceMotion = true`、6 组 `<wallpaperParallaxGroups>` 及完整 `<wallpaperPropertyGroups>`（`v_sleep`/`v_lock`/`v_home` 解锁变身与前景破框三态插值）的 `wallpaper.ca`（背景层自动超采样放大防露边，前景破框与粒子平面反相位移）；
 - **昼夜双生壁纸 (`appearanceAware`)**：支持在「滑动解锁变身工坊」开启昼夜双生模式，一键生成 `CoreImage` 月色夜景调色或分别定制夜间双态底图、夜间 Vision 主体破框与夜间粒子，`Wallpaper.plist` 自动声明 `appearanceAware = true` 并打包 `default` / `dark` 双态变体；
 - **智能时钟配色字体 & 主屏柔焦配套 (`PosterStyleGenerator`)**：自动采样壁纸顶部 `09:41` 区域亮度与全画幅主题色，提供 6 款 `PosterKit` 字体（`Soft` / `Default` / `Rounded` / `NewYork` / `Stencil` / `Rail`）、8 种对比/取色策略及 4 种主屏配套方案（原生柔焦虚化 / 清晰直通 / 同色渐变 / 暗调纯色），通过二进制 `NSKeyedArchiver` 直接写入 `titleStyleConfiguration.plist`、`homescreenConfiguration.plist` 与 `RuntimeSnapshotMetadata`。
 

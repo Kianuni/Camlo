@@ -481,6 +481,190 @@ final class PosterBoardBridge: ObservableObject {
                 }
             }
         }
+
+        // Heal legacy Camlo ParameterizedCA (3D Gyroscope) descriptors whose `<wallpaperPropertyGroups>` was left empty.
+        if let camlEnumerator = fm.enumerator(at: descriptorDir, includingPropertiesForKeys: [.isRegularFileKey], options: []) {
+            for case let fileURL as URL in camlEnumerator where fileURL.lastPathComponent == "main.caml" {
+                healParameterizedCAMLIfNeeded(at: fileURL)
+            }
+        }
+    }
+
+    nonisolated static func healParameterizedCAMLIfNeeded(at camlURL: URL) {
+        guard var xml = try? String(contentsOf: camlURL, encoding: .utf8),
+              xml.contains("id=\"camlo_bg_parallax\"") else {
+            return
+        }
+
+        var mutated = false
+        if xml.contains("<CATransformLayer ") {
+            xml = xml
+                .replacingOccurrences(of: "<CATransformLayer ", with: "<CALayer ")
+                .replacingOccurrences(of: "</CATransformLayer>", with: "</CALayer>")
+            mutated = true
+        }
+
+        if xml.contains("<wallpaperPropertyGroups type=\"NSArray\"/>"),
+           xml.contains("<LKState "),
+           let floatingRange = xml.range(of: "<CALayer id=\"floating\"") {
+            let statesStart = xml.range(of: "<states>")?.lowerBound ?? xml.endIndex
+            let bgSection = String(xml[..<floatingRange.lowerBound])
+            let flSection = String(xml[floatingRange.lowerBound..<min(statesStart, xml.endIndex)])
+
+            let containerIDs: Set<String> = [
+                "__capRootLayer__",
+                "background",
+                "floating",
+                "camlo_bg_parallax",
+                "camlo_bg_overscan",
+                "camlo_fg_parallax",
+                "camlo_fg_overscan",
+                "camlo_fx_parallax"
+            ]
+
+            var layerMeta: [String: (name: String, view: String)] = [:]
+            if let layerRegex = try? NSRegularExpression(
+                pattern: "<CA[A-Za-z]*Layer\\b[^>]*\\bid=\"([^\"]+)\"[^>]*\\bname=\"([^\"]+)\""
+            ) {
+                for (section, viewName) in [(bgSection, "Background"), (flSection, "Floating")] {
+                    let nsSection = section as NSString
+                    let matches = layerRegex.matches(
+                        in: section,
+                        range: NSRange(location: 0, length: nsSection.length)
+                    )
+                    for match in matches where match.numberOfRanges >= 3 {
+                        let id = nsSection.substring(with: match.range(at: 1))
+                        let name = nsSection.substring(with: match.range(at: 2))
+                        guard !containerIDs.contains(id) else { continue }
+                        layerMeta[id] = (name: name, view: viewName)
+                    }
+                }
+            }
+
+            struct LegacyTriple {
+                let targetId: String
+                let keyPath: String
+                var sleepVal: Double?
+                var lockedVal: Double?
+                var unlockVal: Double?
+            }
+
+            var orderedKeys: [String] = []
+            var triples: [String: LegacyTriple] = [:]
+
+            if let stateRegex = try? NSRegularExpression(
+                pattern: "<LKState\\s+name=\"(Sleep|Locked|Unlock)\">([\\s\\S]*?)</LKState>"
+            ),
+               let setValueRegex = try? NSRegularExpression(
+                   pattern: "<LKStateSetValue\\s+targetId=\"([^\"]+)\"\\s+keyPath=\"([^\"]+)\">\\s*<value\\s+type=\"[^\"]+\"\\s+value=\"([^\"]+)\"/>\\s*</LKStateSetValue>"
+               ) {
+                let nsXML = xml as NSString
+                let stateMatches = stateRegex.matches(
+                    in: xml,
+                    range: NSRange(location: 0, length: nsXML.length)
+                )
+                for sMatch in stateMatches where sMatch.numberOfRanges >= 3 {
+                    let stateName = nsXML.substring(with: sMatch.range(at: 1))
+                    let body = nsXML.substring(with: sMatch.range(at: 2))
+                    let nsBody = body as NSString
+                    let valMatches = setValueRegex.matches(
+                        in: body,
+                        range: NSRange(location: 0, length: nsBody.length)
+                    )
+                    for vMatch in valMatches where vMatch.numberOfRanges >= 4 {
+                        let targetId = nsBody.substring(with: vMatch.range(at: 1))
+                        let keyPath = nsBody.substring(with: vMatch.range(at: 2))
+                        let rawVal = nsBody.substring(with: vMatch.range(at: 3))
+                        guard let numVal = Double(rawVal) else { continue }
+
+                        let compoundKey = "\(targetId)|\(keyPath)"
+                        if triples[compoundKey] == nil {
+                            orderedKeys.append(compoundKey)
+                            triples[compoundKey] = LegacyTriple(
+                                targetId: targetId,
+                                keyPath: keyPath,
+                                sleepVal: nil,
+                                lockedVal: nil,
+                                unlockVal: nil
+                            )
+                        }
+                        switch stateName {
+                        case "Sleep":
+                            triples[compoundKey]?.sleepVal = numVal
+                        case "Locked":
+                            triples[compoundKey]?.lockedVal = numVal
+                        case "Unlock":
+                            triples[compoundKey]?.unlockVal = numVal
+                        default:
+                            break
+                        }
+                    }
+                }
+            }
+
+            func makeEntry(
+                keyPath: String,
+                layerName: String,
+                sleepVal: Double,
+                lockVal: Double,
+                homeVal: Double,
+                view: String
+            ) -> String {
+                let h = String(format: "%.4f", homeVal)
+                let l = String(format: "%.4f", lockVal)
+                let s = String(format: "%.4f", sleepVal)
+                return """
+                        <NSDictionary>
+                          <image type="null"/>
+                          <keyPath type="string" value="\(keyPath)"/>
+                          <layerName type="string" value="\(layerName)"/>
+                          <v_home type="real" value="\(h)"/>
+                          <v_lock type="real" value="\(l)"/>
+                          <v_sleep type="real" value="\(s)"/>
+                          <view type="string" value="\(view)"/>
+                        </NSDictionary>
+                """
+            }
+
+            var groupEntries: [String] = []
+            for key in orderedKeys {
+                guard let triple = triples[key],
+                      let meta = layerMeta[triple.targetId] else { continue }
+                var locked = triple.lockedVal ?? 0.0
+                let sleep = triple.sleepVal ?? locked
+                let unlock = triple.unlockVal ?? locked
+                if triple.targetId == "unlock_layer" && triple.keyPath == "opacity" && locked == 0.0 && unlock == 1.0 {
+                    locked = 1.0
+                }
+
+                if triple.keyPath == "transform.scale.xy" {
+                    let s = max(0.0, sleep)
+                    let l = max(0.0, locked)
+                    let h = max(0.0, unlock)
+                    groupEntries.append(makeEntry(keyPath: "transform.scale.x", layerName: meta.name, sleepVal: s, lockVal: l, homeVal: h, view: meta.view))
+                    groupEntries.append(makeEntry(keyPath: "transform.scale.y", layerName: meta.name, sleepVal: s, lockVal: l, homeVal: h, view: meta.view))
+                } else {
+                    groupEntries.append(makeEntry(keyPath: triple.keyPath, layerName: meta.name, sleepVal: sleep, lockVal: locked, homeVal: unlock, view: meta.view))
+                }
+            }
+
+            if !groupEntries.isEmpty {
+                let replacement = """
+                      <wallpaperPropertyGroups type="NSArray">
+                \(groupEntries.joined(separator: "\n"))
+                      </wallpaperPropertyGroups>
+                """
+                xml = xml.replacingOccurrences(of: "      <wallpaperPropertyGroups type=\"NSArray\"/>", with: replacement)
+                if xml.contains("<wallpaperPropertyGroups type=\"NSArray\"/>") {
+                    xml = xml.replacingOccurrences(of: "<wallpaperPropertyGroups type=\"NSArray\"/>", with: replacement.trimmingCharacters(in: .whitespaces))
+                }
+                mutated = true
+            }
+        }
+
+        if mutated {
+            try? xml.data(using: .utf8)?.write(to: camlURL, options: .atomic)
+        }
     }
 
     nonisolated static func synchronizeCollectionsIdentifier(

@@ -32,6 +32,13 @@ ALT_TINT_COLOR = "#6B4EFF"
 ESIGN_TINT_COLOR = "6B4EFF"
 
 DEFAULT_CHANGELOG_BY_VER: dict[str, str] = {
+    "1.2.6": (
+        "v1.2.6 Build 19 — 修复开启陀螺仪 3D 视差后锁屏只显示第一张图（完整支持 `<wallpaperPropertyGroups>` 三态插值与金库旧包自愈） | Fix 3D Gyroscope (`ParameterizedCA`) Lock/Unlock Morphing & Self-Healing:\n"
+        "1. 修复 `ParameterizedCA`（开启「陀螺仪 3D 视差」）在 iOS 26 / iOS 27 真机锁屏及「设为墙纸组合」预览中卡在第一张图不随解锁变身的问题：在 `wallpaper.ca/main.caml` 中完整生成符合 Apple `WallpaperKit` (`WKParameterizedCAPackageLoader`) 规范的 `<wallpaperPropertyGroups>`（精确映射 `CALayer.name` 与 `Background`/`Floating` 视图归属，按 `v_sleep` / `v_lock` / `v_home` 插值并自动展开 `transform.scale.xy` 为 `scale.x` + `scale.y`），改用原生 `<CALayer>` 承载视差容器以保留体积光与粒子混合滤镜，并消除滑动叠化中点的暗场渗色。\n"
+        "   (Fix 3D Gyroscope `ParameterizedCA` Lock/Unlock Transitions on iOS 26/27: emits full `WallpaperKit`-compliant `<wallpaperPropertyGroups>` entries with `v_sleep`/`v_lock`/`v_home` KVC interpolation, `CALayer.name` + `Background`/`Floating` routing, `transform.scale.x/y` expansion, native `<CALayer>` parallax containers, and zero black-bleed crossfade blending.)\n"
+        "2. 金库旧版 3D 壁纸原位自愈 & 社区陀螺仪 `.tendies` 实时预览/X-Ray 增强：对之前保存的旧版 3D `.tendies` 在重新应用写入或导出时自动补全 `<wallpaperPropertyGroups>` 与视差层类型；应用内 `120Hz` 实时舞台 (`LiveCAPreviewView`) 与 `X-Ray` 透视同步支持直接解析并驱动仅含 `<wallpaperPropertyGroups>` 的社区 3D 动态壁纸包。\n"
+        "   (Vault Self-Healing & Community 3D Preview/X-Ray Support: automatically heals previously compiled 3D `.tendies` in-place during apply/export, and adds `<wallpaperPropertyGroups>` stage playback and X-Ray inspection for community `ParameterizedCA` packages.)"
+    ),
     "1.2.5": (
         "v1.2.5 Build 18 — 极限安装包瘦身 (~41 MB → ~9 MB)：仅内置 6 套获奖风光，全部潮流创意与动态壁纸云端零体积托管 | Ultra-Slim IPA (~9 MB) & Zero-Bloat Official Cloud Gallery:\n"
         "1. 安装包极限瘦身：移除随包体积较大的 `OfficialGallerySeed.bundle` 以及 5 套「潮流创意」内置包（星穹剑姬、寒江孤月、暗夜超跑、苍穹机甲、柴犬团子），`PresetGallery.bundle` 仅保留 **6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光），IPA 安装包体积从 ~41.2 MB 骤降至 ~9 MB。\n"

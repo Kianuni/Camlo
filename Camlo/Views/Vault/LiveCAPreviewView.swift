@@ -819,6 +819,14 @@ private final class CamloLiveStageUIView: UIView {
         let axis: String
     }
 
+    struct PropertyTarget {
+        let layer: CALayer
+        let keyPath: String
+        let sleepValue: Double
+        let lockValue: Double
+        let homeValue: Double
+    }
+
     private var currentStage: LockScreenStage = .locked
     private var gyroActive = false
     private var showClock = true
@@ -836,6 +844,7 @@ private final class CamloLiveStageUIView: UIView {
     private var layeredFgLayer: CALayer?
 
     private(set) var parallaxTargets: [ParallaxTarget] = []
+    private var propertyTargets: [PropertyTarget] = []
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -877,6 +886,7 @@ private final class CamloLiveStageUIView: UIView {
 
                 insertClockBetweenParameterizedPlanes(in: root, summary: styleSummary)
                 collectParallaxTargets(from: stage)
+                collectPropertyTargets(from: stage)
             } catch {
                 errorMessages.append(error.localizedDescription)
             }
@@ -964,14 +974,34 @@ private final class CamloLiveStageUIView: UIView {
         case .unlock: targetStateName = "Unlock"
         }
 
+        var handledByStateController = false
         for controller in stageControllers {
             if controller.hasStateNamed(targetStateName) {
-                _ = controller.transition(toStateNamed: targetStateName, speed: immediate ? 2.5 : 1.0)
+                if controller.transition(toStateNamed: targetStateName, speed: immediate ? 2.5 : 1.0) {
+                    handledByStateController = true
+                }
             } else if controller.hasStateNamed("Locked") {
                 _ = controller.transition(toStateNamed: "Locked", speed: immediate ? 2.5 : 1.0)
             } else {
                 controller.applyInitialStates()
             }
+        }
+
+        if !handledByStateController && !propertyTargets.isEmpty {
+            CATransaction.begin()
+            CATransaction.setDisableActions(immediate)
+            CATransaction.setAnimationDuration(0.55)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
+            for target in propertyTargets {
+                let value: Double
+                switch newStage {
+                case .sleep:  value = target.sleepValue
+                case .locked: value = target.lockValue
+                case .unlock: value = target.homeValue
+                }
+                target.layer.setValue(value, forKeyPath: target.keyPath)
+            }
+            CATransaction.commit()
         }
 
         if let stillImageLayer {
@@ -1049,6 +1079,7 @@ private final class CamloLiveStageUIView: UIView {
         layeredFlLayer = nil
         layeredFgLayer = nil
         parallaxTargets.removeAll()
+        propertyTargets.removeAll()
     }
 
     // MARK: - Private Geometry & Clock Helpers
@@ -1251,6 +1282,51 @@ private final class CamloLiveStageUIView: UIView {
             }
         }
         parallaxTargets = targets
+    }
+
+    private func collectPropertyTargets(from stage: CamloCAStageController) {
+        guard let groups = stage.rootLayer.style?["wallpaperPropertyGroups"] as? [[String: Any]],
+              !groups.isEmpty else {
+            return
+        }
+        let rootSublayers = stage.rootLayer.sublayers ?? []
+        let bgPlane = rootSublayers.first(where: { $0.name?.caseInsensitiveCompare("BACKGROUND") == .orderedSame })
+        let flPlane = rootSublayers.first(where: { $0.name?.caseInsensitiveCompare("FLOATING") == .orderedSame })
+
+        var targets: [PropertyTarget] = []
+        for group in groups {
+            guard let layerName = group["layerName"] as? String,
+                  let keyPath = group["keyPath"] as? String,
+                  let lockVal = numericValue(group["v_lock"]) else { continue }
+            let homeVal = numericValue(group["v_home"]) ?? lockVal
+            let sleepVal = numericValue(group["v_sleep"]) ?? lockVal
+            let viewName = (group["view"] as? String) ?? ""
+
+            let searchRoot: CALayer
+            if viewName.caseInsensitiveCompare("Floating") == .orderedSame, let flPlane {
+                searchRoot = flPlane
+            } else if viewName.caseInsensitiveCompare("Background") == .orderedSame, let bgPlane {
+                searchRoot = bgPlane
+            } else {
+                searchRoot = stage.rootLayer
+            }
+
+            let matches = findLayers(named: layerName, under: searchRoot).filter { layer in
+                layer !== bgPlane && layer !== flPlane && layer !== stage.rootLayer
+            }
+            for layer in matches {
+                targets.append(
+                    PropertyTarget(
+                        layer: layer,
+                        keyPath: keyPath,
+                        sleepValue: sleepVal,
+                        lockValue: lockVal,
+                        homeValue: homeVal
+                    )
+                )
+            }
+        }
+        propertyTargets = targets
     }
 
     private func findLayers(named targetName: String, under root: CALayer) -> [CALayer] {

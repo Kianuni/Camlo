@@ -6,7 +6,7 @@
   <p><strong>Wake to unveil. Swipe to transform.</strong> — Zero-threshold Slide-to-Unlock Morph &amp; Dynamic Lock Screen (<code>.tendies</code> / CAML) Studio for iOS &amp; iPadOS</p>
   <p>Craft native Core Animation wallpapers on-device and apply directly to <code>PosterBoard</code> in 1 tap on iOS 26.x &amp; iOS 27.0 – 27.3 beta 1 — zero PC required.</p>
   <p><a href="./README.md">简体中文文档</a> · <strong>English</strong> · <a href="https://github.com/Kianuni/Erosion-CN">Erosion-CN Companion Toolkit</a></p>
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.5-6A4DF5?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.6-6A4DF5?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
   <a href="https://altdirect.app/?url=https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json"><img alt="Official AltSource" src="https://img.shields.io/badge/Official%20Source-SideStore%20%2F%20AltStore-0EA5E9?style=flat-square"></a>
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square"></a>
@@ -17,7 +17,7 @@
 ## What's New in v1.2.0
 
 - **120Hz Native `.ca` Live Preview (`LiveCAPreviewView`)**: Clean-room Objective-C `CamloCAStageController` (`CAPackage` + `CAStateController`) paired with a 120Hz ProMotion `CADisplayLink` & `CoreMotion` tilt engine lets you inspect and interact with `.tendies` packs (`LayeredAnimation`, `ParameterizedCA`, and `Still`) directly inside Vault X-Ray and Cloud Gallery — complete with live `Sleep`/`Locked`/`Unlock` transitions, finger tilt scrubbing, Day/Night toggling, and Home Screen mockups;
-- **3D Gyroscope Spatial Parallax (`ParameterizedCA`)**: Toggle 120Hz gyroscope depth and depth scale (`25%–100%`) or trigger a 1-tap Auto 3D Orbit Demo in both Studios; compiles `wantsDeviceMotion = true` `wallpaper.ca` bundles with 6 `<wallpaperParallaxGroups>` entries (overscanned background + inverse floating/foreground planes);
+- **3D Gyroscope Spatial Parallax (`ParameterizedCA`)**: Toggle 120Hz gyroscope depth and depth scale (`25%–100%`) or trigger a 1-tap Auto 3D Orbit Demo in both Studios; compiles `wantsDeviceMotion = true` `wallpaper.ca` bundles with 6 `<wallpaperParallaxGroups>` entries (overscanned background + inverse floating/foreground planes) and full `<wallpaperPropertyGroups>` (`v_sleep`/`v_lock`/`v_home` KVC interpolation for Lock-to-Unlock & Depth Cutout transitions);
 - **Day/Night Dual Appearance (`appearanceAware`)**: Enable dual Day/Night mode in Slide-to-Morph Studio with 1-tap `CoreImage` Moonlight grading or custom night frames, night cutouts, and night particles — writing both `default` and `dark` variants into `Wallpaper.plist`;
 - **Smart Clock Typography, Contrast Color & Home Screen Pairing (`PosterStyleGenerator`)**: Samples clock-sky luminance and dominant hues to drive 6 `PosterKit` time fonts (`PRTimeFontIdentifier*`), 8 color strategies, and 4 Home Screen companion styles (`Soft-Focus Blur`, `Clear Match`, `Matched Gradient`, `Matched Solid`) encoded directly into binary `titleStyleConfiguration.plist`, `homescreenConfiguration.plist`, and `RuntimeSnapshotMetadata`.
 

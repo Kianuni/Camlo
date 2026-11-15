@@ -22,13 +22,13 @@
       "screenshots": [],
       "versions": [
         {
-          "version": "1.2.5",
-          "buildVersion": "18",
-          "date": "2026-11-15T02:16:31Z",
-          "localizedDescription": "## Camlo · 开幕 v1.2.5 (Build 18)\n\n> **亮屏即开幕，上滑即变身 / Wake to unveil. Swipe to transform.**  \n> 支持 **iOS / iPadOS 26.0 – 27.3 beta 1** 免电脑一键直写系统锁屏画廊（基于 `CSStore2` + 原生 C `worse_query` 跨容器访问桥接，100% 独立原生实现）。\n\n---\n\n### ✨ v1.2.5 安装包极限瘦身与云端扩充\n\n1. **安装包大幅瘦身（41.2 MB → 9.0 MB）**：\n   - 从安装包中移除随包 `OfficialGallerySeed.bundle` 与 5 套「潮流创意」内置资产；\n   - `PresetGallery.bundle` **仅内置保留 6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光），`Camlo_v1.2.5_Bilingual.ipa` 体积骤降至 **9.0 MB**。\n2. **15 套官方云端 `.tendies` 壁纸全量托管至仓库 `wallpapers/`（零 IPA 体积负担）**：\n   - 将原内置 5 套潮流创意预设连同其 8-bit 景深遮罩完整编译为 `.tendies`（ID `18911–18915`）与 16 帧动态 WebP 预览图，与原有 10 套动态循环 / 景深变身包组成 **15 套官方精选零体积云端壁纸库**；\n   - 继续包含 v1.2.4 的 `/var` vs `/private/var` 规范路径校验修复（全面恢复 `CAPlayground` / `Nugget` / 官方包真机导入），并清晰提示 `Kianuni/Camlo` 私有测试期的 `HTTP 404` 状态。\n\n---\n\n### 📦 安装说明 & 校验信息\n\n- **产物文件**：`Camlo_v1.2.5_Bilingual.ipa`（9429482 bytes / ~9.0 MB）\n- **SHA-256**：`8db837c633469667c0b50d6d2d4702fbbb0c88f5b9de063b0dbdc8e2770f2653`\n- **最低系统**：iOS / iPadOS 26.0+（实测支持至 iOS 27.0 – 27.3 beta 1）\n- **签名要求**：使用 **SideStore / AltStore / Feather / Sideloadly / Impactor / iLoader** 或支持 `App Group` 的个人开发者证书签名安装，以启用免电脑一键直写 `PosterBoard`（无 `App Group` 仍可完整创作并导出 `.tendies`）。",
-          "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.5/Camlo_v1.2.5_Bilingual.ipa",
-          "size": 9429482,
-          "sha256": "8db837c633469667c0b50d6d2d4702fbbb0c88f5b9de063b0dbdc8e2770f2653",
+          "version": "1.2.6",
+          "buildVersion": "19",
+          "date": "2026-11-15T03:50:27Z",
+          "localizedDescription": "v1.2.6 Build 19 — 修复开启陀螺仪 3D 视差后锁屏只显示第一张图（完整支持 `<wallpaperPropertyGroups>` 三态插值与金库旧包自愈） | Fix 3D Gyroscope (`ParameterizedCA`) Lock/Unlock Morphing & Self-Healing:\n1. 修复 `ParameterizedCA`（开启「陀螺仪 3D 视差」）在 iOS 26 / iOS 27 真机锁屏及「设为墙纸组合」预览中卡在第一张图不随解锁变身的问题：在 `wallpaper.ca/main.caml` 中完整生成符合 Apple `WallpaperKit` (`WKParameterizedCAPackageLoader`) 规范的 `<wallpaperPropertyGroups>`（精确映射 `CALayer.name` 与 `Background`/`Floating` 视图归属，按 `v_sleep` / `v_lock` / `v_home` 插值并自动展开 `transform.scale.xy` 为 `scale.x` + `scale.y`），改用原生 `<CALayer>` 承载视差容器以保留体积光与粒子混合滤镜，并消除滑动叠化中点的暗场渗色。\n   (Fix 3D Gyroscope `ParameterizedCA` Lock/Unlock Transitions on iOS 26/27: emits full `WallpaperKit`-compliant `<wallpaperPropertyGroups>` entries with `v_sleep`/`v_lock`/`v_home` KVC interpolation, `CALayer.name` + `Background`/`Floating` routing, `transform.scale.x/y` expansion, native `<CALayer>` parallax containers, and zero black-bleed crossfade blending.)\n2. 金库旧版 3D 壁纸原位自愈 & 社区陀螺仪 `.tendies` 实时预览/X-Ray 增强：对之前保存的旧版 3D `.tendies` 在重新应用写入或导出时自动补全 `<wallpaperPropertyGroups>` 与视差层类型；应用内 `120Hz` 实时舞台 (`LiveCAPreviewView`) 与 `X-Ray` 透视同步支持直接解析并驱动仅含 `<wallpaperPropertyGroups>` 的社区 3D 动态壁纸包。\n   (Vault Self-Healing & Community 3D Preview/X-Ray Support: automatically heals previously compiled 3D `.tendies` in-place during apply/export, and adds `<wallpaperPropertyGroups>` stage playback and X-Ray inspection for community `ParameterizedCA` packages.)",
+          "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.6/Camlo_v1.2.6_Bilingual.ipa",
+          "size": 9443339,
+          "sha256": "b82debfbfd28cbb15bf8bfc060a55a5409fa46246b4ef488ca4bd7bf787132b7",
           "minOSVersion": "26.0"
         }
       ],
@@ -40,12 +40,12 @@
           "NSPhotoLibraryUsageDescription": "用于选择锁屏变身图片、视频或实况照片制作动态壁纸。"
         }
       },
-      "version": "1.2.5",
-      "buildVersion": "18",
-      "versionDate": "2026-11-15T02:16:31Z",
-      "versionDescription": "## Camlo · 开幕 v1.2.5 (Build 18)\n\n> **亮屏即开幕，上滑即变身 / Wake to unveil. Swipe to transform.**  \n> 支持 **iOS / iPadOS 26.0 – 27.3 beta 1** 免电脑一键直写系统锁屏画廊（基于 `CSStore2` + 原生 C `worse_query` 跨容器访问桥接，100% 独立原生实现）。\n\n---\n\n### ✨ v1.2.5 安装包极限瘦身与云端扩充\n\n1. **安装包大幅瘦身（41.2 MB → 9.0 MB）**：\n   - 从安装包中移除随包 `OfficialGallerySeed.bundle` 与 5 套「潮流创意」内置资产；\n   - `PresetGallery.bundle` **仅内置保留 6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光），`Camlo_v1.2.5_Bilingual.ipa` 体积骤降至 **9.0 MB**。\n2. **15 套官方云端 `.tendies` 壁纸全量托管至仓库 `wallpapers/`（零 IPA 体积负担）**：\n   - 将原内置 5 套潮流创意预设连同其 8-bit 景深遮罩完整编译为 `.tendies`（ID `18911–18915`）与 16 帧动态 WebP 预览图，与原有 10 套动态循环 / 景深变身包组成 **15 套官方精选零体积云端壁纸库**；\n   - 继续包含 v1.2.4 的 `/var` vs `/private/var` 规范路径校验修复（全面恢复 `CAPlayground` / `Nugget` / 官方包真机导入），并清晰提示 `Kianuni/Camlo` 私有测试期的 `HTTP 404` 状态。\n\n---\n\n### 📦 安装说明 & 校验信息\n\n- **产物文件**：`Camlo_v1.2.5_Bilingual.ipa`（9429482 bytes / ~9.0 MB）\n- **SHA-256**：`8db837c633469667c0b50d6d2d4702fbbb0c88f5b9de063b0dbdc8e2770f2653`\n- **最低系统**：iOS / iPadOS 26.0+（实测支持至 iOS 27.0 – 27.3 beta 1）\n- **签名要求**：使用 **SideStore / AltStore / Feather / Sideloadly / Impactor / iLoader** 或支持 `App Group` 的个人开发者证书签名安装，以启用免电脑一键直写 `PosterBoard`（无 `App Group` 仍可完整创作并导出 `.tendies`）。",
-      "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.5/Camlo_v1.2.5_Bilingual.ipa",
-      "size": 9429482
+      "version": "1.2.6",
+      "buildVersion": "19",
+      "versionDate": "2026-11-15T03:50:27Z",
+      "versionDescription": "v1.2.6 Build 19 — 修复开启陀螺仪 3D 视差后锁屏只显示第一张图（完整支持 `<wallpaperPropertyGroups>` 三态插值与金库旧包自愈） | Fix 3D Gyroscope (`ParameterizedCA`) Lock/Unlock Morphing & Self-Healing:\n1. 修复 `ParameterizedCA`（开启「陀螺仪 3D 视差」）在 iOS 26 / iOS 27 真机锁屏及「设为墙纸组合」预览中卡在第一张图不随解锁变身的问题：在 `wallpaper.ca/main.caml` 中完整生成符合 Apple `WallpaperKit` (`WKParameterizedCAPackageLoader`) 规范的 `<wallpaperPropertyGroups>`（精确映射 `CALayer.name` 与 `Background`/`Floating` 视图归属，按 `v_sleep` / `v_lock` / `v_home` 插值并自动展开 `transform.scale.xy` 为 `scale.x` + `scale.y`），改用原生 `<CALayer>` 承载视差容器以保留体积光与粒子混合滤镜，并消除滑动叠化中点的暗场渗色。\n   (Fix 3D Gyroscope `ParameterizedCA` Lock/Unlock Transitions on iOS 26/27: emits full `WallpaperKit`-compliant `<wallpaperPropertyGroups>` entries with `v_sleep`/`v_lock`/`v_home` KVC interpolation, `CALayer.name` + `Background`/`Floating` routing, `transform.scale.x/y` expansion, native `<CALayer>` parallax containers, and zero black-bleed crossfade blending.)\n2. 金库旧版 3D 壁纸原位自愈 & 社区陀螺仪 `.tendies` 实时预览/X-Ray 增强：对之前保存的旧版 3D `.tendies` 在重新应用写入或导出时自动补全 `<wallpaperPropertyGroups>` 与视差层类型；应用内 `120Hz` 实时舞台 (`LiveCAPreviewView`) 与 `X-Ray` 透视同步支持直接解析并驱动仅含 `<wallpaperPropertyGroups>` 的社区 3D 动态壁纸包。\n   (Vault Self-Healing & Community 3D Preview/X-Ray Support: automatically heals previously compiled 3D `.tendies` in-place during apply/export, and adds `<wallpaperPropertyGroups>` stage playback and X-Ray inspection for community `ParameterizedCA` packages.)",
+      "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.6/Camlo_v1.2.6_Bilingual.ipa",
+      "size": 9443339
     }
   ],
   "news": []

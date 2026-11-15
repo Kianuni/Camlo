@@ -258,6 +258,7 @@ final class TendiesVaultStore: ObservableObject {
                         try fm.removeItem(at: dst)
                     }
                     try fm.copyItem(at: src, to: dst)
+                    PosterBoardBridge.normalizeDescriptorForCurrentOS(in: dst, extensionBundleID: extID)
                     try? fm.removeItem(at: dst.appendingPathComponent(PosterBoardBridge.camloMarkerFilename))
                 }
             }
@@ -683,14 +684,27 @@ final class TendiesVaultStore: ObservableObject {
                 } else if lower.hasSuffix(".caml"), let xml = try? String(contentsOf: fileURL, encoding: .utf8) {
                     let layerHits = Self.regexCount("<CA[A-Za-z]*Layer\\b", in: xml)
                     totalLayers += layerHits
-                    transitionCount += Self.regexCount("<LKStateTransition\\b", in: xml)
+                    let explicitTransitions = Self.regexCount("<LKStateTransition\\b", in: xml)
+                    transitionCount += explicitTransitions
                     animationCount += Self.regexCount("<animation\\b", in: xml)
                     if xml.contains("<CAEmitterLayer") {
                         hasEmitter = true
                     }
+                    let propGroupsSlice: Substring? = {
+                        guard let start = xml.range(of: "<wallpaperPropertyGroups"),
+                              let end = xml.range(of: "</wallpaperPropertyGroups>", range: start.upperBound..<xml.endIndex) else {
+                            return nil
+                        }
+                        return xml[start.lowerBound..<end.upperBound]
+                    }()
+                    let hasParameterizedFloatingGroups = propGroupsSlice?.range(
+                        of: "<view\\s+type=\"string\"\\s+value=\"Floating\"\\s*/>",
+                        options: [.regularExpression, .caseInsensitive]
+                    ) != nil
                     if (fileURL.path.lowercased().contains("floating") && layerHits > 2) ||
                        xml.contains("id=\"float_lock\"") ||
-                       xml.contains("id=\"float_unlock\"") {
+                       xml.contains("id=\"float_unlock\"") ||
+                       hasParameterizedFloatingGroups {
                         hasFloating = true
                     }
                     if xml.contains("<wallpaperParallaxGroups") && xml.contains("<NSDictionary") {
@@ -698,6 +712,12 @@ final class TendiesVaultStore: ObservableObject {
                     }
                     for st in ["Sleep", "Locked", "Unlock"] where xml.contains("LKState name=\"\(st)\"") {
                         stateNamesSet.insert(st)
+                    }
+                    if xml.contains("<wallpaperPropertyGroups") && xml.contains("<v_lock") {
+                        stateNamesSet.formUnion(["Sleep", "Locked", "Unlock"])
+                        if explicitTransitions == 0 {
+                            transitionCount += Self.regexCount("<v_home\\b", in: xml)
+                        }
                     }
                     if let boundsMatch = Self.firstCapture("bounds=\"0 0 ([0-9]+) ([0-9]+)\"", in: xml),
                        boundsMatch.count == 2,
