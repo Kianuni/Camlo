@@ -24,11 +24,21 @@
         {
           "version": "1.2.8",
           "buildVersion": "21",
-          "date": "2026-11-15T07:58:52Z",
-          "localizedDescription": "1. 官方云端壁纸广场扩容至 50 套馆藏殿堂级杰作：新增 30 套大师纯艺术滑动变身壁纸（锚定伦勃朗、维米尔、卡拉瓦乔、拉图尔、萨金特、委拉斯开兹、达芬奇晕涂、莫奈、梵高、索罗利亚、柯罗、毕沙罗、克里姆特、弗里德里希、哈默修伊、怀斯蛋彩、艾瓦佐夫斯基、惠斯勒、霍默、雷东粉画，以及马远、郭熙、宋徽宗、夏圭、米芾、马麟、八大山人、川濑巴水与北斋馆藏意境），真实粗亚麻布厚涂、透明罩染、古绢裂纹与宣纸枯笔质感，全量零体积托管于 wallpapers/；\n2. 全系 50 套官方壁纸均配备动画 WebP 实时预览、SHA-256 完整性校验、120Hz 原生 .ca 交互试穿与一键直写锁屏，保持 ~9 MB 超轻量安装包。",
+          "date": "2026-11-15T08:07:45Z",
+          "localizedDescription": "### Museum-Pantheon Cloud Collection (50 Official Packs)\n- Added **30 museum-pantheon fine-art cloud wallpapers** spanning Old Masters & Chiaroscuro (Rembrandt, Vermeer, Caravaggio, Velazquez, De La Tour, Leonardo, Sargent), Impressionism & Expressive Oil (Monet, Sorolla, Pissarro, Van Gogh, Klimt, Corot, Redon), Romantic & Quietist Luminism (Turner, Friedrich, Whistler, Aivazovsky, Homer, Hammershoi, Wyeth), Song Dynasty Silk/Xuan Scrolls (Guo Xi, Ma Yuan, Xia Gui, Mi Fu, Huizong, Ma Lin, Bada Shanren), and Ukiyo-e Woodblock Prints (Hokusai, Kawase Hasui).\n- Official cloud catalog in `wallpapers/` expanded from **20 → 50 packs** with animated WebP previews and SHA-256 verification.\n- Bundled presets kept strictly slim (6 landscape packs only), keeping `Camlo_v1.2.8_Bilingual.ipa` at **9.03 MB**.\n\n### 馆藏殿堂级官方云端壁纸扩展至 50 套\n- 新增 **30 套博物馆大师原作级云端壁纸**，涵盖古典明暗 oil & chiaroscuro、外光印象派与表现主义、浪漫主义与寂静主义海空微光、宋代院体绢本山水花鸟（郭熙、马远、夏圭、米芾、徽宗、马麟、八大山人）以及浮世绘木版画（北斋、川濑巴水）。\n- 官方 `wallpapers/` 云端目录扩充至 **50 套**，每套均配套动态 WebP 预览与 SHA-256 校验。\n- 安装包严格精简仅内置 6 套获奖风光壁纸，IPA 体积控制为 **9.03 MB**。",
           "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.8/Camlo_v1.2.8_Bilingual.ipa",
           "size": 9463432,
           "sha256": "657a4293bbec43fa8225fb66055e131db10b9c8578cb1492b5a835c0d61d3294",
+          "minOSVersion": "26.0"
+        },
+        {
+          "version": "1.2.7",
+          "buildVersion": "1",
+          "date": "2026-11-15T05:46:57Z",
+          "localizedDescription": "## Camlo · 开幕 v1.2.7 (Build 20)\n\n> **亮屏即开幕，上滑即变身 / Wake to unveil. Swipe to transform.**  \n> 支持 **iOS / iPadOS 26.0 – 27.3 beta 1** 免电脑一键直写系统锁屏画廊。\n\n### ✨ v1.2.7 更新亮点\n\n1. **官方云端壁纸库重塑升级至 20 套大师级意境美学（零 IPA 体积占用）**：\n   - 全面退役早期粗糙风格主题，围绕「凝视感、时间张力与大师意境」全新打造 **20 套** 官方云端 `.tendies` 壁纸（独立托管于仓库 `wallpapers/`，IPA 严格仅内置 6 套获奖风光，保持 **~9.01 MB** 超轻量体积）；\n   - 横跨四大审美维度：**自然极境 & 摄影呼吸循环**（罗弗敦极夜孤屿、乌尤尼苍穹之镜、冥海幽蓝水母、京都苔庭听雨、黑曜流金潮汐、巴塔哥尼亚荒原燃金、贝加尔冰封深渊、迷雾孤柏静水、帕米尔慕士塔格月华）、**深空宇宙诗篇**（韦伯创生之柱、视界孤光黑洞引力环、卡西尼土星春分环影、阿波罗静海地出、荒原星拱仙女座）、**东方传世美学**（千里江山溪山霁雪、敦煌月牙大漠星河）与 **西方油画 & 建筑光影**（吉维尼莫奈睡莲、透纳雾海流霞、特瑞尔苍穹之窗、洞石光之圣殿）；\n   - 升级 `600×1300` 摄影级呼吸循环（PosterBoard Jetsam 安全内存预算内）、修正双态叠化黑底渗色并配套全新 `360×780` 动画 WebP 预览与 `540×1170` 高清缩略图。\n2. **私有仓库内测授权直连（可选 `GitHub Token`）**：\n   - 新增 **「设备与设置 → 软件源订阅 → 高级：自定义 GitHub 仓库路径 → GitHub Token」** 可选配置；在 `Kianuni/Camlo` 保持 **私有（Private）** 测试期间，填入个人 Token 即可在真机直接拉取 20 套官方云端目录、动态预览、下载 `.tendies` 并检查更新；待后续仓库转为公开后，无需任何 Token 即可走大陆镜像与全球 CDN 免配置加速。\n\n### 📦 构建产物校验\n- **文件**：`Camlo_v1.2.7_Bilingual.ipa`（`9452052` bytes / 9.01 MB）\n- **SHA-256**：`6cdb2ae54637344e0c23eb56a2bcec75d55976c887c8d14f5b0362cac1bde184`",
+          "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.7/Camlo_v1.2.7_Bilingual.ipa",
+          "size": 9452052,
+          "sha256": "6cdb2ae54637344e0c23eb56a2bcec75d55976c887c8d14f5b0362cac1bde184",
           "minOSVersion": "26.0"
         }
       ],
@@ -42,8 +52,8 @@
       },
       "version": "1.2.8",
       "buildVersion": "21",
-      "versionDate": "2026-11-15T07:58:52Z",
-      "versionDescription": "1. 官方云端壁纸广场扩容至 50 套馆藏殿堂级杰作：新增 30 套大师纯艺术滑动变身壁纸（锚定伦勃朗、维米尔、卡拉瓦乔、拉图尔、萨金特、委拉斯开兹、达芬奇晕涂、莫奈、梵高、索罗利亚、柯罗、毕沙罗、克里姆特、弗里德里希、哈默修伊、怀斯蛋彩、艾瓦佐夫斯基、惠斯勒、霍默、雷东粉画，以及马远、郭熙、宋徽宗、夏圭、米芾、马麟、八大山人、川濑巴水与北斋馆藏意境），真实粗亚麻布厚涂、透明罩染、古绢裂纹与宣纸枯笔质感，全量零体积托管于 wallpapers/；\n2. 全系 50 套官方壁纸均配备动画 WebP 实时预览、SHA-256 完整性校验、120Hz 原生 .ca 交互试穿与一键直写锁屏，保持 ~9 MB 超轻量安装包。",
+      "versionDate": "2026-11-15T08:07:45Z",
+      "versionDescription": "### Museum-Pantheon Cloud Collection (50 Official Packs)\n- Added **30 museum-pantheon fine-art cloud wallpapers** spanning Old Masters & Chiaroscuro (Rembrandt, Vermeer, Caravaggio, Velazquez, De La Tour, Leonardo, Sargent), Impressionism & Expressive Oil (Monet, Sorolla, Pissarro, Van Gogh, Klimt, Corot, Redon), Romantic & Quietist Luminism (Turner, Friedrich, Whistler, Aivazovsky, Homer, Hammershoi, Wyeth), Song Dynasty Silk/Xuan Scrolls (Guo Xi, Ma Yuan, Xia Gui, Mi Fu, Huizong, Ma Lin, Bada Shanren), and Ukiyo-e Woodblock Prints (Hokusai, Kawase Hasui).\n- Official cloud catalog in `wallpapers/` expanded from **20 → 50 packs** with animated WebP previews and SHA-256 verification.\n- Bundled presets kept strictly slim (6 landscape packs only), keeping `Camlo_v1.2.8_Bilingual.ipa` at **9.03 MB**.\n\n### 馆藏殿堂级官方云端壁纸扩展至 50 套\n- 新增 **30 套博物馆大师原作级云端壁纸**，涵盖古典明暗 oil & chiaroscuro、外光印象派与表现主义、浪漫主义与寂静主义海空微光、宋代院体绢本山水花鸟（郭熙、马远、夏圭、米芾、徽宗、马麟、八大山人）以及浮世绘木版画（北斋、川濑巴水）。\n- 官方 `wallpapers/` 云端目录扩充至 **50 套**，每套均配套动态 WebP 预览与 SHA-256 校验。\n- 安装包严格精简仅内置 6 套获奖风光壁纸，IPA 体积控制为 **9.03 MB**。",
       "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.8/Camlo_v1.2.8_Bilingual.ipa",
       "size": 9463432
     }
