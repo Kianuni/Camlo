@@ -6,7 +6,7 @@
   <p><strong>Wake to unveil. Swipe to transform.</strong> — Zero-threshold Slide-to-Unlock Morph &amp; Dynamic Lock Screen (<code>.tendies</code> / CAML) Studio for iOS &amp; iPadOS</p>
   <p>Craft native Core Animation wallpapers on-device and apply directly to <code>PosterBoard</code> in 1 tap on iOS 26.x &amp; iOS 27.0 – 27.3 beta 1 — zero PC required.</p>
   <p><a href="./README.md">简体中文文档</a> · <strong>English</strong> · <a href="https://github.com/Kianuni/Erosion-CN">Erosion-CN Companion Toolkit</a></p>
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.4-6A4DF5?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.5-6A4DF5?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
   <a href="https://altdirect.app/?url=https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json"><img alt="Official AltSource" src="https://img.shields.io/badge/Official%20Source-SideStore%20%2F%20AltStore-0EA5E9?style=flat-square"></a>
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square"></a>
@@ -26,8 +26,8 @@
 1. **Zero-Code Slide-to-Morph Studio (`MorphEditorView`)**
    - Pick 2–3 images (`Locked`, `Unlock`, and optional custom `Sleep` AOD art) to compile spec-compliant `LayerKit` 3-state CAML packages automatically;
    - **6 Curated Transition Curves**: *Curtain Rise*, *Burst Awaken*, *Silk Crossfade*, *Flash Morph*, *Holo Flip*, and *AOD Gaze* with customizable duration (`0.35s–1.40s`) and spring bounce (`0%–100%`);
-   - **11 Curated HD Pixel-Aligned Official Presets (`PresetGallery.bundle`)**: **6 award-inspired natural landscapes** (*Dolomites Alpenglow*, *Namib Dune Geometry*, *Iceland Basalt Coast*, *Yosemite Firefall*, *Mount Fuji Sea of Clouds*, *Alpine Starry Aurora*) and **5 creative themes** (*Starlight Valkyrie*, *Ink Moon to Golden Dawn*, *Midnight GT Ignition*, *Aegis Mecha Overdrive*, *Sleepy Shiba Morning*) — complete with pre-extracted 8-bit foreground depth masks ready to apply in 1 tap;
-   - **Multi-Source Cloud `.tendies` Gallery (330+ Packs · [`wallpapers/`](./wallpapers/README.md) OTA & Live Previews)**: Browse **Camlo Official (10 animated packs with animated WebP grid & sheet previews, 1-tap `120Hz Interactive .ca Try-On`, `OfficialGallerySeed.bundle` offline/private seed & SHA-256 checks)** plus live catalogs from **CAPlayground (183+)**, **Nugget Custom (111+)**, and **Apple Collections (32+)** — featuring clean-room `CamloRemotePreview` Core Animation keyframe playback, `CamloEndpointRanker` (5-min host EWMA latency cache + `Range: bytes=0-1` probe), iOS `/var -> /private/var` canonical archive extraction, and full iOS 26/27 cross-device package normalization (`versions/0`, `.wallpaperCollection` ID sync & `productTypes` stripping);
+   - **6 Built-in Award-Winning Landscape Presets (`PresetGallery.bundle`)**: Curated pixel-aligned Lock <-> Unlock landscapes (*Dolomites Alpenglow*, *Namib Dune Geometry*, *Iceland Basalt Coast*, *Yosemite Firefall*, *Mount Fuji Sea of Clouds*, *Alpine Starry Aurora*) with pre-extracted 8-bit Clock-Depth masks ready in 1 tap — keeping the IPA ultra-slim (~9 MB) while all 5 Creative packs live cleanly in the repository;
+   - **Multi-Source Cloud `.tendies` Gallery (340+ Packs · [`wallpapers/`](./wallpapers/README.md) Zero-Bloat OTA)**: Browse **15 zero-bloat official motion & creative depth packs in `wallpapers/` (animated WebP grid & sheet previews, 1-tap `120Hz Interactive .ca Try-On`, and SHA-256 verification)** plus live catalogs from **CAPlayground (183+)**, **Nugget Custom (111+)**, and **Apple Collections (32+)** — featuring clean-room `CamloRemotePreview` Core Animation keyframe playback, `CamloEndpointRanker` (5-min host EWMA latency cache + `Range: bytes=0-1` probe), iOS `/var -> /private/var` canonical archive extraction, and full iOS 26/27 cross-device package normalization (`versions/0`, `.wallpaperCollection` ID sync & `productTypes` stripping);
    - **Visual Installed Lock Screen Manager & Universal `.tendies` Engine**: Powered by 100% Camlo-native `SystemPosterStore` with ImageIO 520px disk-cached thumbnails, batch `PBRoleIndexFile` pruning, single-pass streaming Zip-Slip-hardened unpacking, `*CollectionsPoster*`/`*MercuryPoster*` mirroring, and pure POSIX C `worse_query` App Group `Library/Caches` guarding;
    - **Hybrid Live Photo × Morph & Interactive Lock Screen Crop Studio**: Pick static photos, **Live Photos**, or short video clips directly into `Locked` / `Unlock` slots for continuous motion + morph transitions under a Jetsam-safe memory budget, plus non-destructive pan/pinch framing with live `09:41` clock & control guides and blurred edge-extend fill.
 
@@ -74,7 +74,7 @@ https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json
 
 ### Option B: Manual IPA Sideloading
 
-1. Download the latest `Camlo_v1.2.4_Bilingual.ipa` from [Releases](https://github.com/Kianuni/Camlo/releases/latest).
+1. Download the latest `Camlo_v1.2.5_Bilingual.ipa` from [Releases](https://github.com/Kianuni/Camlo/releases/latest).
 2. Sideload with any signing tool above; inside the app, **System & Settings → App Source & Updates** also supports switching to the Mainland China accelerated mirror or checking for updates.
 
 ### Quick 3-Step Usage
@@ -92,7 +92,7 @@ chmod +x ./ipabuild.sh
 ./ipabuild.sh
 ```
 
-Produces `Camlo_v1.2.4_Bilingual.ipa` and refreshes `apps.json`, `repo.json`, `esign.json`, `repo_cn.json`, and `esign_cn.json`.
+Produces `Camlo_v1.2.5_Bilingual.ipa` and refreshes `apps.json`, `repo.json`, `esign.json`, `repo_cn.json`, and `esign_cn.json`.
 
 ---
 

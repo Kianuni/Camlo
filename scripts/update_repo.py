@@ -32,6 +32,13 @@ ALT_TINT_COLOR = "#6B4EFF"
 ESIGN_TINT_COLOR = "6B4EFF"
 
 DEFAULT_CHANGELOG_BY_VER: dict[str, str] = {
+    "1.2.5": (
+        "v1.2.5 Build 18 — 极限安装包瘦身 (~41 MB → ~9 MB)：仅内置 6 套获奖风光，全部潮流创意与动态壁纸云端零体积托管 | Ultra-Slim IPA (~9 MB) & Zero-Bloat Official Cloud Gallery:\n"
+        "1. 安装包极限瘦身：移除随包体积较大的 `OfficialGallerySeed.bundle` 以及 5 套「潮流创意」内置包（星穹剑姬、寒江孤月、暗夜超跑、苍穹机甲、柴犬团子），`PresetGallery.bundle` 仅保留 **6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光），IPA 安装包体积从 ~41.2 MB 骤降至 ~9 MB。\n"
+        "   (Ultra-Slim IPA Footprint: strips `OfficialGallerySeed.bundle` and the 5 Creative packs from the app bundle, keeping only the 6 Award-Winning Landscape packs built-in and cutting IPA size from ~41.2 MB to ~9 MB.)\n"
+        "2. 官方云端 `.tendies` 壁纸库扩充至 15 套并全量零体积托管于 `wallpapers/`：将原内置 5 套潮流创意预设连同其 8-bit 景深遮罩一并编译为完整 `.tendies`（ID 18911–18915）与 16 帧动态 WebP 预览图，与原有 10 套无缝动态/景深包组成 15 套零安装包负担的官方云端目录（支持 SHA-256 校验与 WebP 实时动画预览）。\n"
+        "   (15 Official Zero-Bloat Cloud Packs in `wallpapers/`: converts the 5 Creative packs + Clock-Depth cutouts into verified `.tendies` packages and animated WebP previews alongside the existing 10 packs — streamed directly from `wallpapers/` with zero IPA bloat.)"
+    ),
     "1.2.4": (
         "v1.2.4 Build 17 — 云端 .tendies 解压真机路径修复 & 官方主题全动态预览 | Cloud .tendies Symlink Fix & Live Official Gallery Previews:\n"
         "1. 彻底修复云端/社区 `.tendies` 下载时在真机上误报「检测到非法路径穿越条目，已安全拦截导入」：统一规范化目标根目录与未创建子路径的 `/var` vs `/private/var`（及 `/tmp` vs `/private/tmp`）符号链接前缀校验，同时保留对前置 `/`、`..` 及 `.symlink` 越界条目的严格拦截；扩展目录探索兼容大小写 `Extensions` 与 `ordered-descriptors`。\n"
@@ -242,7 +249,7 @@ def build_payloads(
         "localizedDescription": (
             "Camlo（开幕）是一款零门槛 iOS / iPadOS 原生 Core Animation (.tendies / CAML) 动态与滑动变身锁屏制作工坊。"
             "内置 120Hz 原生 `.ca` 实时交互试穿、陀螺仪 3D 裸眼视差 (ParameterizedCA)、昼夜双生壁纸 (appearanceAware)、智能时钟配色字体与主屏柔焦配套、"
-            "11 套高清双态破框预设、8 款异形粒子与体积流光特效、AI 主体抠图遮挡时钟、视频/实况抽帧无缝循环与免电脑一键直写 iOS 26 / iOS 27 锁屏画廊。"
+            "6 套内置获奖风光双态预设与 15 套零体积官方云端壁纸、8 款异形粒子与体积流光特效、AI 主体抠图遮挡时钟、视频/实况抽帧无缝循环与免电脑一键直写 iOS 26 / iOS 27 锁屏画廊。"
         ),
         "iconURL": icon_url,
         "tintColor": ALT_TINT_COLOR,

@@ -171,7 +171,7 @@ struct VaultView: View {
                 Button {
                     seedSampleIntoVault()
                 } label: {
-                    Label(Bi("一键载入 11 套官方预设", "Load 11 Official Presets"), systemImage: "wand.and.stars")
+                    Label(Bi("一键载入 6 套获奖风光", "Load 6 Landscape Presets"), systemImage: "wand.and.stars")
                         .font(.system(size: 14, weight: .semibold))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)

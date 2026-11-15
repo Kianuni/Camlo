@@ -17,6 +17,7 @@ let metadataURL = wallpapersDir.appendingPathComponent("metadata.json")
 let packagesDir = wallpapersDir.appendingPathComponent("packages")
 let thumbsDir = wallpapersDir.appendingPathComponent("thumbs")
 let sourcesDir = URL(fileURLWithPath: "/tmp/camlo_wp_sources")
+let presetBundleDir = repoRoot.appendingPathComponent("Camlo/Resources/PresetGallery.bundle")
 let seedBundleDir = repoRoot.appendingPathComponent("Camlo/Resources/PosterSeed.bundle")
 
 struct PackMetadata: Decodable {
@@ -27,6 +28,7 @@ struct PackMetadata: Decodable {
         let duration: Double
     }
     let id: String
+    let sourceBundlePrefix: String?
     let posterSeedId: Int
     let category: String
     let kind: String
@@ -139,6 +141,24 @@ func extractForegroundCutout(from source1170x2532: CGImage, outWidth: Int = 780,
     let downscaled = try aspectFillCGImage(fullCutout, width: outWidth, height: outHeight)
     let coverage = estimateOpaqueCoverage(downscaled)
     return (downscaled, coverage)
+}
+
+func compositeGrayscaleMaskCutout(
+    source: CGImage,
+    grayscaleMask: CGImage,
+    outWidth: Int = 780,
+    outHeight: Int = 1688
+) throws -> CGImage {
+    let fittedSource = try aspectFillCGImage(source, width: outWidth, height: outHeight)
+    let ctx = try makeRGBContext(width: outWidth, height: outHeight)
+    let rect = CGRect(x: 0, y: 0, width: outWidth, height: outHeight)
+    ctx.clear(rect)
+    ctx.clip(to: rect, mask: grayscaleMask)
+    ctx.draw(fittedSource, in: rect)
+    guard let outCG = ctx.makeImage() else {
+        throw NSError(domain: "BuildWallpapers", code: 12, userInfo: [NSLocalizedDescriptionKey: "compositeGrayscaleMaskCutout makeImage failed"])
+    }
+    return outCG
 }
 
 func estimateOpaqueCoverage(_ img: CGImage) -> Double {
@@ -1175,9 +1195,17 @@ func buildAll() throws {
 
     let metaData = try Data(contentsOf: metadataURL)
     let rootMeta = try JSONDecoder().decode(RootMetadata.self, from: metaData)
+    let forceRebuild = CommandLine.arguments.contains("--force")
     print("[*] Loaded \(rootMeta.packs.count) pack definitions from \(metadataURL.path)")
 
     for pack in rootMeta.packs {
+        let thumbOutURL = thumbsDir.appendingPathComponent("\(pack.id).jpg")
+        let tendiesOutURL = packagesDir.appendingPathComponent("\(pack.id).tendies")
+        if !forceRebuild, fm.fileExists(atPath: tendiesOutURL.path), fm.fileExists(atPath: thumbOutURL.path) {
+            print("[=] Skipping existing \(pack.id).tendies")
+            continue
+        }
+
         let workRoot = fm.temporaryDirectory.appendingPathComponent("camlo_wp_build_\(pack.id)_\(UUID().uuidString.prefix(6))", isDirectory: true)
         defer { try? fm.removeItem(at: workRoot) }
 
@@ -1190,9 +1218,6 @@ func buildAll() throws {
             try standardIndexXML().write(to: ca.appendingPathComponent("index.xml"), atomically: true, encoding: .utf8)
             try standardAssetManifestXML().write(to: ca.appendingPathComponent("assetManifest.caml"), atomically: true, encoding: .utf8)
         }
-
-        let thumbOutURL = thumbsDir.appendingPathComponent("\(pack.id).jpg")
-        let tendiesOutURL = packagesDir.appendingPathComponent("\(pack.id).tendies")
 
         if pack.kind == "motionLoop" {
             let w = 468, h = 1014
@@ -1207,9 +1232,25 @@ func buildAll() throws {
             let fgAssets = try renderParticleSprite(pack.particlePreset, outDir: fgCA.appendingPathComponent("assets"))
             try camlForegroundXML(preset: pack.particlePreset, spriteName: fgAssets.first?.filename, includeFlashPulse: false).write(to: fgCA.appendingPathComponent("main.caml"), atomically: true, encoding: .utf8)
         } else {
-            // Morph Pair + Vision Clock Depth Cutout
-            let lockRaw = try loadCGImage(at: sourcesDir.appendingPathComponent("\(pack.id)_lock.jpg"))
-            let unlockRaw = try loadCGImage(at: sourcesDir.appendingPathComponent("\(pack.id)_unlock.jpg"))
+            // Morph Pair + Vision / Bundle Mask Clock Depth Cutout
+            let lockSourceURL: URL
+            let unlockSourceURL: URL
+            let bundleLockMaskURL: URL?
+            let bundleUnlockMaskURL: URL?
+            if let prefix = pack.sourceBundlePrefix, !prefix.isEmpty {
+                lockSourceURL = presetBundleDir.appendingPathComponent("\(prefix)_lock.jpg")
+                unlockSourceURL = presetBundleDir.appendingPathComponent("\(prefix)_unlock.jpg")
+                bundleLockMaskURL = presetBundleDir.appendingPathComponent("\(prefix)_mask_lock.png")
+                bundleUnlockMaskURL = presetBundleDir.appendingPathComponent("\(prefix)_mask_unlock.png")
+            } else {
+                lockSourceURL = sourcesDir.appendingPathComponent("\(pack.id)_lock.jpg")
+                unlockSourceURL = sourcesDir.appendingPathComponent("\(pack.id)_unlock.jpg")
+                bundleLockMaskURL = nil
+                bundleUnlockMaskURL = nil
+            }
+
+            let lockRaw = try loadCGImage(at: lockSourceURL)
+            let unlockRaw = try loadCGImage(at: unlockSourceURL)
             let lock1170 = try aspectFillCGImage(lockRaw, width: 1170, height: 2532)
             let unlock1170 = try aspectFillCGImage(unlockRaw, width: 1170, height: 2532)
 
@@ -1222,19 +1263,35 @@ func buildAll() throws {
 
             var hasCutout = false
             if pack.supportsClockDepth {
-                do {
-                    let (cutLock, covLock) = try extractForegroundCutout(from: lock1170, outWidth: 780, outHeight: 1688)
-                    let (cutUnlock, covUnlock) = try extractForegroundCutout(from: unlock1170, outWidth: 780, outHeight: 1688)
-                    if covLock > 0.04 && covUnlock > 0.04 {
-                        try writePNG(cutLock, to: flCA.appendingPathComponent("assets/cutout_lock.png"))
-                        try writePNG(cutUnlock, to: flCA.appendingPathComponent("assets/cutout_unlock.png"))
-                        hasCutout = true
-                        print(String(format: "    [Vision] %@ cutout coverage: lock=%.1f%% unlock=%.1f%%", pack.id, covLock * 100.0, covUnlock * 100.0))
-                    } else {
-                        print(String(format: "    [Vision] %@ low cutout coverage (lock=%.1f%%, unlock=%.1f%%), skipping Floating layer", pack.id, covLock * 100.0, covUnlock * 100.0))
+                if let maskLURL = bundleLockMaskURL,
+                   let maskUURL = bundleUnlockMaskURL,
+                   fm.fileExists(atPath: maskLURL.path),
+                   fm.fileExists(atPath: maskUURL.path),
+                   let maskL = try? loadCGImage(at: maskLURL),
+                   let maskU = try? loadCGImage(at: maskUURL) {
+                    let cutLock = try compositeGrayscaleMaskCutout(source: lock1170, grayscaleMask: maskL)
+                    let cutUnlock = try compositeGrayscaleMaskCutout(source: unlock1170, grayscaleMask: maskU)
+                    try writePNG(cutLock, to: flCA.appendingPathComponent("assets/cutout_lock.png"))
+                    try writePNG(cutUnlock, to: flCA.appendingPathComponent("assets/cutout_unlock.png"))
+                    hasCutout = true
+                    let covLock = estimateOpaqueCoverage(cutLock)
+                    let covUnlock = estimateOpaqueCoverage(cutUnlock)
+                    print(String(format: "    [Mask] %@ composite cutout coverage: lock=%.1f%% unlock=%.1f%%", pack.id, covLock * 100.0, covUnlock * 100.0))
+                } else {
+                    do {
+                        let (cutLock, covLock) = try extractForegroundCutout(from: lock1170, outWidth: 780, outHeight: 1688)
+                        let (cutUnlock, covUnlock) = try extractForegroundCutout(from: unlock1170, outWidth: 780, outHeight: 1688)
+                        if covLock > 0.04 && covUnlock > 0.04 {
+                            try writePNG(cutLock, to: flCA.appendingPathComponent("assets/cutout_lock.png"))
+                            try writePNG(cutUnlock, to: flCA.appendingPathComponent("assets/cutout_unlock.png"))
+                            hasCutout = true
+                            print(String(format: "    [Vision] %@ cutout coverage: lock=%.1f%% unlock=%.1f%%", pack.id, covLock * 100.0, covUnlock * 100.0))
+                        } else {
+                            print(String(format: "    [Vision] %@ low cutout coverage (lock=%.1f%%, unlock=%.1f%%), skipping Floating layer", pack.id, covLock * 100.0, covUnlock * 100.0))
+                        }
+                    } catch {
+                        print("    [Vision] \(pack.id) cutout skipped: \(error.localizedDescription)")
                     }
-                } catch {
-                    print("    [Vision] \(pack.id) cutout skipped: \(error.localizedDescription)")
                 }
             }
             try camlFloatingCutoutXML(hasCutout: hasCutout, transitionPreset: pack.transitionPreset).write(to: flCA.appendingPathComponent("main.caml"), atomically: true, encoding: .utf8)

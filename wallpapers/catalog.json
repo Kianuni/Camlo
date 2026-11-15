@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-15T01:56:57Z",
+  "generatedAt": "2026-11-15T02:15:10Z",
   "repo": "Kianuni/Camlo",
-  "packCount": 10,
+  "packCount": 15,
   "packs": [
     {
       "id": "titanium_silk_flow",
@@ -343,6 +343,176 @@
       "fps": null,
       "frameCount": null,
       "accentHex": "#94A3B8"
+    },
+    {
+      "id": "starlight_valkyrie",
+      "posterSeedId": 18911,
+      "category": "morph",
+      "kind": "morphPair",
+      "titleZh": "星穹剑姬 · 破界觉醒",
+      "titleEn": "Starlight Valkyrie",
+      "subtitleZh": "暗夜冥想静立 → 上滑睁眼绽放星辉羽翼与圣剑光芒（银冠破框遮挡时钟）",
+      "subtitleEn": "Dormant starlight sword-maiden awakens with glowing cyan eyes & crystal wings",
+      "badgeZh": "景深变身",
+      "badgeEn": "Depth Morph",
+      "tagsZh": [
+        "二次元觉醒",
+        "时钟景深",
+        "推进变身"
+      ],
+      "tagsEn": [
+        "Anime",
+        "Clock Depth",
+        "Burst Zoom"
+      ],
+      "transitionPreset": "burstZoom",
+      "particlePreset": "starlight",
+      "supportsClockDepth": true,
+      "hasClockDepthAssets": true,
+      "packagePath": "wallpapers/packages/starlight_valkyrie.tendies",
+      "thumbPath": "wallpapers/thumbs/starlight_valkyrie.jpg",
+      "previewPath": "wallpapers/previews/starlight_valkyrie.webp",
+      "sizeBytes": 5266497,
+      "sha256": "d92d5bf7d0c4791b05563e0dcc3609ee5570f09419cf7df5ce1246e65fc2ba53",
+      "fps": null,
+      "frameCount": null,
+      "accentHex": "#38BDF8"
+    },
+    {
+      "id": "ink_moon_golden_dawn",
+      "posterSeedId": 18912,
+      "category": "morph",
+      "kind": "morphPair",
+      "titleZh": "寒江孤月 · 金碧破晓",
+      "titleEn": "Ink Moon to Golden Dawn",
+      "subtitleZh": "墨色寒山孤亭夜 → 上滑化作千里江山石青金碧日出云海（主峰破框遮挡时钟）",
+      "subtitleEn": "Midnight ink landscape unveils into imperial blue-green & molten gold sunrise",
+      "badgeZh": "景深变身",
+      "badgeEn": "Depth Morph",
+      "tagsZh": [
+        "新中式山水",
+        "时钟景深",
+        "上滑揭幕"
+      ],
+      "tagsEn": [
+        "Ink Scroll",
+        "Clock Depth",
+        "Curtain Rise"
+      ],
+      "transitionPreset": "curtainRise",
+      "particlePreset": "fireflies",
+      "supportsClockDepth": true,
+      "hasClockDepthAssets": true,
+      "packagePath": "wallpapers/packages/ink_moon_golden_dawn.tendies",
+      "thumbPath": "wallpapers/thumbs/ink_moon_golden_dawn.jpg",
+      "previewPath": "wallpapers/previews/ink_moon_golden_dawn.webp",
+      "sizeBytes": 4873707,
+      "sha256": "0f37836e6748f2d6679b70cc1f69678d8ac54a48254cc49ac4c6504ba7b651af",
+      "fps": null,
+      "frameCount": null,
+      "accentHex": "#F59E0B"
+    },
+    {
+      "id": "midnight_gt_ignition",
+      "posterSeedId": 18913,
+      "category": "morph",
+      "kind": "morphPair",
+      "titleZh": "暗夜超跑 · 氮气点火",
+      "titleEn": "Midnight GT Ignition",
+      "subtitleZh": "雨夜哑光黑武士静默停泊 → 解锁瞬间激光大灯、炽红卡钳与蓝紫尾焰全开",
+      "subtitleEn": "Stealth matte-black hypercar roars to life with laser headlights & twin exhaust flames",
+      "badgeZh": "景深变身",
+      "badgeEn": "Depth Morph",
+      "tagsZh": [
+        "暗夜超跑",
+        "时钟景深",
+        "圣光瞬变"
+      ],
+      "tagsEn": [
+        "Hypercar",
+        "Clock Depth",
+        "Flash Morph"
+      ],
+      "transitionPreset": "flashAwaken",
+      "particlePreset": "auroraRibbon",
+      "supportsClockDepth": true,
+      "hasClockDepthAssets": true,
+      "packagePath": "wallpapers/packages/midnight_gt_ignition.tendies",
+      "thumbPath": "wallpapers/thumbs/midnight_gt_ignition.jpg",
+      "previewPath": "wallpapers/previews/midnight_gt_ignition.webp",
+      "sizeBytes": 1792974,
+      "sha256": "87eff9b428c7afbdefe2fb999a64f71f09f278da978e5a00d82139046792289b",
+      "fps": null,
+      "frameCount": null,
+      "accentHex": "#EF4444"
+    },
+    {
+      "id": "aegis_mecha_overdrive",
+      "posterSeedId": 18914,
+      "category": "morph",
+      "kind": "morphPair",
+      "titleZh": "苍穹机甲 · 晶核超频",
+      "titleEn": "Aegis Mecha Overdrive",
+      "subtitleZh": "格纳库休眠白钛装甲 → 上滑全息光翼与胸口等离子晶核超频展开",
+      "subtitleEn": "Dormant titanium mecha activates neon plasma reactor core & holographic wings",
+      "badgeZh": "景深变身",
+      "badgeEn": "Depth Morph",
+      "tagsZh": [
+        "赛博机甲",
+        "时钟景深",
+        "光栅幻卡"
+      ],
+      "tagsEn": [
+        "Mecha",
+        "Clock Depth",
+        "Holo Flip"
+      ],
+      "transitionPreset": "holoCard",
+      "particlePreset": "starlight",
+      "supportsClockDepth": true,
+      "hasClockDepthAssets": true,
+      "packagePath": "wallpapers/packages/aegis_mecha_overdrive.tendies",
+      "thumbPath": "wallpapers/thumbs/aegis_mecha_overdrive.jpg",
+      "previewPath": "wallpapers/previews/aegis_mecha_overdrive.webp",
+      "sizeBytes": 3683280,
+      "sha256": "dfcbf39b09878b9392a6ff18dd1b98fc069466998829abfd0e12fd2acf4cece0",
+      "fps": null,
+      "frameCount": null,
+      "accentHex": "#818CF8"
+    },
+    {
+      "id": "sleepy_shiba_morning",
+      "posterSeedId": 18915,
+      "category": "morph",
+      "kind": "morphPair",
+      "titleZh": "柴犬团子 · 扑屏早安",
+      "titleEn": "Sleepy Shiba Morning",
+      "subtitleZh": "烛光窗台熟睡柴犬与小奶猫 → 上滑迎着落樱晨光睁眼微笑问早",
+      "subtitleEn": "Sleeping Shiba Inu & tiny white kitten wake up to warm sakura morning sunshine",
+      "badgeZh": "景深变身",
+      "badgeEn": "Depth Morph",
+      "tagsZh": [
+        "萌宠治愈",
+        "时钟景深",
+        "落樱缤纷"
+      ],
+      "tagsEn": [
+        "Cozy Pet",
+        "Clock Depth",
+        "Sakura"
+      ],
+      "transitionPreset": "aodGaze",
+      "particlePreset": "sakura",
+      "supportsClockDepth": true,
+      "hasClockDepthAssets": true,
+      "packagePath": "wallpapers/packages/sleepy_shiba_morning.tendies",
+      "thumbPath": "wallpapers/thumbs/sleepy_shiba_morning.jpg",
+      "previewPath": "wallpapers/previews/sleepy_shiba_morning.webp",
+      "sizeBytes": 2251365,
+      "sha256": "f3ffa2c1322e915eeb3bf5d782d4d7ede6cff033c8e05e34ddce2f59e49c5631",
+      "fps": null,
+      "frameCount": null,
+      "accentHex": "#FB7185"
     }
   ]
 }

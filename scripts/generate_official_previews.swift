@@ -557,7 +557,16 @@ func run() throws {
     try FileManager.default.createDirectory(at: workTempRoot, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: workTempRoot) }
 
+    let forceRebuild = CommandLine.arguments.contains("--force")
+
     for pack in root.packs {
+        let outWebP = previewsDir.appendingPathComponent("\(pack.id).webp")
+        if !forceRebuild, FileManager.default.fileExists(atPath: outWebP.path) {
+            let existingFrames = try verifyAnimatedWebP(at: outWebP, minFrames: 16)
+            print("[=] Skipping existing \(outWebP.lastPathComponent) (\(existingFrames) frames verified)")
+            continue
+        }
+
         let tendiesURL = packagesDir.appendingPathComponent("\(pack.id).tendies")
         guard FileManager.default.fileExists(atPath: tendiesURL.path) else {
             throw NSError(domain: "GenPreviews", code: 11, userInfo: [NSLocalizedDescriptionKey: "Missing package \(tendiesURL.path)"])
@@ -565,7 +574,6 @@ func run() throws {
         let unpackDir = workTempRoot.appendingPathComponent(pack.id, isDirectory: true)
         try unzipArchive(tendiesURL, to: unpackDir)
 
-        let outWebP = previewsDir.appendingPathComponent("\(pack.id).webp")
         if pack.category == "motion" {
             try generateMotionLoopPreview(pack: pack, extractedDir: unpackDir, outURL: outWebP, workDir: workTempRoot, img2webp: img2webp)
         } else {

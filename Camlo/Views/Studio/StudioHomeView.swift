@@ -23,7 +23,6 @@ struct StudioHomeView: View {
     @State private var importAlertTitle = ""
     @State private var importAlertMessage = ""
     @State private var showImportAlert = false
-    @State private var selectedDemoFilter: DemoCategoryFilter = .all
 
     // Cached preview thumbnails for the flagship Morph hero card (loaded once in .task)
     @State private var flagshipLockThumb: UIImage?
@@ -39,15 +38,6 @@ struct StudioHomeView: View {
 
     private var hairlineBorderColor: Color {
         isDark ? Color.white.opacity(0.11) : Color.black.opacity(0.06)
-    }
-
-    private var filteredDemos: [BuiltInDemoPack] {
-        switch selectedDemoFilter {
-        case .all:
-            return SampleArtGenerator.allDemos
-        case .nature, .creative:
-            return SampleArtGenerator.allDemos.filter { $0.filterGroup == selectedDemoFilter }
-        }
     }
 
     var body: some View {
@@ -74,52 +64,34 @@ struct StudioHomeView: View {
 
                     // 3. Official HD Paired Presets Gallery
                     VStack(alignment: .leading, spacing: 10) {
-                        HStack {
+                        HStack(alignment: .top, spacing: 10) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(Bi("官方精选变身画廊 (11 套内置)", "Official Transformation Gallery (11 Packs)"))
+                                Text(Bi("内置获奖风光画廊 (6 套精选)", "Award-Winning Landscapes (6 Built-in)"))
                                     .font(.system(.headline, design: .rounded).weight(.bold))
-                                Text(Bi("像素级对齐锁屏 ↔ 解锁双态，点开即可体验或一键上锁屏", "Pixel-aligned Lock <-> Unlock pairs with pre-extracted Clock Depth"))
+                                Text(Bi("像素级对齐锁屏 ↔ 解锁双态；潮流创意与动态主题已移至云端壁纸库", "Pixel-aligned Lock <-> Unlock pairs; Creative & Motion packs live in Cloud Gallery"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                        }
-
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(DemoCategoryFilter.allCases) { filter in
-                                    let isSelected = selectedDemoFilter == filter
-                                    Button {
-                                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
-                                            selectedDemoFilter = filter
-                                        }
-                                        CamloHaptics.selection()
-                                    } label: {
-                                        Text(filter.title)
-                                            .font(.caption.weight(.semibold))
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(
-                                                isSelected ? Color.accentColor : Color(.secondarySystemGroupedBackground),
-                                                in: Capsule()
-                                            )
-                                            .overlay {
-                                                if !isSelected {
-                                                    Capsule()
-                                                        .strokeBorder(hairlineBorderColor, lineWidth: 0.8)
-                                                }
-                                            }
-                                            .foregroundStyle(isSelected ? Color.white : Color.primary)
-                                            .contentShape(Capsule())
-                                    }
-                                    .buttonStyle(CamloTapButtonStyle())
+                            NavigationLink {
+                                CloudGalleryView()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "icloud.and.arrow.down")
+                                    Text(Bi("更多云端包", "Cloud Gallery"))
                                 }
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.accentColor.opacity(0.12), in: Capsule())
+                                .foregroundStyle(Color.accentColor)
                             }
+                            .buttonStyle(CamloTapButtonStyle())
                         }
 
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 14) {
-                                ForEach(filteredDemos) { demo in
+                                ForEach(SampleArtGenerator.allDemos) { demo in
                                     NavigationLink {
                                         MorphEditorView(initialDemo: demo)
                                     } label: {

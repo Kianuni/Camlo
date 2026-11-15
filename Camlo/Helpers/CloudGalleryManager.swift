@@ -70,10 +70,6 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
         Color(camloHex: accentHex ?? "#6A4DF5")
     }
 
-    nonisolated static var officialSeedBundleURL: URL? {
-        Bundle.main.url(forResource: "OfficialGallerySeed", withExtension: "bundle")
-    }
-
     var effectivePreviewPath: String {
         if let previewPath, !previewPath.isEmpty {
             return previewPath
@@ -88,29 +84,6 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             repoSlug: AppSourceManager.shared.effectiveRepoSlug,
             branch: "main"
         )
-    }
-
-    var bundledPreviewURL: URL? {
-        guard let seedRoot = Self.officialSeedBundleURL else { return nil }
-        let fm = FileManager.default
-        let candidates = [
-            seedRoot.appendingPathComponent("previews/\(id).webp"),
-            seedRoot.appendingPathComponent("previews/\(id).gif"),
-            seedRoot.appendingPathComponent("thumbs/\(id).jpg")
-        ]
-        return candidates.first { fm.fileExists(atPath: $0.path) }
-    }
-
-    var bundledThumbURL: URL? {
-        guard let seedRoot = Self.officialSeedBundleURL else { return nil }
-        let url = seedRoot.appendingPathComponent("thumbs/\(id).jpg")
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
-    }
-
-    var bundledPackageURL: URL? {
-        guard let seedRoot = Self.officialSeedBundleURL else { return nil }
-        let url = seedRoot.appendingPathComponent("packages/\(id).tendies")
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
     static let seedFallbackPacks: [CloudWallpaperPack] = [
@@ -133,8 +106,8 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             packagePath: "wallpapers/packages/titanium_silk_flow.tendies",
             thumbPath: "wallpapers/thumbs/titanium_silk_flow.jpg",
             previewPath: "wallpapers/previews/titanium_silk_flow.webp",
-            sizeBytes: 0,
-            sha256: "",
+            sizeBytes: 936846,
+            sha256: "550ff26a57d67cbe669682c065cf55ca3e0b2c4a2f1f672edcfbc13d771051ee",
             fps: 15,
             frameCount: 20,
             accentHex: "#9BA5B8"
@@ -158,8 +131,8 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             packagePath: "wallpapers/packages/polar_aurora_curtain.tendies",
             thumbPath: "wallpapers/thumbs/polar_aurora_curtain.jpg",
             previewPath: "wallpapers/previews/polar_aurora_curtain.webp",
-            sizeBytes: 0,
-            sha256: "",
+            sizeBytes: 2858432,
+            sha256: "ac3b1065869a066ddac4d66b11bdbd4b166848af29ad57dea2d56b44a0afd89f",
             fps: 14,
             frameCount: 20,
             accentHex: "#34D399"
@@ -183,8 +156,8 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             packagePath: "wallpapers/packages/sunset_ocean_shimmer.tendies",
             thumbPath: "wallpapers/thumbs/sunset_ocean_shimmer.jpg",
             previewPath: "wallpapers/previews/sunset_ocean_shimmer.webp",
-            sizeBytes: 0,
-            sha256: "",
+            sizeBytes: 2495228,
+            sha256: "12171a776460764dd4d9f8b85788777cf0094c65dd2425d11004cec2a5df6c4b",
             fps: 14,
             frameCount: 20,
             accentHex: "#F59E0B"
@@ -208,8 +181,8 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             packagePath: "wallpapers/packages/cyber_neon_rain.tendies",
             thumbPath: "wallpapers/thumbs/cyber_neon_rain.jpg",
             previewPath: "wallpapers/previews/cyber_neon_rain.webp",
-            sizeBytes: 0,
-            sha256: "",
+            sizeBytes: 3792842,
+            sha256: "3da3f01122a307162d7b21e558fd8446db2075ee02748fe50202044e3618dbed",
             fps: 15,
             frameCount: 20,
             accentHex: "#38BDF8"
@@ -233,8 +206,8 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             packagePath: "wallpapers/packages/abyssal_jellyfish_glow.tendies",
             thumbPath: "wallpapers/thumbs/abyssal_jellyfish_glow.jpg",
             previewPath: "wallpapers/previews/abyssal_jellyfish_glow.webp",
-            sizeBytes: 0,
-            sha256: "",
+            sizeBytes: 2058120,
+            sha256: "9ee698024cde48d99926bb34e0ed078f20f87c3cdfea18d2286e19fb0fa77687",
             fps: 14,
             frameCount: 20,
             accentHex: "#818CF8"
@@ -258,8 +231,8 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             packagePath: "wallpapers/packages/neon_ronin_slash.tendies",
             thumbPath: "wallpapers/thumbs/neon_ronin_slash.jpg",
             previewPath: "wallpapers/previews/neon_ronin_slash.webp",
-            sizeBytes: 0,
-            sha256: "",
+            sizeBytes: 3565571,
+            sha256: "7cb7f5b3a32ab2ce718084ca0aaa506b258e3ffbcf2fdc3b3dba7b2c45991fe8",
             fps: nil,
             frameCount: nil,
             accentHex: "#F43F5E"
@@ -283,8 +256,8 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             packagePath: "wallpapers/packages/lunar_earthrise_portal.tendies",
             thumbPath: "wallpapers/thumbs/lunar_earthrise_portal.jpg",
             previewPath: "wallpapers/previews/lunar_earthrise_portal.webp",
-            sizeBytes: 0,
-            sha256: "",
+            sizeBytes: 2268425,
+            sha256: "95a3924b0cdbf261ef0955f3e57a46544c4f940db58dd5689b59386ab986b7a1",
             fps: nil,
             frameCount: nil,
             accentHex: "#60A5FA"
@@ -308,8 +281,8 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             packagePath: "wallpapers/packages/kyoto_sakura_dawn.tendies",
             thumbPath: "wallpapers/thumbs/kyoto_sakura_dawn.jpg",
             previewPath: "wallpapers/previews/kyoto_sakura_dawn.webp",
-            sizeBytes: 0,
-            sha256: "",
+            sizeBytes: 1798924,
+            sha256: "0ee5f12129a0a03531bf1f6f49a24cd2eef26508ad3a7a07a05899468a7509ba",
             fps: nil,
             frameCount: nil,
             accentHex: "#F472B6"
@@ -333,8 +306,8 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             packagePath: "wallpapers/packages/frost_dragon_awaken.tendies",
             thumbPath: "wallpapers/thumbs/frost_dragon_awaken.jpg",
             previewPath: "wallpapers/previews/frost_dragon_awaken.webp",
-            sizeBytes: 0,
-            sha256: "",
+            sizeBytes: 4273833,
+            sha256: "e217fb950f2673a8c6d154fe943638dfe4e5e3699f4ece4253c04b345291c25e",
             fps: nil,
             frameCount: nil,
             accentHex: "#22D3EE"
@@ -358,11 +331,136 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             packagePath: "wallpapers/packages/silver_gt_apex.tendies",
             thumbPath: "wallpapers/thumbs/silver_gt_apex.jpg",
             previewPath: "wallpapers/previews/silver_gt_apex.webp",
-            sizeBytes: 0,
-            sha256: "",
+            sizeBytes: 1470690,
+            sha256: "dad5122fb05c6a7c7f781394e8bdd4fd3fef934f690fa0145b575c5b007b17c2",
             fps: nil,
             frameCount: nil,
             accentHex: "#94A3B8"
+        ),
+        CloudWallpaperPack(
+            id: "starlight_valkyrie",
+            posterSeedId: 18911,
+            category: "morph",
+            kind: "morphPair",
+            titleZh: "星穹剑姬 · 破界觉醒",
+            titleEn: "Starlight Valkyrie",
+            subtitleZh: "暗夜冥想静立 → 上滑睁眼绽放星辉羽翼与圣剑光芒（银冠破框遮挡时钟）",
+            subtitleEn: "Dormant starlight sword-maiden awakens with glowing cyan eyes & crystal wings",
+            badgeZh: "景深变身",
+            badgeEn: "Depth Morph",
+            tagsZh: ["二次元觉醒", "时钟景深", "推进变身"],
+            tagsEn: ["Anime", "Clock Depth", "Burst Zoom"],
+            transitionPreset: "burstZoom",
+            particlePreset: "starlight",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/starlight_valkyrie.tendies",
+            thumbPath: "wallpapers/thumbs/starlight_valkyrie.jpg",
+            previewPath: "wallpapers/previews/starlight_valkyrie.webp",
+            sizeBytes: 5266497,
+            sha256: "d92d5bf7d0c4791b05563e0dcc3609ee5570f09419cf7df5ce1246e65fc2ba53",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#38BDF8"
+        ),
+        CloudWallpaperPack(
+            id: "ink_moon_golden_dawn",
+            posterSeedId: 18912,
+            category: "morph",
+            kind: "morphPair",
+            titleZh: "寒江孤月 · 金碧破晓",
+            titleEn: "Ink Moon to Golden Dawn",
+            subtitleZh: "墨色寒山孤亭夜 → 上滑化作千里江山石青金碧日出云海（主峰破框遮挡时钟）",
+            subtitleEn: "Midnight ink landscape unveils into imperial blue-green & molten gold sunrise",
+            badgeZh: "景深变身",
+            badgeEn: "Depth Morph",
+            tagsZh: ["新中式山水", "时钟景深", "上滑揭幕"],
+            tagsEn: ["Ink Scroll", "Clock Depth", "Curtain Rise"],
+            transitionPreset: "curtainRise",
+            particlePreset: "fireflies",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/ink_moon_golden_dawn.tendies",
+            thumbPath: "wallpapers/thumbs/ink_moon_golden_dawn.jpg",
+            previewPath: "wallpapers/previews/ink_moon_golden_dawn.webp",
+            sizeBytes: 4873707,
+            sha256: "0f37836e6748f2d6679b70cc1f69678d8ac54a48254cc49ac4c6504ba7b651af",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#F59E0B"
+        ),
+        CloudWallpaperPack(
+            id: "midnight_gt_ignition",
+            posterSeedId: 18913,
+            category: "morph",
+            kind: "morphPair",
+            titleZh: "暗夜超跑 · 氮气点火",
+            titleEn: "Midnight GT Ignition",
+            subtitleZh: "雨夜哑光黑武士静默停泊 → 解锁瞬间激光大灯、炽红卡钳与蓝紫尾焰全开",
+            subtitleEn: "Stealth matte-black hypercar roars to life with laser headlights & twin exhaust flames",
+            badgeZh: "景深变身",
+            badgeEn: "Depth Morph",
+            tagsZh: ["暗夜超跑", "时钟景深", "圣光瞬变"],
+            tagsEn: ["Hypercar", "Clock Depth", "Flash Morph"],
+            transitionPreset: "flashAwaken",
+            particlePreset: "auroraRibbon",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/midnight_gt_ignition.tendies",
+            thumbPath: "wallpapers/thumbs/midnight_gt_ignition.jpg",
+            previewPath: "wallpapers/previews/midnight_gt_ignition.webp",
+            sizeBytes: 1792974,
+            sha256: "87eff9b428c7afbdefe2fb999a64f71f09f278da978e5a00d82139046792289b",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#EF4444"
+        ),
+        CloudWallpaperPack(
+            id: "aegis_mecha_overdrive",
+            posterSeedId: 18914,
+            category: "morph",
+            kind: "morphPair",
+            titleZh: "苍穹机甲 · 晶核超频",
+            titleEn: "Aegis Mecha Overdrive",
+            subtitleZh: "格纳库休眠白钛装甲 → 上滑全息光翼与胸口等离子晶核超频展开",
+            subtitleEn: "Dormant titanium mecha activates neon plasma reactor core & holographic wings",
+            badgeZh: "景深变身",
+            badgeEn: "Depth Morph",
+            tagsZh: ["赛博机甲", "时钟景深", "光栅幻卡"],
+            tagsEn: ["Mecha", "Clock Depth", "Holo Flip"],
+            transitionPreset: "holoCard",
+            particlePreset: "starlight",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/aegis_mecha_overdrive.tendies",
+            thumbPath: "wallpapers/thumbs/aegis_mecha_overdrive.jpg",
+            previewPath: "wallpapers/previews/aegis_mecha_overdrive.webp",
+            sizeBytes: 3683280,
+            sha256: "dfcbf39b09878b9392a6ff18dd1b98fc069466998829abfd0e12fd2acf4cece0",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#818CF8"
+        ),
+        CloudWallpaperPack(
+            id: "sleepy_shiba_morning",
+            posterSeedId: 18915,
+            category: "morph",
+            kind: "morphPair",
+            titleZh: "柴犬团子 · 扑屏早安",
+            titleEn: "Sleepy Shiba Morning",
+            subtitleZh: "烛光窗台熟睡柴犬与小奶猫 → 上滑迎着落樱晨光睁眼微笑问早",
+            subtitleEn: "Sleeping Shiba Inu & tiny white kitten wake up to warm sakura morning sunshine",
+            badgeZh: "景深变身",
+            badgeEn: "Depth Morph",
+            tagsZh: ["萌宠治愈", "时钟景深", "落樱缤纷"],
+            tagsEn: ["Cozy Pet", "Clock Depth", "Sakura"],
+            transitionPreset: "aodGaze",
+            particlePreset: "sakura",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/sleepy_shiba_morning.tendies",
+            thumbPath: "wallpapers/thumbs/sleepy_shiba_morning.jpg",
+            previewPath: "wallpapers/previews/sleepy_shiba_morning.webp",
+            sizeBytes: 2251365,
+            sha256: "f3ffa2c1322e915eeb3bf5d782d4d7ede6cff033c8e05e34ddce2f59e49c5631",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#FB7185"
         )
     ]
 }
@@ -565,7 +663,6 @@ final class CloudGalleryManager: ObservableObject {
 
     private init() {
         ensureCacheDirs()
-        loadBundledSeedCatalog()
         loadCachedCatalog()
         loadCachedCommunityCatalogs()
     }
@@ -574,24 +671,13 @@ final class CloudGalleryManager: ObservableObject {
         try? FileManager.default.createDirectory(at: thumbCacheDir, withIntermediateDirectories: true)
     }
 
-    private func loadBundledSeedCatalog() {
-        guard let seedRoot = CloudWallpaperPack.officialSeedBundleURL else { return }
-        let seedCatalogURL = seedRoot.appendingPathComponent("catalog.json")
-        guard let data = try? Data(contentsOf: seedCatalogURL),
-              let decoded = try? JSONDecoder().decode(CloudWallpaperCatalog.self, from: data),
-              !decoded.packs.isEmpty else {
-            return
-        }
-        packs = decoded.packs
-    }
-
     private func loadCachedCatalog() {
         guard let data = try? Data(contentsOf: catalogCacheURL),
               let decoded = try? JSONDecoder().decode(CloudWallpaperCatalog.self, from: data),
               !decoded.packs.isEmpty else {
             return
         }
-        if packs.contains(where: { $0.sizeBytes > 0 }) && decoded.packs.allSatisfy({ $0.sizeBytes == 0 }) {
+        if decoded.packs.count < packs.count {
             return
         }
         packs = decoded.packs
@@ -1052,14 +1138,14 @@ final class CloudGalleryManager: ObservableObject {
     }
 
     func refreshCatalogIfNeeded() async {
-        if !hasSyncedOnce || packs.allSatisfy({ $0.sizeBytes == 0 }) {
+        if !hasSyncedOnce {
             await refreshCatalog(force: false)
         }
     }
 
     func refreshCatalog(force: Bool = true) async {
         if isRefreshingCatalog { return }
-        if hasSyncedOnce && !force && !packs.allSatisfy({ $0.sizeBytes == 0 }) { return }
+        if hasSyncedOnce && !force { return }
 
         isRefreshingCatalog = true
         syncErrorMessage = nil
@@ -1067,6 +1153,7 @@ final class CloudGalleryManager: ObservableObject {
 
         let urls = AppSourceManager.shared.candidateRawURLs(for: "wallpapers/catalog.json")
         var lastError: Error?
+        var saw404 = false
 
         for url in urls {
             do {
@@ -1074,6 +1161,9 @@ final class CloudGalleryManager: ObservableObject {
                 request.setValue("Camlo/\(CamloDevice.appVersion)", forHTTPHeaderField: "User-Agent")
                 let (data, response) = try await URLSession.shared.data(for: request)
                 if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                    if http.statusCode == 404 {
+                        saw404 = true
+                    }
                     throw NSError(
                         domain: "CloudGallery",
                         code: http.statusCode,
@@ -1091,15 +1181,18 @@ final class CloudGalleryManager: ObservableObject {
                     return
                 }
             } catch {
+                if (error as NSError).code == 404 {
+                    saw404 = true
+                }
                 lastError = error
             }
         }
 
-        // Preserve bundled/cached official catalog cleanly while repo is private (HTTP 404) or device is offline.
-        if !packs.isEmpty && !packs.allSatisfy({ $0.sizeBytes == 0 }) {
-            hasSyncedOnce = true
-            lastSyncedAt = lastSyncedAt ?? Date()
-            syncErrorMessage = nil
+        if saw404 || (lastError as? NSError)?.code == 404 {
+            syncErrorMessage = Bi(
+                "Camlo 官方仓库当前处于私有测试状态（HTTP 404），待仓库公开后即可在线加载全部 15 套动态预览与下载；CAPlayground / Nugget 社区频道当前可正常下载。",
+                "Camlo Official repo is currently private (HTTP 404). Make the repository public to stream previews & download all 15 packs; CAPlayground & Nugget channels work now."
+            )
             return
         }
 
@@ -1124,12 +1217,6 @@ final class CloudGalleryManager: ObservableObject {
             memCache.setObject(img, forKey: pack.id as NSString)
             return img
         }
-        if let bundledThumb = pack.bundledThumbURL,
-           let data = try? Data(contentsOf: bundledThumb),
-           let img = UIImage.downsampledRetina(from: data, maxPixelDimension: 840) {
-            memCache.setObject(img, forKey: pack.id as NSString)
-            return img
-        }
         return nil
     }
 
@@ -1143,18 +1230,6 @@ final class CloudGalleryManager: ObservableObject {
         if inFlightThumbIDs.contains(pack.id) { return }
         inFlightThumbIDs.insert(pack.id)
         defer { inFlightThumbIDs.remove(pack.id) }
-
-        if let bundledThumb = pack.bundledThumbURL {
-            let decodedBundled: UIImage? = await Task.detached(priority: .utility) {
-                guard let data = try? Data(contentsOf: bundledThumb) else { return nil }
-                return UIImage.downsampledRetina(from: data, maxPixelDimension: 840)
-            }.value
-            if let decodedBundled {
-                memCache.setObject(decodedBundled, forKey: pack.id as NSString)
-                thumbnails[pack.id] = decodedBundled
-                return
-            }
-        }
 
         let urls = AppSourceManager.shared.candidateRawURLs(for: pack.thumbPath)
         let targetDiskURL = thumbCacheDir.appendingPathComponent("\(pack.id).jpg")
@@ -1191,17 +1266,6 @@ final class CloudGalleryManager: ObservableObject {
         items.first { $0.cloudPackID == pack.cloudPackID }
     }
 
-    nonisolated private static func copyBundledArchiveToTemp(_ sourceURL: URL, id: String) throws -> URL {
-        let safeID = id.replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: ":", with: "_")
-        let copyURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("seed_\(safeID)_\(UUID().uuidString.prefix(8)).tendies")
-        if FileManager.default.fileExists(atPath: copyURL.path) {
-            try? FileManager.default.removeItem(at: copyURL)
-        }
-        try FileManager.default.copyItem(at: sourceURL, to: copyURL)
-        return copyURL
-    }
-
     func downloadAndImport(pack: CloudWallpaperPack) async throws -> TendiesVaultItem {
         cancelActiveDownload()
         let task = Task<TendiesVaultItem, Error> {
@@ -1215,52 +1279,39 @@ final class CloudGalleryManager: ObservableObject {
                 activeDownloadTask = nil
             }
 
-            var resolvedTempURL: URL?
-            if let bundledPkg = pack.bundledPackageURL {
-                let bundledMatches = await Task.detached(priority: .userInitiated) { () -> Bool in
-                    if pack.sha256.isEmpty { return true }
-                    guard let data = try? Data(contentsOf: bundledPkg, options: .mappedIfSafe) else { return false }
-                    let digestHex = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-                    return digestHex.lowercased() == pack.sha256.lowercased()
-                }.value
-
-                if bundledMatches {
-                    downloadProgressByID[pack.id] = 0.45
-                    resolvedTempURL = try Self.copyBundledArchiveToTemp(bundledPkg, id: pack.id)
-                }
+            let rawCandidates = Self.buildRepoURLs(
+                pathOrURL: pack.packagePath,
+                repoSlug: AppSourceManager.shared.effectiveRepoSlug,
+                branch: "main"
+            )
+            let urls = await CamloEndpointRanker.shared.prioritize(rawCandidates)
+            guard !urls.isEmpty else {
+                throw URLError(.badURL)
             }
 
-            if resolvedTempURL == nil {
-                let rawCandidates = Self.buildRepoURLs(
-                    pathOrURL: pack.packagePath,
-                    repoSlug: AppSourceManager.shared.effectiveRepoSlug,
-                    branch: "main"
+            let tempURL: URL
+            do {
+                tempURL = try await downloadVerifiedArchive(
+                    from: urls,
+                    trackID: pack.id,
+                    expectedSize: Int64(pack.sizeBytes),
+                    expectedSHA256: pack.sha256.isEmpty ? nil : pack.sha256,
+                    isOfficialChannel: true
                 )
-                let urls = await CamloEndpointRanker.shared.prioritize(rawCandidates)
-                guard !urls.isEmpty else {
-                    throw URLError(.badURL)
-                }
-                do {
-                    resolvedTempURL = try await downloadVerifiedArchive(
-                        from: urls,
-                        trackID: pack.id,
-                        expectedSize: Int64(pack.sizeBytes),
-                        expectedSHA256: pack.sha256.isEmpty ? nil : pack.sha256,
-                        isOfficialChannel: true
+            } catch {
+                if (error as NSError).code == 404 {
+                    throw NSError(
+                        domain: "CloudGallery",
+                        code: 404,
+                        userInfo: [
+                            NSLocalizedDescriptionKey: Bi(
+                                "Camlo 官方仓库当前为私有状态（HTTP 404），请等待作者公开仓库后再下载官方云端包；您可先在「CAPlayground / Nugget」频道正常下载社区壁纸，或在首页使用内置 6 套获奖风光预设。",
+                                "Kianuni/Camlo is currently private (HTTP 404), so official cloud packs cannot be fetched remotely yet. Use CAPlayground / Nugget channels or the 6 built-in Landscapes."
+                            )
+                        ]
                     )
-                } catch is CancellationError {
-                    throw CancellationError()
-                } catch {
-                    if let bundledPkg = pack.bundledPackageURL {
-                        resolvedTempURL = try Self.copyBundledArchiveToTemp(bundledPkg, id: pack.id)
-                    } else {
-                        throw error
-                    }
                 }
-            }
-
-            guard let tempURL = resolvedTempURL else {
-                throw URLError(.cannotOpenFile)
+                throw error
             }
             defer { try? FileManager.default.removeItem(at: tempURL) }
             try Task.checkCancellation()
@@ -1406,8 +1457,8 @@ final class CloudGalleryManager: ObservableObject {
             let msg: String
             if isOfficialChannel {
                 msg = Bi(
-                    "官方精选壁纸包尚未上传至远端仓库（HTTP 404），请切换至上方 CAPlayground / Nugget 社区库下载，或在开幕工坊本地制作",
-                    "Official cloud packs are not yet published on the remote repo (HTTP 404). Switch to CAPlayground / Nugget channels above or create locally in Studio."
+                    "Camlo 官方仓库当前处于私有测试状态（HTTP 404），待仓库公开后即可在线下载全部 15 套官方包；CAPlayground / Nugget 社区库当前可正常下载。",
+                    "Kianuni/Camlo is currently private (HTTP 404). Make the repository public to download all 15 official packs; CAPlayground & Nugget channels work now."
                 )
             } else {
                 msg = Bi(

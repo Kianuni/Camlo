@@ -23,20 +23,6 @@ if [[ -f "$WORKING_LOCATION/scripts/update_wallpapers.py" && -d "$WORKING_LOCATI
     python3 "$WORKING_LOCATION/scripts/update_wallpapers.py"
 fi
 
-stage_official_gallery_seed() {
-    local app_dir="$1"
-    if [[ -f "$WORKING_LOCATION/wallpapers/catalog.json" ]]; then
-        echo "[*] Staging OfficialGallerySeed.bundle into ${app_dir##*/}..."
-        local seed_bundle="$app_dir/OfficialGallerySeed.bundle"
-        rm -rf "$seed_bundle"
-        mkdir -p "$seed_bundle"
-        cp "$WORKING_LOCATION/wallpapers/catalog.json" "$seed_bundle/catalog.json"
-        [[ -d "$WORKING_LOCATION/wallpapers/thumbs" ]] && cp -R "$WORKING_LOCATION/wallpapers/thumbs" "$seed_bundle/thumbs"
-        [[ -d "$WORKING_LOCATION/wallpapers/previews" ]] && cp -R "$WORKING_LOCATION/wallpapers/previews" "$seed_bundle/previews"
-        [[ -d "$WORKING_LOCATION/wallpapers/packages" ]] && cp -R "$WORKING_LOCATION/wallpapers/packages" "$seed_bundle/packages"
-    fi
-}
-
 mkdir -p build
 cd build
 
@@ -53,7 +39,6 @@ xcodebuild -project "$WORKING_LOCATION/$APPLICATION_NAME.xcodeproj" \
 DD_APP_PATH="$WORKING_LOCATION/build/DerivedDataApp/Build/Products/Debug-iphoneos/$APPLICATION_NAME.app"
 TARGET_APP="$WORKING_LOCATION/build/$APPLICATION_NAME.app"
 cp -r "$DD_APP_PATH" "$TARGET_APP"
-stage_official_gallery_seed "$TARGET_APP"
 else
 xcodebuild -project "$WORKING_LOCATION/$APPLICATION_NAME.xcodeproj" \
     -scheme "$APPLICATION_NAME" \
@@ -66,7 +51,6 @@ xcodebuild -project "$WORKING_LOCATION/$APPLICATION_NAME.xcodeproj" \
 DD_APP_PATH="$WORKING_LOCATION/build/DerivedDataApp/Build/Products/Release-iphoneos/$APPLICATION_NAME.app"
 TARGET_APP="$WORKING_LOCATION/build/$APPLICATION_NAME.app"
 cp -r "$DD_APP_PATH" "$TARGET_APP"
-stage_official_gallery_seed "$TARGET_APP"
 fi
 
 echo "[*] Stripping signature..."

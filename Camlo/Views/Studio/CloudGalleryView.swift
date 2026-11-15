@@ -314,7 +314,7 @@ struct CloudGalleryView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(ch == .camloOfficial
-                         ? Bi("Camlo 官方精选 · 动态预览与云端库", "Camlo Official · Live & Cloud Gallery")
+                         ? Bi("Camlo 官方精选 · 零体积云端库", "Camlo Official · Zero-Bloat Cloud Gallery")
                          : Bi("\(ch.localizedTitle) · 开源社区直连", "\(ch.localizedTitle) · Open-Source Catalog"))
                         .font(.subheadline.weight(.bold))
                     Text(headerSubtitle(for: ch))
@@ -352,8 +352,8 @@ struct CloudGalleryView: View {
         switch channel {
         case .camloOfficial:
             return Bi(
-                "内置高清动态预览与离线秒装种子，同时支持仓库 wallpapers/ 云端热更新与 SHA-256 校验。",
-                "Built-in animated previews & offline seed with cloud OTA updates and SHA-256 verification."
+                "15 套动态循环与潮流创意景深壁纸全量托管于仓库 wallpapers/，不占安装包体积，支持 WebP 动态预览与 SHA-256 校验。",
+                "15 motion & creative depth packs hosted in repo wallpapers/ with zero IPA footprint, animated WebP previews, and SHA-256 verification."
             )
         case .caPlayground:
             return Bi(
@@ -463,8 +463,7 @@ struct CloudGalleryView: View {
                                 candidateURLs: pack.previewCandidateURLs,
                                 mode: .motion(maxPixel: 440, maxKeyframes: 24),
                                 contentMode: .scaleAspectFill,
-                                placeholderColors: [pack.accentColor.opacity(0.36), Color.black.opacity(0.88)],
-                                bundledFileURL: pack.bundledPreviewURL
+                                placeholderColors: [pack.accentColor.opacity(0.36), Color.black.opacity(0.88)]
                             )
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -806,8 +805,7 @@ struct CloudGalleryView: View {
                                 candidateURLs: pack.previewCandidateURLs,
                                 mode: .motion(maxPixel: 720, maxKeyframes: 32),
                                 contentMode: .scaleAspectFill,
-                                placeholderColors: [pack.accentColor.opacity(0.36), Color.black.opacity(0.88)],
-                                bundledFileURL: pack.bundledPreviewURL
+                                placeholderColors: [pack.accentColor.opacity(0.36), Color.black.opacity(0.88)]
                             )
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))

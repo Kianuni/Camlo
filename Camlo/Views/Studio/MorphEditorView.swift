@@ -333,7 +333,7 @@ struct MorphEditorView: View {
     private var demoSamplerStrip: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Label(Bi("官方精选预设画廊 (点选即刻切换)", "Official HD Presets (Tap to Load)"), systemImage: "sparkles.rectangle.stack.fill")
+                Label(Bi("内置获奖风光预设 (点选即刻切换)", "Built-in Landscape Presets (Tap to Load)"), systemImage: "mountain.2.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
