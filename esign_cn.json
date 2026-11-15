@@ -3,8 +3,8 @@
   "identifier": "com.kianuni.Camlo.esign.cn",
   "news": {
     "title": "Camlo · 开幕 官方更新源",
-    "caption": "最新版本：v1.2.5 · 同步于 2026-11-15 10:15",
-    "date": "2026-11-15 10:15",
+    "caption": "最新版本：v1.2.5 · 同步于 2026-11-15 10:16",
+    "date": "2026-11-15 10:16",
     "tintColor": "6B4EFF",
     "isUnlock": 1,
     "key": "",
@@ -18,13 +18,13 @@
       "bundleIdentifier": "com.kianuni.Camlo",
       "developerName": "Kianuni",
       "version": "1.2.5",
-      "versionDate": "2026-11-15 10:15:23",
+      "versionDate": "2026-11-15 10:16:31",
       "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.5/Camlo_v1.2.5_Bilingual.ipa",
       "iconURL": "https://ghfast.top/https://raw.githubusercontent.com/Kianuni/Camlo/main/PreviewIcon.png",
       "size": 9429482,
       "isNeedlock": 0,
       "appType": 1,
-      "localizedDescription": "v1.2.5 Build 18 — 极限安装包瘦身 (~41 MB → ~9 MB)：仅内置 6 套获奖风光，全部潮流创意与动态壁纸云端零体积托管 | Ultra-Slim IPA (~9 MB) & Zero-Bloat Official Cloud Gallery:\n1. 安装包极限瘦身：移除随包体积较大的 `OfficialGallerySeed.bundle` 以及 5 套「潮流创意」内置包（星穹剑姬、寒江孤月、暗夜超跑、苍穹机甲、柴犬团子），`PresetGallery.bundle` 仅保留 **6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光），IPA 安装包体积从 ~41.2 MB 骤降至 ~9 MB。\n   (Ultra-Slim IPA Footprint: strips `OfficialGallerySeed.bundle` and the 5 Creative packs from the app bundle, keeping only the 6 Award-Winning Landscape packs built-in and cutting IPA size from ~41.2 MB to ~9 MB.)\n2. 官方云端 `.tendies` 壁纸库扩充至 15 套并全量零体积托管于 `wallpapers/`：将原内置 5 套潮流创意预设连同其 8-bit 景深遮罩一并编译为完整 `.tendies`（ID 18911–18915）与 16 帧动态 WebP 预览图，与原有 10 套无缝动态/景深包组成 15 套零安装包负担的官方云端目录（支持 SHA-256 校验与 WebP 实时动画预览）。\n   (15 Official Zero-Bloat Cloud Packs in `wallpapers/`: converts the 5 Creative packs + Clock-Depth cutouts into verified `.tendies` packages and animated WebP previews alongside the existing 10 packs — streamed directly from `wallpapers/` with zero IPA bloat.)"
+      "localizedDescription": "## Camlo · 开幕 v1.2.5 (Build 18)\n\n> **亮屏即开幕，上滑即变身 / Wake to unveil. Swipe to transform.**  \n> 支持 **iOS / iPadOS 26.0 – 27.3 beta 1** 免电脑一键直写系统锁屏画廊（基于 `CSStore2` + 原生 C `worse_query` 跨容器访问桥接，100% 独立原生实现）。\n\n---\n\n### ✨ v1.2.5 安装包极限瘦身与云端扩充\n\n1. **安装包大幅瘦身（41.2 MB → 9.0 MB）**：\n   - 从安装包中移除随包 `OfficialGallerySeed.bundle` 与 5 套「潮流创意」内置资产；\n   - `PresetGallery.bundle` **仅内置保留 6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光），`Camlo_v1.2.5_Bilingual.ipa` 体积骤降至 **9.0 MB**。\n2. **15 套官方云端 `.tendies` 壁纸全量托管至仓库 `wallpapers/`（零 IPA 体积负担）**：\n   - 将原内置 5 套潮流创意预设连同其 8-bit 景深遮罩完整编译为 `.tendies`（ID `18911–18915`）与 16 帧动态 WebP 预览图，与原有 10 套动态循环 / 景深变身包组成 **15 套官方精选零体积云端壁纸库**；\n   - 继续包含 v1.2.4 的 `/var` vs `/private/var` 规范路径校验修复（全面恢复 `CAPlayground` / `Nugget` / 官方包真机导入），并清晰提示 `Kianuni/Camlo` 私有测试期的 `HTTP 404` 状态。\n\n---\n\n### 📦 安装说明 & 校验信息\n\n- **产物文件**：`Camlo_v1.2.5_Bilingual.ipa`（9429482 bytes / ~9.0 MB）\n- **SHA-256**：`8db837c633469667c0b50d6d2d4702fbbb0c88f5b9de063b0dbdc8e2770f2653`\n- **最低系统**：iOS / iPadOS 26.0+（实测支持至 iOS 27.0 – 27.3 beta 1）\n- **签名要求**：使用 **SideStore / AltStore / Feather / Sideloadly / Impactor / iLoader** 或支持 `App Group` 的个人开发者证书签名安装，以启用免电脑一键直写 `PosterBoard`（无 `App Group` 仍可完整创作并导出 `.tendies`）。"
     }
   ]
 }
