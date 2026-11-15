@@ -75,6 +75,7 @@ private actor CamloPreviewAssetStore {
                 if Task.isCancelled { return nil }
                 var req = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 14)
                 req.setValue("Camlo/\(CamloDevice.appVersion)", forHTTPHeaderField: "User-Agent")
+                AppSourceManager.applyGitHubAuthIfNeeded(to: &req)
                 do {
                     let (data, response) = try await session.data(for: req)
                     guard let http = response as? HTTPURLResponse,

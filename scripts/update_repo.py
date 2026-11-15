@@ -32,6 +32,13 @@ ALT_TINT_COLOR = "#6B4EFF"
 ESIGN_TINT_COLOR = "6B4EFF"
 
 DEFAULT_CHANGELOG_BY_VER: dict[str, str] = {
+    "1.2.7": (
+        "v1.2.7 Build 20 — 官方云端画廊重塑至 20 套博物馆级意境美学 + 私有仓库内测 GitHub Token 直连授权 | 20 Museum-Grade Official Cloud Packs & Private-Repo Token Testing:\n"
+        "1. 官方云端壁纸库美学重塑与扩容（15 → 20 套）：全面退役早期粗糙风格主题，以长期耐看的意境美学标准重制 20 套精品——涵盖极致自然风光（罗弗敦极夜、乌尤尼盐镜、巴塔哥尼亚日照、贝加尔冰渊）、深空宇宙奇观（韦伯创生之柱、黑洞事件视界、卡西尼土星逆光环、阿波罗地出）、东方诗意审美（千里江山青绿、敦煌月牙星穹、苔庭听雨、水墨寒松）与大师光影油画/空间建筑（莫奈睡莲、透纳雾海、特瑞尔苍穹天窗、洞石圣殿光束），升级 `600×1300` 摄影级呼吸循环与高质感 WebP 预览并修正叠加黑边渗色。\n"
+        "   (Rebuilt & Expanded Official Cloud Gallery to 20 Museum-Grade Packs: replaces all 15 earlier packs with 20 contemplative masterpieces spanning Nature, JWST/Cassini/Apollo Cosmos, Eastern Song Scroll & Dunhuang Scrolls, Impressionist/Romanticist Oils, and Turrell/Ando Light Architecture — upgraded to crisp `600×1300` cinemagraphs, seamless crossfades, and `360×780` WebP previews while keeping the IPA ~9 MB.)\n"
+        "2. 私有仓库内测授权访问与说明完善：在「设备与设置 → 软件源订阅 → 高级」新增可选 `GitHub Token` 配置，内测阶段即使 `Kianuni/Camlo` 保持私有，填写后也可实时拉取官方目录、动画预览、下载 `.tendies` 与检查更新；仓库公开后无需配置即可享全网节点加速。\n"
+        "   (Optional GitHub Token for Private-Repo Testing: adds an optional Token field in System & Settings -> App Source -> Advanced so testers can stream private `Kianuni/Camlo` cloud catalogs, animated previews, `.tendies`, and OTA updates immediately.)"
+    ),
     "1.2.6": (
         "v1.2.6 Build 19 — 修复开启陀螺仪 3D 视差后锁屏只显示第一张图（完整支持 `<wallpaperPropertyGroups>` 三态插值与金库旧包自愈） | Fix 3D Gyroscope (`ParameterizedCA`) Lock/Unlock Morphing & Self-Healing:\n"
         "1. 修复 `ParameterizedCA`（开启「陀螺仪 3D 视差」）在 iOS 26 / iOS 27 真机锁屏及「设为墙纸组合」预览中卡在第一张图不随解锁变身的问题：在 `wallpaper.ca/main.caml` 中完整生成符合 Apple `WallpaperKit` (`WKParameterizedCAPackageLoader`) 规范的 `<wallpaperPropertyGroups>`（精确映射 `CALayer.name` 与 `Background`/`Floating` 视图归属，按 `v_sleep` / `v_lock` / `v_home` 插值并自动展开 `transform.scale.xy` 为 `scale.x` + `scale.y`），改用原生 `<CALayer>` 承载视差容器以保留体积光与粒子混合滤镜，并消除滑动叠化中点的暗场渗色。\n"
@@ -256,7 +263,7 @@ def build_payloads(
         "localizedDescription": (
             "Camlo（开幕）是一款零门槛 iOS / iPadOS 原生 Core Animation (.tendies / CAML) 动态与滑动变身锁屏制作工坊。"
             "内置 120Hz 原生 `.ca` 实时交互试穿、陀螺仪 3D 裸眼视差 (ParameterizedCA)、昼夜双生壁纸 (appearanceAware)、智能时钟配色字体与主屏柔焦配套、"
-            "6 套内置获奖风光双态预设与 15 套零体积官方云端壁纸、8 款异形粒子与体积流光特效、AI 主体抠图遮挡时钟、视频/实况抽帧无缝循环与免电脑一键直写 iOS 26 / iOS 27 锁屏画廊。"
+            "6 套内置获奖风光双态预设与 20 套零体积大师级官方云端壁纸、8 款异形粒子与体积流光特效、AI 主体抠图遮挡时钟、视频/实况抽帧无缝循环与免电脑一键直写 iOS 26 / iOS 27 锁屏画廊。"
         ),
         "iconURL": icon_url,
         "tintColor": ALT_TINT_COLOR,

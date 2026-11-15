@@ -39,6 +39,7 @@ struct PackMetadata: Decodable {
     let transitionPreset: String
     let particlePreset: String
     let supportsClockDepth: Bool
+    let depthMaskMode: String?
     let motion: MotionConfig?
 }
 
@@ -141,6 +142,138 @@ func extractForegroundCutout(from source1170x2532: CGImage, outWidth: Int = 780,
     let downscaled = try aspectFillCGImage(fullCutout, width: outWidth, height: outHeight)
     let coverage = estimateOpaqueCoverage(downscaled)
     return (downscaled, coverage)
+}
+
+/// Flood-fills upper sky from top border (y = 0...8%) to cleanly separate mountain peaks, arches,
+/// dunes, and nebula pillars from the upper Clock zone (`09:41`), with soft feathered alpha edges.
+func extractSkylineCutout(from source1170x2532: CGImage, outWidth: Int = 780, outHeight: Int = 1688) throws -> (CGImage, Double) {
+    let fitted = try aspectFillCGImage(source1170x2532, width: outWidth, height: outHeight)
+    guard let data = fitted.dataProvider?.data,
+          let rawPtr = CFDataGetBytePtr(data) else {
+        throw NSError(domain: "BuildWallpapers", code: 13, userInfo: [NSLocalizedDescriptionKey: "Missing pixel buffer for skyline mask"])
+    }
+    let w = fitted.width
+    let h = fitted.height
+    let bpp = max(4, fitted.bitsPerPixel / 8)
+    let bpr = fitted.bytesPerRow
+
+    @inline(__always)
+    func pixelRGB(_ x: Int, _ y: Int) -> (Int, Int, Int) {
+        let off = y * bpr + x * bpp
+        return (Int(rawPtr[off]), Int(rawPtr[off + 1]), Int(rawPtr[off + 2]))
+    }
+
+    // Sample median/mean sky reference from top 6% band per column-bucket (16 buckets across width)
+    let buckets = 16
+    var refR = [Double](repeating: 0, count: buckets)
+    var refG = [Double](repeating: 0, count: buckets)
+    var refB = [Double](repeating: 0, count: buckets)
+    let bandH = max(8, Int(Double(h) * 0.06))
+    for b in 0..<buckets {
+        let x0 = (b * w) / buckets
+        let x1 = ((b + 1) * w) / buckets
+        var sr = 0.0, sg = 0.0, sb = 0.0, cnt = 0.0
+        for y in stride(from: 2, to: bandH, by: 2) {
+            for x in stride(from: x0, to: x1, by: 2) {
+                let (r, g, bl) = pixelRGB(x, y)
+                sr += Double(r); sg += Double(g); sb += Double(bl); cnt += 1.0
+            }
+        }
+        refR[b] = sr / max(1.0, cnt)
+        refG[b] = sg / max(1.0, cnt)
+        refB[b] = sb / max(1.0, cnt)
+    }
+
+    // 4-connected BFS flood fill from top 8% rows across pixels that remain close to upper sky color/luma
+    // and lack strong high-frequency edge jump against their parent neighbor.
+    var isSky = [UInt8](repeating: 0, count: w * h)
+    var queue = [Int]()
+    queue.reserveCapacity(w * h / 2)
+
+    let topSeedRows = max(12, Int(Double(h) * 0.08))
+    for y in 0..<topSeedRows {
+        for x in 0..<w {
+            let idx = y * w + x
+            isSky[idx] = 1
+            queue.append(idx)
+        }
+    }
+
+    let maxStopY = Int(Double(h) * 0.88)
+    var head = 0
+    while head < queue.count {
+        let cur = queue[head]
+        head += 1
+        let cx = cur % w
+        let cy = cur / w
+        let (cr, cg, cb) = pixelRGB(cx, cy)
+        let bucket = min(buckets - 1, max(0, (cx * buckets) / w))
+        let br = refR[bucket], bg = refG[bucket], bb = refB[bucket]
+
+        let neighbors = [(cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)]
+        for (nx, ny) in neighbors {
+            if nx < 0 || nx >= w || ny < 0 || ny >= maxStopY { continue }
+            let nIdx = ny * w + nx
+            if isSky[nIdx] != 0 { continue }
+            let (nr, ng, nb) = pixelRGB(nx, ny)
+
+            let stepDiff = abs(nr - cr) + abs(ng - cg) + abs(nb - cb)
+            let refDiff = abs(Double(nr) - br) + abs(Double(ng) - bg) + abs(Double(nb) - bb)
+            let localLuma = 0.299 * Double(nr) + 0.587 * Double(ng) + 0.114 * Double(nb)
+            let refLuma = 0.299 * br + 0.587 * bg + 0.114 * bb
+            // Allow gradual twilight sky gradient vertically, stop at sharp silhouettes or dark mountain faces
+            let verticalAllowance = 42.0 + 45.0 * min(1.0, Double(ny) / Double(h))
+            if stepDiff < 48 && (refDiff < verticalAllowance || abs(localLuma - refLuma) < 32.0) {
+                isSky[nIdx] = 1
+                queue.append(nIdx)
+            }
+        }
+    }
+
+    // Build 8-bit grayscale alpha buffer (0 = sky transparent, 255 = foreground opaque)
+    var maskBytes = [UInt8](repeating: 0, count: w * h)
+    let topClockSafeY = Int(Double(h) * 0.16)
+    for y in topClockSafeY..<h {
+        let rowOff = y * w
+        for x in 0..<w {
+            if isSky[rowOff + x] == 0 {
+                maskBytes[rowOff + x] = 255
+            }
+        }
+    }
+
+    // Create CGImage from grayscale bytes and apply soft Gaussian feathering for clean edges
+    let grayCS = CGColorSpaceCreateDeviceGray()
+    let maskData = Data(maskBytes) as CFData
+    guard let provider = CGDataProvider(data: maskData),
+          let rawMask = CGImage(
+              width: w,
+              height: h,
+              bitsPerComponent: 8,
+              bitsPerPixel: 8,
+              bytesPerRow: w,
+              space: grayCS,
+              bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+              provider: provider,
+              decode: nil,
+              shouldInterpolate: true,
+              intent: .defaultIntent
+          ) else {
+        throw NSError(domain: "BuildWallpapers", code: 14, userInfo: [NSLocalizedDescriptionKey: "Failed creating skyline mask CGImage"])
+    }
+
+    let maskCI = CIImage(cgImage: rawMask)
+        .clampedToExtent()
+        .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: 2.0])
+        .cropped(to: CGRect(x: 0, y: 0, width: w, height: h))
+    let ciContext = CIContext(options: nil)
+    guard let softMask = ciContext.createCGImage(maskCI, from: CGRect(x: 0, y: 0, width: w, height: h)) else {
+        throw NSError(domain: "BuildWallpapers", code: 15, userInfo: [NSLocalizedDescriptionKey: "Failed softening skyline mask"])
+    }
+
+    let cutout = try compositeGrayscaleMaskCutout(source: fitted, grayscaleMask: softMask, outWidth: w, outHeight: h)
+    let coverage = estimateOpaqueCoverage(cutout)
+    return (cutout, coverage)
 }
 
 func compositeGrayscaleMaskCutout(
@@ -287,13 +420,32 @@ func renderParticleSprite(_ preset: String, outDir: URL) throws -> [(filename: S
         try writePNG(ctx.makeImage()!, to: url)
         return [("particle_meteor.png", w, h)]
 
+    case "snowfall":
+        let size = 64
+        let ctx = try makeRGBContext(width: size, height: size)
+        let cs = CGColorSpaceCreateDeviceRGB()
+        let grad = CGGradient(
+            colorsSpace: cs,
+            colors: [
+                CGColor(red: 0.96, green: 0.98, blue: 1.0, alpha: 0.95),
+                CGColor(red: 0.78, green: 0.90, blue: 1.0, alpha: 0.42),
+                CGColor(red: 0.65, green: 0.85, blue: 1.0, alpha: 0.0)
+            ] as CFArray,
+            locations: [0.0, 0.45, 1.0]
+        )!
+        let c = CGPoint(x: 32, y: 32)
+        ctx.drawRadialGradient(grad, startCenter: c, startRadius: 1, endCenter: c, endRadius: 26, options: [])
+        let url = outDir.appendingPathComponent("particle_snow.png")
+        try writePNG(ctx.makeImage()!, to: url)
+        return [("particle_snow.png", size, size)]
+
     case "auroraRibbon", "sunbeamRays":
         let w = 256, h = 512
         let ctx = try makeRGBContext(width: w, height: h)
         let cs = CGColorSpaceCreateDeviceRGB()
         let tint: CGColor = (preset == "auroraRibbon")
-            ? CGColor(red: 0.25, green: 0.95, blue: 0.82, alpha: 0.45)
-            : CGColor(red: 1.0, green: 0.84, blue: 0.48, alpha: 0.42)
+            ? CGColor(red: 0.25, green: 0.95, blue: 0.82, alpha: 0.36)
+            : CGColor(red: 1.0, green: 0.86, blue: 0.56, alpha: 0.34)
         let grad = CGGradient(
             colorsSpace: cs,
             colors: [
@@ -322,8 +474,8 @@ func renderParticleSprite(_ preset: String, outDir: URL) throws -> [(filename: S
         let grad = CGGradient(
             colorsSpace: cs,
             colors: [
-                CGColor(red: 0.78, green: 0.96, blue: 1.0, alpha: 1.0),
-                CGColor(red: 0.45, green: 0.65, blue: 1.0, alpha: 0.55),
+                CGColor(red: 0.78, green: 0.96, blue: 1.0, alpha: 0.92),
+                CGColor(red: 0.45, green: 0.72, blue: 1.0, alpha: 0.45),
                 CGColor(red: 0.25, green: 0.35, blue: 0.95, alpha: 0.0)
             ] as CFArray,
             locations: [0.0, 0.38, 1.0]
@@ -334,350 +486,70 @@ func renderParticleSprite(_ preset: String, outDir: URL) throws -> [(filename: S
         try writePNG(ctx.makeImage()!, to: url)
         return [("particle_firefly.png", size, size)]
 
-    default:
+    default: // "none"
         return []
     }
 }
 
-// MARK: - Procedural Seamless Loop Frame Renderers (468x1014 @ 20 frames)
+// MARK: - Photorealistic Cinemagraph Loop Renderer (600x1300 @ 16 frames < 50MB RGBA8)
 
 func renderMotionLoopFrames(pack: PackMetadata, width: Int, height: Int, assetsDir: URL) throws -> (frames: [String], heroThumbImage: CGImage) {
-    let style = pack.motion?.style ?? "titaniumSilk"
-    let frameCount = pack.motion?.frameCount ?? 20
-    let baseCG: CGImage?
-    let basePath = sourcesDir.appendingPathComponent("\(pack.id)_base.jpg")
-    if style != "titaniumSilk" && FileManager.default.fileExists(atPath: basePath.path) {
-        let raw = try loadCGImage(at: basePath)
-        baseCG = try aspectFillCGImage(raw, width: width, height: height)
-    } else {
-        baseCG = nil
-    }
+    let frameCount = pack.motion?.frameCount ?? 16
+    let stateAURL = sourcesDir.appendingPathComponent("\(pack.id)_lock.jpg")
+    let stateBURL = sourcesDir.appendingPathComponent("\(pack.id)_unlock.jpg")
+    let rawA = try loadCGImage(at: stateAURL)
+    let rawB = try loadCGImage(at: stateBURL)
+    let cgA = try aspectFillCGImage(rawA, width: width, height: height)
+    let cgB = try aspectFillCGImage(rawB, width: width, height: height)
+
+    let extent = CGRect(x: 0, y: 0, width: width, height: height)
+    let ciA = CIImage(cgImage: cgA)
+    let ciB = CIImage(cgImage: cgB)
+    let ciContext = CIContext(options: [.useSoftwareRenderer: false])
 
     var filenames: [String] = []
-    var heroFrame: CGImage?
-
     for i in 0..<frameCount {
         let theta = 2.0 * Double.pi * Double(i) / Double(frameCount)
-        let unitProgress = Double(i) / Double(frameCount)
-        let ctx = try makeRGBContext(width: width, height: height)
-        let w = CGFloat(width)
-        let h = CGFloat(height)
+        let weightB = CGFloat(0.5 - 0.5 * cos(theta))
+        let breathScale = CGFloat(1.008 + 0.008 * sin(theta))
 
-        if let bg = baseCG {
-            ctx.draw(bg, in: CGRect(x: 0, y: 0, width: w, height: h))
-        }
+        // Blend State A and State B with periodic cosine weighting + subtle highlight bloom
+        let breathTransform = CGAffineTransform(translationX: extent.midX, y: extent.midY)
+            .scaledBy(x: breathScale, y: breathScale)
+            .translatedBy(x: -extent.midX, y: -extent.midY)
+        let scaledA = ciA.clampedToExtent().transformed(by: breathTransform).cropped(to: extent)
+        let scaledB = ciB.clampedToExtent().transformed(by: breathTransform).cropped(to: extent)
 
-        switch style {
-        case "titaniumSilk":
-            drawTitaniumSilkFrame(ctx: ctx, w: w, h: h, theta: theta)
-        case "auroraCurtain":
-            drawAuroraCurtainOverlay(ctx: ctx, w: w, h: h, theta: theta)
-        case "oceanShimmer":
-            drawOceanShimmerOverlay(ctx: ctx, w: w, h: h, theta: theta)
-        case "neonRain":
-            drawNeonRainOverlay(ctx: ctx, w: w, h: h, theta: theta, unitProgress: unitProgress)
-        case "jellyfishPulse":
-            drawJellyfishOverlay(ctx: ctx, w: w, h: h, theta: theta, unitProgress: unitProgress)
-        default:
-            break
-        }
+        let weightMask = CIImage(color: CIColor(red: weightB, green: weightB, blue: weightB, alpha: 1.0)).cropped(to: extent)
+        let blended = scaledB.applyingFilter("CIBlendWithMask", parameters: [
+            kCIInputBackgroundImageKey: scaledA,
+            kCIInputMaskImageKey: weightMask
+        ]).cropped(to: extent)
 
-        guard let frameCG = ctx.makeImage() else {
-            throw NSError(domain: "BuildWallpapers", code: 20, userInfo: [NSLocalizedDescriptionKey: "Failed frame \(i)"])
+        let softGlow = blended
+            .clampedToExtent()
+            .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: 14.0])
+            .cropped(to: extent)
+            .applyingFilter("CIColorMatrix", parameters: [
+                "inputAVector": CIVector(x: 0, y: 0, z: 0, w: 0.06 * weightB)
+            ])
+        let finalCI = softGlow.applyingFilter("CIScreenBlendMode", parameters: [
+            kCIInputBackgroundImageKey: blended
+        ]).cropped(to: extent)
+
+        guard let frameCG = ciContext.createCGImage(finalCI, from: extent) else {
+            throw NSError(domain: "BuildWallpapers", code: 20, userInfo: [NSLocalizedDescriptionKey: "Failed rendering cinemagraph frame \(i) for \(pack.id)"])
         }
         let fname = String(format: "frame_%d.jpg", i)
-        try writeJPEG(frameCG, to: assetsDir.appendingPathComponent(fname), quality: 0.78)
+        try writeJPEG(frameCG, to: assetsDir.appendingPathComponent(fname), quality: 0.86)
         filenames.append(fname)
-
-        if i == 5 {
-            if baseCG != nil {
-                // Use full crisp base photo enhanced slightly for thumbnail if available
-                let raw = try loadCGImage(at: basePath)
-                heroFrame = try aspectFillCGImage(raw, width: 360, height: 780)
-            } else {
-                heroFrame = try aspectFillCGImage(frameCG, width: 360, height: 780)
-            }
-        }
     }
 
-    return (filenames, heroFrame!)
+    let heroThumb = try aspectFillCGImage(rawB, width: 540, height: 1170)
+    return (filenames, heroThumb)
 }
 
-func drawTitaniumSilkFrame(ctx: CGContext, w: CGFloat, h: CGFloat, theta: Double) {
-    let cs = CGColorSpaceCreateDeviceRGB()
-    // Deep Titanium Slate Base
-    let bgGrad = CGGradient(
-        colorsSpace: cs,
-        colors: [
-            CGColor(red: 0.04, green: 0.05, blue: 0.07, alpha: 1.0),
-            CGColor(red: 0.11, green: 0.12, blue: 0.16, alpha: 1.0),
-            CGColor(red: 0.03, green: 0.04, blue: 0.06, alpha: 1.0)
-        ] as CFArray,
-        locations: [0.0, 0.52, 1.0]
-    )!
-    ctx.drawLinearGradient(bgGrad, start: CGPoint(x: 0, y: h), end: CGPoint(x: w, y: 0), options: [])
-
-    ctx.saveGState()
-    ctx.setBlendMode(.screen)
-
-    // Six sculpted metallic silk wave ribbons sweeping continuously across periodic phase
-    let bands: [(yBase: CGFloat, amp: CGFloat, phase: Double, r: CGFloat, g: CGFloat, b: CGFloat, thick: CGFloat)] = [
-        (0.68, 52, 0.0, 0.62, 0.68, 0.78, 120),
-        (0.56, 65, 1.1, 0.86, 0.76, 0.68, 105),
-        (0.46, 58, 2.2, 0.74, 0.78, 0.86, 95),
-        (0.36, 48, 3.4, 0.52, 0.60, 0.74, 110),
-        (0.24, 38, 4.3, 0.82, 0.74, 0.69, 80),
-        (0.79, 44, 5.1, 0.48, 0.54, 0.64, 130)
-    ]
-
-    for (idx, band) in bands.enumerated() {
-        let p = CGMutablePath()
-        let y0 = h * band.yBase
-        let step: CGFloat = 24
-        p.move(to: CGPoint(x: -160, y: y0))
-        var x: CGFloat = -160
-        while x <= w + 160 {
-            let nx = Double(x / w)
-            let wave1 = sin(nx * 3.6 + theta + band.phase) * Double(band.amp)
-            let wave2 = cos(nx * 2.1 - theta + Double(idx) * 0.7) * Double(band.amp * 0.45)
-            p.addLine(to: CGPoint(x: x, y: y0 + CGFloat(wave1 + wave2)))
-            x += step
-        }
-
-        // Glow under-stroke + crisp specular silk edge
-        ctx.saveGState()
-        ctx.addPath(p)
-        ctx.setLineWidth(band.thick)
-        ctx.setLineCap(.round)
-        ctx.setLineJoin(.round)
-        ctx.setStrokeColor(CGColor(red: band.r * 0.42, green: band.g * 0.42, blue: band.b * 0.45, alpha: 0.24))
-        ctx.strokePath()
-
-        ctx.addPath(p)
-        ctx.setLineWidth(band.thick * 0.45)
-        ctx.setStrokeColor(CGColor(red: band.r * 0.72, green: band.g * 0.72, blue: band.b * 0.75, alpha: 0.28))
-        ctx.strokePath()
-
-        ctx.addPath(p)
-        ctx.setLineWidth(2.6)
-        ctx.setStrokeColor(CGColor(red: min(1.0, band.r + 0.14), green: min(1.0, band.g + 0.14), blue: min(1.0, band.b + 0.12), alpha: 0.65))
-        ctx.strokePath()
-        ctx.restoreGState()
-    }
-
-    // Traveling soft volumetric champagne sheen
-    let sweepX = w * CGFloat(0.5 + 0.35 * sin(theta))
-    let sheen = CGGradient(
-        colorsSpace: cs,
-        colors: [
-            CGColor(red: 0.94, green: 0.88, blue: 0.82, alpha: 0.22),
-            CGColor(red: 0.72, green: 0.76, blue: 0.85, alpha: 0.0)
-        ] as CFArray,
-        locations: [0.0, 1.0]
-    )!
-    ctx.drawRadialGradient(sheen, startCenter: CGPoint(x: sweepX, y: h * 0.48), startRadius: 8, endCenter: CGPoint(x: sweepX, y: h * 0.48), endRadius: w * 0.82, options: [])
-    ctx.restoreGState()
-}
-
-func drawAuroraCurtainOverlay(ctx: CGContext, w: CGFloat, h: CGFloat, theta: Double) {
-    let cs = CGColorSpaceCreateDeviceRGB()
-    ctx.saveGState()
-    ctx.setBlendMode(.screen)
-
-    // Gentle emerald & violet aurora wave curtains across the upper night sky
-    let curtains: [(yFrac: Double, xShiftAmp: Double, r: CGFloat, g: CGFloat, b: CGFloat, alpha: CGFloat)] = [
-        (0.68, 28, 0.12, 0.96, 0.62, 0.22),
-        (0.60, 22, 0.42, 0.85, 0.98, 0.16),
-        (0.75, 34, 0.68, 0.32, 0.96, 0.14)
-    ]
-
-    for (idx, c) in curtains.enumerated() {
-        let p = theta + Double(idx) * 2.1
-        let cx = w * CGFloat(0.5 + 0.14 * sin(p))
-        let cy = h * CGFloat(c.yFrac + 0.03 * cos(p))
-        let grad = CGGradient(
-            colorsSpace: cs,
-            colors: [
-                CGColor(red: c.r, green: c.g, blue: c.b, alpha: c.alpha),
-                CGColor(red: c.r, green: c.g, blue: c.b, alpha: 0.0)
-            ] as CFArray,
-            locations: [0.0, 1.0]
-        )!
-        ctx.saveGState()
-        ctx.translateBy(x: cx, y: cy)
-        ctx.scaleBy(x: 1.5, y: 0.48)
-        ctx.drawRadialGradient(grad, startCenter: .zero, startRadius: 6, endCenter: .zero, endRadius: w * 0.56, options: [])
-        ctx.restoreGState()
-    }
-
-    // Vertical aurora ray streaks shimmering gently
-    for k in 0..<14 {
-        let kf = Double(k) / 14.0
-        let x = w * CGFloat(0.10 + 0.80 * kf + 0.04 * sin(theta + kf * 6.0))
-        let alpha = CGFloat(0.06 + 0.11 * pow(0.5 + 0.5 * sin(theta + Double(k) * 1.3), 2))
-        let rayGrad = CGGradient(
-            colorsSpace: cs,
-            colors: [
-                CGColor(red: 0.18, green: 0.98, blue: 0.68, alpha: 0.0),
-                CGColor(red: 0.20, green: 0.98, blue: 0.72, alpha: alpha),
-                CGColor(red: 0.55, green: 0.42, blue: 1.0, alpha: 0.0)
-            ] as CFArray,
-            locations: [0.0, 0.42, 1.0]
-        )!
-        ctx.drawLinearGradient(
-            rayGrad,
-            start: CGPoint(x: x, y: h * 0.48),
-            end: CGPoint(x: x + 18, y: h * 0.88),
-            options: []
-        )
-    }
-
-    // Lower fjord reflection shimmer
-    for r in 0..<10 {
-        let rf = Double(r) / 10.0
-        let y = h * CGFloat(0.08 + rf * 0.20)
-        let drift = CGFloat(sin(theta + rf * 5.2) * 22.0)
-        let barAlpha = CGFloat(0.05 + 0.08 * (0.5 + 0.5 * cos(theta + rf * 3.7)))
-        ctx.setFillColor(CGColor(red: 0.24, green: 0.94, blue: 0.72, alpha: barAlpha))
-        ctx.fill(CGRect(x: w * 0.24 + drift, y: y, width: w * 0.52, height: 3.5))
-    }
-
-    // Twinkling stars in upper sky
-    for s in 0..<26 {
-        let sx = CGFloat(((s * 97 + 31) % 100)) / 100.0 * w
-        let sy = h * (0.64 + CGFloat(((s * 53 + 17) % 34)) / 100.0)
-        let tw = 0.25 + 0.75 * pow(0.5 + 0.5 * sin(theta + Double(s) * 1.9), 3)
-        let r = CGFloat(1.1 + (Double(s % 3) * 0.5))
-        ctx.setFillColor(CGColor(red: 0.95, green: 0.98, blue: 1.0, alpha: CGFloat(tw * 0.85)))
-        ctx.fillEllipse(in: CGRect(x: sx - r, y: sy - r, width: r * 2, height: r * 2))
-    }
-    ctx.restoreGState()
-}
-
-func drawOceanShimmerOverlay(ctx: CGContext, w: CGFloat, h: CGFloat, theta: Double) {
-    let cs = CGColorSpaceCreateDeviceRGB()
-    ctx.saveGState()
-    ctx.setBlendMode(.screen)
-
-    // Warm sun horizon halo gently breathing
-    let glowAlpha = CGFloat(0.16 + 0.08 * sin(theta))
-    let sunGrad = CGGradient(
-        colorsSpace: cs,
-        colors: [
-            CGColor(red: 1.0, green: 0.82, blue: 0.42, alpha: glowAlpha),
-            CGColor(red: 1.0, green: 0.52, blue: 0.28, alpha: 0.0)
-        ] as CFArray,
-        locations: [0.0, 1.0]
-    )!
-    ctx.drawRadialGradient(sunGrad, startCenter: CGPoint(x: w * 0.5, y: h * 0.50), startRadius: 6, endCenter: CGPoint(x: w * 0.5, y: h * 0.50), endRadius: w * 0.62, options: [])
-
-    // Shimmering ocean specular glints on lower half (y in 0.06...0.48 in bottom-up CG coords)
-    for row in 0..<32 {
-        let rf = Double(row) / 32.0
-        let y = h * CGFloat(0.06 + rf * 0.40)
-        let spread = 0.08 + (1.0 - rf) * 0.34
-        let shift = sin(theta * 2.0 + rf * 9.0) * 18.0 * (1.0 - rf * 0.5)
-        let glintAlpha = CGFloat(0.14 + 0.26 * pow(0.5 + 0.5 * sin(theta + Double(row) * 1.6), 2))
-        let bw = w * CGFloat(spread * (0.55 + 0.45 * sin(Double(row) * 2.3 + theta)))
-        let bx = w * 0.5 - bw * 0.5 + CGFloat(shift)
-        ctx.setFillColor(CGColor(red: 1.0, green: 0.86, blue: 0.54, alpha: glintAlpha))
-        ctx.fill(CGRect(x: bx, y: y, width: bw, height: CGFloat(1.6 + (1.0 - rf) * 2.4)))
-    }
-    ctx.restoreGState()
-}
-
-func drawNeonRainOverlay(ctx: CGContext, w: CGFloat, h: CGFloat, theta: Double, unitProgress: Double) {
-    let cs = CGColorSpaceCreateDeviceRGB()
-    ctx.saveGState()
-    ctx.setBlendMode(.screen)
-
-    // Pulsing neon reflections on wet ground (bottom 35% -> y in 0...0.35 in CG bottom-up)
-    let cyanPulse = CGFloat(0.14 + 0.10 * sin(theta))
-    let magPulse = CGFloat(0.12 + 0.10 * cos(theta))
-
-    let g1 = CGGradient(colorsSpace: cs, colors: [
-        CGColor(red: 0.15, green: 0.86, blue: 1.0, alpha: cyanPulse),
-        CGColor(red: 0.15, green: 0.86, blue: 1.0, alpha: 0.0)
-    ] as CFArray, locations: [0.0, 1.0])!
-    ctx.drawRadialGradient(g1, startCenter: CGPoint(x: w * 0.34, y: h * 0.18), startRadius: 4, endCenter: CGPoint(x: w * 0.34, y: h * 0.18), endRadius: w * 0.48, options: [])
-
-    let g2 = CGGradient(colorsSpace: cs, colors: [
-        CGColor(red: 1.0, green: 0.20, blue: 0.65, alpha: magPulse),
-        CGColor(red: 1.0, green: 0.20, blue: 0.65, alpha: 0.0)
-    ] as CFArray, locations: [0.0, 1.0])!
-    ctx.drawRadialGradient(g2, startCenter: CGPoint(x: w * 0.68, y: h * 0.24), startRadius: 4, endCenter: CGPoint(x: w * 0.68, y: h * 0.24), endRadius: w * 0.46, options: [])
-
-    // Seamless falling rain streaks using exact periodic modular wrap
-    ctx.setLineCap(.round)
-    for drop in 0..<42 {
-        let baseX = Double((drop * 73 + 19) % 100) / 100.0
-        let baseY = Double((drop * 41 + 7) % 100) / 100.0
-        let cycles = Double((drop % 2) + 1)
-        let yf = (baseY - unitProgress * cycles).truncatingRemainder(dividingBy: 1.0)
-        let normY = yf < 0 ? yf + 1.0 : yf
-        let xf = (baseX + unitProgress * 0.15 * cycles).truncatingRemainder(dividingBy: 1.0)
-
-        let px = CGFloat(xf) * w
-        let py = CGFloat(normY) * h
-        let len = CGFloat(22 + (drop % 4) * 9)
-        let edgeFade = min(normY * 6.0, (1.0 - normY) * 6.0, 1.0)
-        let isCyan = drop % 3 != 0
-        ctx.setLineWidth(1.3)
-        ctx.setStrokeColor(CGColor(
-            red: isCyan ? 0.55 : 0.98,
-            green: isCyan ? 0.92 : 0.55,
-            blue: 1.0,
-            alpha: CGFloat(0.45 * edgeFade)
-        ))
-        ctx.move(to: CGPoint(x: px, y: py))
-        ctx.addLine(to: CGPoint(x: px - len * 0.16, y: py + len))
-        ctx.strokePath()
-    }
-    ctx.restoreGState()
-}
-
-func drawJellyfishOverlay(ctx: CGContext, w: CGFloat, h: CGFloat, theta: Double, unitProgress: Double) {
-    let cs = CGColorSpaceCreateDeviceRGB()
-    ctx.saveGState()
-    ctx.setBlendMode(.screen)
-
-    // Bioluminescent jellyfish bell glow pulse around upper-middle frame
-    let pulse = 0.14 + 0.12 * (0.5 + 0.5 * sin(theta))
-    let center = CGPoint(x: w * 0.5, y: h * 0.56)
-    let glow = CGGradient(
-        colorsSpace: cs,
-        colors: [
-            CGColor(red: 0.32, green: 0.88, blue: 1.0, alpha: CGFloat(pulse)),
-            CGColor(red: 0.48, green: 0.42, blue: 1.0, alpha: CGFloat(pulse * 0.55)),
-            CGColor(red: 0.10, green: 0.15, blue: 0.55, alpha: 0.0)
-        ] as CFArray,
-        locations: [0.0, 0.45, 1.0]
-    )!
-    ctx.drawRadialGradient(glow, startCenter: center, startRadius: 8, endCenter: center, endRadius: w * 0.68, options: [])
-
-    // Rising glowing abyssal plankton bokeh orbs (seamless periodic loop)
-    for p in 0..<28 {
-        let bx = Double((p * 67 + 13) % 100) / 100.0
-        let by = Double((p * 43 + 29) % 100) / 100.0
-        let yf = (by + unitProgress).truncatingRemainder(dividingBy: 1.0)
-        let drift = 0.03 * sin(theta + Double(p) * 1.4)
-        let px = CGFloat(bx + drift) * w
-        let py = CGFloat(yf) * h
-        let fade = sin(yf * Double.pi) // smooth 0 -> 1 -> 0 wrap fade
-        let radius = CGFloat(2.0 + Double(p % 4) * 1.4)
-        let orbGrad = CGGradient(
-            colorsSpace: cs,
-            colors: [
-                CGColor(red: 0.52, green: 0.94, blue: 1.0, alpha: CGFloat(0.68 * fade)),
-                CGColor(red: 0.32, green: 0.55, blue: 1.0, alpha: 0.0)
-            ] as CFArray,
-            locations: [0.0, 1.0]
-        )!
-        let pt = CGPoint(x: px, y: py)
-        ctx.drawRadialGradient(orbGrad, startCenter: pt, startRadius: 0, endCenter: pt, endRadius: radius * 2.5, options: [])
-    }
-    ctx.restoreGState()
-}
+func UnusedLegacyStubKeepNothing() {}
 
 // MARK: - CAML 1.0 XML Generators (100% Aligned with Camlo CAMLCompiler & Apple CAPackage)
 
@@ -903,15 +775,15 @@ func camlMorphBackgroundXML(transitionPreset: String) -> String {
         overrides.append(contentsOf: [
             StateOverride(targetId: "locked_layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
             StateOverride(targetId: "locked_layer", keyPath: "transform.scale.xy", sleepVal: 1.04, lockedVal: 1.0, unlockVal: 0.86, isInteger: false),
-            StateOverride(targetId: "unlock_layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 1.0, isInteger: false),
-            StateOverride(targetId: "unlock_layer", keyPath: "transform.scale.xy", sleepVal: 1.24, lockedVal: 1.22, unlockVal: 1.0, isInteger: false)
+            StateOverride(targetId: "unlock_layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+            StateOverride(targetId: "unlock_layer", keyPath: "transform.scale.xy", sleepVal: 1.24, lockedVal: 1.18, unlockVal: 1.0, isInteger: false)
         ])
     case "holoCard":
         overrides.append(contentsOf: [
             StateOverride(targetId: "locked_layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
             StateOverride(targetId: "locked_layer", keyPath: "transform.rotation.y", sleepVal: -0.06, lockedVal: 0.0, unlockVal: 0.24, isInteger: false),
             StateOverride(targetId: "locked_layer", keyPath: "position.x", sleepVal: 195, lockedVal: 195, unlockVal: 215, isInteger: true),
-            StateOverride(targetId: "unlock_layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 1.0, isInteger: false),
+            StateOverride(targetId: "unlock_layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
             StateOverride(targetId: "unlock_layer", keyPath: "transform.rotation.y", sleepVal: -0.24, lockedVal: -0.22, unlockVal: 0.0, isInteger: false),
             StateOverride(targetId: "unlock_layer", keyPath: "position.x", sleepVal: 175, lockedVal: 178, unlockVal: 195, isInteger: true),
             StateOverride(targetId: "unlock_layer", keyPath: "transform.scale.xy", sleepVal: 1.06, lockedVal: 1.05, unlockVal: 1.0, isInteger: false)
@@ -919,16 +791,23 @@ func camlMorphBackgroundXML(transitionPreset: String) -> String {
     case "aodGaze":
         overrides.append(contentsOf: [
             StateOverride(targetId: "locked_layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-            StateOverride(targetId: "locked_layer", keyPath: "transform.scale.xy", sleepVal: 0.94, lockedVal: 1.0, unlockVal: 1.06, isInteger: false),
-            StateOverride(targetId: "unlock_layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 1.0, isInteger: false),
-            StateOverride(targetId: "unlock_layer", keyPath: "transform.scale.xy", sleepVal: 1.14, lockedVal: 1.12, unlockVal: 1.0, isInteger: false)
+            StateOverride(targetId: "locked_layer", keyPath: "transform.scale.xy", sleepVal: 0.96, lockedVal: 1.0, unlockVal: 1.04, isInteger: false),
+            StateOverride(targetId: "unlock_layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+            StateOverride(targetId: "unlock_layer", keyPath: "transform.scale.xy", sleepVal: 1.08, lockedVal: 1.06, unlockVal: 1.0, isInteger: false)
         ])
-    default: // flashAwaken / crossfade
+    case "crossfade":
         overrides.append(contentsOf: [
             StateOverride(targetId: "locked_layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-            StateOverride(targetId: "locked_layer", keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 1.08, isInteger: false),
-            StateOverride(targetId: "unlock_layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 1.0, isInteger: false),
-            StateOverride(targetId: "unlock_layer", keyPath: "transform.scale.xy", sleepVal: 1.12, lockedVal: 1.10, unlockVal: 1.0, isInteger: false)
+            StateOverride(targetId: "locked_layer", keyPath: "transform.scale.xy", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 1.04, isInteger: false),
+            StateOverride(targetId: "unlock_layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+            StateOverride(targetId: "unlock_layer", keyPath: "transform.scale.xy", sleepVal: 1.06, lockedVal: 1.04, unlockVal: 1.0, isInteger: false)
+        ])
+    default: // flashAwaken
+        overrides.append(contentsOf: [
+            StateOverride(targetId: "locked_layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+            StateOverride(targetId: "locked_layer", keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 1.06, isInteger: false),
+            StateOverride(targetId: "unlock_layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+            StateOverride(targetId: "unlock_layer", keyPath: "transform.scale.xy", sleepVal: 1.08, lockedVal: 1.06, unlockVal: 1.0, isInteger: false)
         ])
     }
 
@@ -1016,7 +895,7 @@ func camlForegroundXML(preset: String, spriteName: String?, includeFlashPulse: B
                     </animations>
                   </CALayer>
             """)
-            overrides.append(StateOverride(targetId: "camlo_volumetric_beam", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.62, unlockVal: 0.55, isInteger: false))
+            overrides.append(StateOverride(targetId: "camlo_volumetric_beam", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.48, unlockVal: 0.42, isInteger: false))
             overrides.append(StateOverride(targetId: "camlo_volumetric_beam", keyPath: "speed", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false))
         } else {
             let birthRate: Double
@@ -1029,15 +908,17 @@ func camlForegroundXML(preset: String, spriteName: String?, includeFlashPulse: B
             let spin: Double
             switch preset {
             case "embers":
-                birthRate = 9.0; velocity = 42; yAccel = 18; scale = 0.28; ePosY = 120; emLong = 1.57; emRange = 1.20; spin = 1.2
+                birthRate = 7.5; velocity = 38; yAccel = 16; scale = 0.25; ePosY = 120; emLong = 1.57; emRange = 1.20; spin = 1.2
             case "sakura":
-                birthRate = 5.5; velocity = 48; yAccel = -14; scale = 0.36; ePosY = 820; emLong = -1.57; emRange = 0.90; spin = 1.8
+                birthRate = 4.5; velocity = 42; yAccel = -12; scale = 0.32; ePosY = 820; emLong = -1.57; emRange = 0.90; spin = 1.8
+            case "snowfall":
+                birthRate = 4.2; velocity = 26; yAccel = -8; scale = 0.24; ePosY = 820; emLong = -1.57; emRange = 0.70; spin = 0.4
             case "meteorShower":
-                birthRate = 3.0; velocity = 280; yAccel = -40; scale = 0.45; ePosY = 740; emLong = -2.25; emRange = 0.22; spin = 0.0
+                birthRate = 2.2; velocity = 260; yAccel = -36; scale = 0.38; ePosY = 740; emLong = -2.25; emRange = 0.22; spin = 0.0
             case "fireflies":
-                birthRate = 6.0; velocity = 18; yAccel = 6; scale = 0.26; ePosY = 420; emLong = 1.57; emRange = 3.14; spin = 0.6
+                birthRate = 4.5; velocity = 14; yAccel = 5; scale = 0.22; ePosY = 420; emLong = 1.57; emRange = 3.14; spin = 0.6
             default: // starlight
-                birthRate = 7.0; velocity = 14; yAccel = 4; scale = 0.25; ePosY = 460; emLong = 1.57; emRange = 3.14; spin = 0.8
+                birthRate = 5.0; velocity = 12; yAccel = 3; scale = 0.21; ePosY = 460; emLong = 1.57; emRange = 3.14; spin = 0.8
             }
 
             sublayers.append("""
@@ -1220,19 +1101,19 @@ func buildAll() throws {
         }
 
         if pack.kind == "motionLoop" {
-            let w = 468, h = 1014
+            let w = 600, h = 1300
             let (frameNames, heroThumb) = try renderMotionLoopFrames(pack: pack, width: w, height: h, assetsDir: bgCA.appendingPathComponent("assets"))
-            try writeJPEG(heroThumb, to: thumbOutURL, quality: 0.86)
+            try writeJPEG(heroThumb, to: thumbOutURL, quality: 0.88)
 
-            let fps = pack.motion?.fps ?? 14
-            let dur = pack.motion?.duration ?? (Double(frameNames.count) / Double(fps) * 2.0)
+            let fps = pack.motion?.fps ?? 8
+            let dur = pack.motion?.duration ?? (Double(frameNames.count) / Double(fps))
             try camlMotionBackgroundXML(frameNames: frameNames, duration: dur).write(to: bgCA.appendingPathComponent("main.caml"), atomically: true, encoding: .utf8)
             try camlFloatingCutoutXML(hasCutout: false, transitionPreset: pack.transitionPreset).write(to: flCA.appendingPathComponent("main.caml"), atomically: true, encoding: .utf8)
 
             let fgAssets = try renderParticleSprite(pack.particlePreset, outDir: fgCA.appendingPathComponent("assets"))
             try camlForegroundXML(preset: pack.particlePreset, spriteName: fgAssets.first?.filename, includeFlashPulse: false).write(to: fgCA.appendingPathComponent("main.caml"), atomically: true, encoding: .utf8)
         } else {
-            // Morph Pair + Vision / Bundle Mask Clock Depth Cutout
+            // Morph Pair + Vision / Skyline Clock Depth Cutout
             let lockSourceURL: URL
             let unlockSourceURL: URL
             let bundleLockMaskURL: URL?
@@ -1254,15 +1135,16 @@ func buildAll() throws {
             let lock1170 = try aspectFillCGImage(lockRaw, width: 1170, height: 2532)
             let unlock1170 = try aspectFillCGImage(unlockRaw, width: 1170, height: 2532)
 
-            try writeJPEG(lock1170, to: bgCA.appendingPathComponent("assets/locked.jpg"), quality: 0.85)
-            try writeJPEG(unlock1170, to: bgCA.appendingPathComponent("assets/unlock.jpg"), quality: 0.85)
-            let thumbCG = try aspectFillCGImage(unlockRaw, width: 360, height: 780)
-            try writeJPEG(thumbCG, to: thumbOutURL, quality: 0.86)
+            try writeJPEG(lock1170, to: bgCA.appendingPathComponent("assets/locked.jpg"), quality: 0.87)
+            try writeJPEG(unlock1170, to: bgCA.appendingPathComponent("assets/unlock.jpg"), quality: 0.87)
+            let thumbCG = try aspectFillCGImage(unlockRaw, width: 540, height: 1170)
+            try writeJPEG(thumbCG, to: thumbOutURL, quality: 0.88)
 
             try camlMorphBackgroundXML(transitionPreset: pack.transitionPreset).write(to: bgCA.appendingPathComponent("main.caml"), atomically: true, encoding: .utf8)
 
             var hasCutout = false
-            if pack.supportsClockDepth {
+            let maskMode = (pack.depthMaskMode ?? (pack.supportsClockDepth ? "vision" : "none")).lowercased()
+            if pack.supportsClockDepth && maskMode != "none" {
                 if let maskLURL = bundleLockMaskURL,
                    let maskUURL = bundleUnlockMaskURL,
                    fm.fileExists(atPath: maskLURL.path),
@@ -1278,19 +1160,40 @@ func buildAll() throws {
                     let covUnlock = estimateOpaqueCoverage(cutUnlock)
                     print(String(format: "    [Mask] %@ composite cutout coverage: lock=%.1f%% unlock=%.1f%%", pack.id, covLock * 100.0, covUnlock * 100.0))
                 } else {
-                    do {
-                        let (cutLock, covLock) = try extractForegroundCutout(from: lock1170, outWidth: 780, outHeight: 1688)
-                        let (cutUnlock, covUnlock) = try extractForegroundCutout(from: unlock1170, outWidth: 780, outHeight: 1688)
-                        if covLock > 0.04 && covUnlock > 0.04 {
-                            try writePNG(cutLock, to: flCA.appendingPathComponent("assets/cutout_lock.png"))
-                            try writePNG(cutUnlock, to: flCA.appendingPathComponent("assets/cutout_unlock.png"))
-                            hasCutout = true
-                            print(String(format: "    [Vision] %@ cutout coverage: lock=%.1f%% unlock=%.1f%%", pack.id, covLock * 100.0, covUnlock * 100.0))
+                    func attemptCutout(mode: String) -> (CGImage, CGImage, Double, Double, String)? {
+                        if mode == "skyline" {
+                            if let (cl, covL) = try? extractSkylineCutout(from: lock1170, outWidth: 780, outHeight: 1688),
+                               let (cu, covU) = try? extractSkylineCutout(from: unlock1170, outWidth: 780, outHeight: 1688),
+                               covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
+                                return (cl, cu, covL, covU, "Skyline")
+                            }
+                            if let (cl, covL) = try? extractForegroundCutout(from: lock1170, outWidth: 780, outHeight: 1688),
+                               let (cu, covU) = try? extractForegroundCutout(from: unlock1170, outWidth: 780, outHeight: 1688),
+                               covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
+                                return (cl, cu, covL, covU, "Vision-Fallback")
+                            }
                         } else {
-                            print(String(format: "    [Vision] %@ low cutout coverage (lock=%.1f%%, unlock=%.1f%%), skipping Floating layer", pack.id, covLock * 100.0, covUnlock * 100.0))
+                            if let (cl, covL) = try? extractForegroundCutout(from: lock1170, outWidth: 780, outHeight: 1688),
+                               let (cu, covU) = try? extractForegroundCutout(from: unlock1170, outWidth: 780, outHeight: 1688),
+                               covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
+                                return (cl, cu, covL, covU, "Vision")
+                            }
+                            if let (cl, covL) = try? extractSkylineCutout(from: lock1170, outWidth: 780, outHeight: 1688),
+                               let (cu, covU) = try? extractSkylineCutout(from: unlock1170, outWidth: 780, outHeight: 1688),
+                               covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
+                                return (cl, cu, covL, covU, "Skyline-Fallback")
+                            }
                         }
-                    } catch {
-                        print("    [Vision] \(pack.id) cutout skipped: \(error.localizedDescription)")
+                        return nil
+                    }
+
+                    if let (cutLock, cutUnlock, covLock, covUnlock, tag) = attemptCutout(mode: maskMode) {
+                        try writePNG(cutLock, to: flCA.appendingPathComponent("assets/cutout_lock.png"))
+                        try writePNG(cutUnlock, to: flCA.appendingPathComponent("assets/cutout_unlock.png"))
+                        hasCutout = true
+                        print(String(format: "    [%@] %@ cutout coverage: lock=%.1f%% unlock=%.1f%%", tag, pack.id, covLock * 100.0, covUnlock * 100.0))
+                    } else {
+                        print("    [Cutout] \(pack.id) skipped Floating layer (coverage outside 4%...78% safe Clock-Depth band)")
                     }
                 }
             }

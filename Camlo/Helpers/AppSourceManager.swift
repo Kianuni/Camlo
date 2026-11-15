@@ -108,6 +108,12 @@ final class AppSourceManager: ObservableObject {
         }
     }
 
+    @Published var githubToken: String {
+        didSet {
+            UserDefaults.standard.set(githubToken.trimmingCharacters(in: .whitespacesAndNewlines), forKey: "camlo_source_github_token")
+        }
+    }
+
     @Published private(set) var isCheckingUpdate: Bool = false
     @Published private(set) var latestRelease: RemoteVersionInfo?
     @Published private(set) var hasNewerUpdate: Bool = false
@@ -134,10 +140,44 @@ final class AppSourceManager: ObservableObject {
         defaultRouteMode == .cnMirror
     }
 
+    nonisolated static var currentGitHubToken: String {
+        (UserDefaults.standard.string(forKey: "camlo_source_github_token") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    nonisolated static func currentEffectiveRepoSlug() -> String {
+        let savedSlug = UserDefaults.standard.string(forKey: "camlo_source_repo_slug") ?? defaultRepoSlug
+        let cleaned = savedSlug.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "https://github.com/", with: "")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return cleaned.contains("/") ? cleaned : defaultRepoSlug
+    }
+
+    /// 仅为 Camlo 主仓库直连 GitHub 域名附加可选私有测试 Token，绝不向第三方社区源或镜像代理转发凭据。
+    nonisolated static func applyGitHubAuthIfNeeded(to request: inout URLRequest) {
+        let token = currentGitHubToken
+        guard !token.isEmpty,
+              let url = request.url,
+              let host = url.host?.lowercased(),
+              host == "raw.githubusercontent.com"
+                || host == "api.github.com"
+                || host == "github.com"
+                || host == "objects.githubusercontent.com" else {
+            return
+        }
+        let slugLower = currentEffectiveRepoSlug().lowercased()
+        let pathLower = url.path.lowercased()
+        guard pathLower.contains("/\(slugLower)/") else {
+            return
+        }
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    }
+
     private init() {
         self.routeMode = Self.defaultRouteMode
         let savedSlug = UserDefaults.standard.string(forKey: "camlo_source_repo_slug") ?? Self.defaultRepoSlug
         self.repoSlug = savedSlug.isEmpty ? Self.defaultRepoSlug : savedSlug
+        self.githubToken = UserDefaults.standard.string(forKey: "camlo_source_github_token") ?? ""
     }
 
     private var normalizedSlug: String {
@@ -220,7 +260,9 @@ final class AppSourceManager: ObservableObject {
         let rawRepo = "https://raw.githubusercontent.com/\(slug)/main/repo.json"
         let rawRepoCN = "https://raw.githubusercontent.com/\(slug)/main/repo_cn.json"
         let candidateURLs: [String]
-        if routeMode == .cnMirror {
+        if !Self.currentGitHubToken.isEmpty {
+            candidateURLs = [rawApps, rawRepo]
+        } else if routeMode == .cnMirror {
             candidateURLs = [
                 "\(Self.mirrorPrefix)\(rawRepoCN)",
                 "https://gh-proxy.com/\(rawRepoCN)",
@@ -292,7 +334,10 @@ final class AppSourceManager: ObservableObject {
         for raw in urls {
             guard let u = URL(string: raw) else { continue }
             do {
-                let (data, resp) = try await session.data(from: u)
+                var req = URLRequest(url: u, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 8)
+                req.setValue("Camlo/\(CamloDevice.appVersion)", forHTTPHeaderField: "User-Agent")
+                Self.applyGitHubAuthIfNeeded(to: &req)
+                let (data, resp) = try await session.data(for: req)
                 guard let http = resp as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
                     throw NSError(
                         domain: "CamloRepo",

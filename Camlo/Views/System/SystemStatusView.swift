@@ -426,11 +426,27 @@ struct SystemStatusView: View {
             }
 
             DisclosureGroup(Bi("高级：自定义 GitHub 仓库路径", "Advanced: Custom GitHub Repo"), isExpanded: $showCustomRepoField) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     TextField("Kianuni/Camlo", text: $appSource.repoSlug)
                         .font(.system(.caption, design: .monospaced))
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                    SecureField(Bi("私有库测试 Token（可选，公开库留空）", "Private Repo GitHub Token (Optional)"), text: $appSource.githubToken)
+                        .font(.system(.caption, design: .monospaced))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    if !appSource.githubToken.isEmpty {
+                        HStack {
+                            Text(Bi("已启用 Camlo 主仓库鉴权直连", "Direct auth enabled for Camlo repo"))
+                                .font(.caption2)
+                                .foregroundStyle(.green)
+                            Spacer()
+                            Button(Bi("清除 Token", "Clear Token")) {
+                                appSource.githubToken = ""
+                            }
+                            .font(.caption2)
+                        }
+                    }
                     if appSource.repoSlug != AppSourceManager.defaultRepoSlug {
                         Button(Bi("恢复默认官方仓库 (Kianuni/Camlo)", "Reset to Official Repo")) {
                             appSource.repoSlug = AppSourceManager.defaultRepoSlug

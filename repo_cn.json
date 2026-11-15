@@ -15,20 +15,20 @@
       "bundleIdentifier": "com.kianuni.Camlo",
       "developerName": "Kianuni",
       "subtitle": "零门槛「滑动解锁变身 + 动态锁屏」壁纸工坊",
-      "localizedDescription": "Camlo（开幕）是一款零门槛 iOS / iPadOS 原生 Core Animation (.tendies / CAML) 动态与滑动变身锁屏制作工坊。内置 120Hz 原生 `.ca` 实时交互试穿、陀螺仪 3D 裸眼视差 (ParameterizedCA)、昼夜双生壁纸 (appearanceAware)、智能时钟配色字体与主屏柔焦配套、6 套内置获奖风光双态预设与 15 套零体积官方云端壁纸、8 款异形粒子与体积流光特效、AI 主体抠图遮挡时钟、视频/实况抽帧无缝循环与免电脑一键直写 iOS 26 / iOS 27 锁屏画廊。",
+      "localizedDescription": "Camlo（开幕）是一款零门槛 iOS / iPadOS 原生 Core Animation (.tendies / CAML) 动态与滑动变身锁屏制作工坊。内置 120Hz 原生 `.ca` 实时交互试穿、陀螺仪 3D 裸眼视差 (ParameterizedCA)、昼夜双生壁纸 (appearanceAware)、智能时钟配色字体与主屏柔焦配套、6 套内置获奖风光双态预设与 20 套零体积大师级官方云端壁纸、8 款异形粒子与体积流光特效、AI 主体抠图遮挡时钟、视频/实况抽帧无缝循环与免电脑一键直写 iOS 26 / iOS 27 锁屏画廊。",
       "iconURL": "https://ghfast.top/https://raw.githubusercontent.com/Kianuni/Camlo/main/PreviewIcon.png",
       "tintColor": "#6B4EFF",
       "category": "utilities",
       "screenshots": [],
       "versions": [
         {
-          "version": "1.2.6",
-          "buildVersion": "19",
-          "date": "2026-11-15T03:52:40Z",
-          "localizedDescription": "## Camlo · 开幕 v1.2.6 (Build 19)\n\n> **亮屏即开幕，上滑即变身 / Wake to unveil. Swipe to transform.**  \n> 支持 **iOS / iPadOS 26.0 – 27.3 beta 1** 免电脑一键直写系统锁屏画廊（基于 `CSStore2` + 原生 C `worse_query` 跨容器访问桥接，100% 独立原生实现）。\n\n---\n\n### ✨ v1.2.6 修复「陀螺仪 3D 视差」锁屏只显示第一张图 & 金库旧包自动自愈\n\n1. **修复开启 3D 视差 (`ParameterizedCA`) 后真机锁屏不随解锁切换第二张图的问题**：\n   - 深度逆向验证 iOS 26 / iOS 27 系统 `WallpaperKit.framework`（`WKParameterizedCAPackageLoader` & `WKParameterizedCAWallpaperRepresentedView`）：`ParameterizedCA` 不运行 `<LKState>` 状态机，而是根据 `<wallpaperPropertyGroups>` 中的 `v_sleep` / `v_lock` / `v_home`（按 `CALayer.name` 与 `Background` / `Floating` 归属视图匹配）在熄屏、锁屏与 Face ID 解锁/上滑进入主屏时实时 KVC 插值驱动图层属性；\n   - `CAMLCompiler` 现已为所有 3D 陀螺仪壁纸（包括 6 种变身曲线、AI 主体破框遮挡层、8 款粒子/体积光及动态视频壁纸）完整生成 `<wallpaperPropertyGroups>`，自动将 `transform.scale.xy` 展开为 `transform.scale.x` + `transform.scale.y`，改用原生 `<CALayer>` 承载视差容器以保留 `plusL` 体积光与 `CAEmitterLayer` 混合效果，并消除交叉叠化中点的暗场渗色。\n   - *(Fixes 3D Gyroscope `ParameterizedCA` freeze on the first image: generates complete `WallpaperKit`-compliant `<wallpaperPropertyGroups>` with `v_sleep`/`v_lock`/`v_home` interpolation, `CALayer.name` + `Background`/`Floating` routing, `transform.scale.x/y` expansion, `<CALayer>` parallax containers, and black-bleed-free crossfades.)*\n2. **金库旧版 3D 壁纸原位自愈 & 社区 3D `.tendies` 实时预览增强**：\n   - 更新至 **v1.2.6** 后，**之前在金库保存过的 3D `.tendies` 无需重新制作**：重新点击「立即应用此壁纸到锁屏」或「导出 .tendies」时，`PosterBoardBridge` 与 `TendiesPackager` 会自动在原位补全 `<wallpaperPropertyGroups>` 并升级视差层；\n   - 应用内 `120Hz` 实时舞台（`LiveCAPreviewView`）与 `X-Ray` 透视同步支持直接解析并驱动仅含 `<wallpaperPropertyGroups>` 的社区 3D `.tendies`。\n   - *(Vault Self-Healing & Community 3D Support: heals previously saved `v1.2.0–v1.2.5` 3D packs automatically on re-apply/export, and supports `<wallpaperPropertyGroups>` in `LiveCAPreviewView` and Vault X-Ray.)*\n\n---\n\n### 📦 安装说明 & 校验信息\n\n- **产物文件**：`Camlo_v1.2.6_Bilingual.ipa`（9443339 bytes / 9.01 MB · 保持仅内置 6 套获奖风光极限瘦身）\n- **SHA-256**：`b82debfbfd28cbb15bf8bfc060a55a5409fa46246b4ef488ca4bd7bf787132b7`\n- **最低系统**：iOS / iPadOS 26.0+（实测支持至 iOS 27.0 – 27.3 beta 1）\n- **签名要求**：使用 **SideStore / AltStore / Feather / Sideloadly / Impactor / iLoader** 或支持 `App Group` 的个人开发者证书签名安装，以启用免电脑一键直写 `PosterBoard`（无 `App Group` 仍可完整创作并导出 `.tendies`）。",
-          "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.6/Camlo_v1.2.6_Bilingual.ipa",
-          "size": 9443339,
-          "sha256": "b82debfbfd28cbb15bf8bfc060a55a5409fa46246b4ef488ca4bd7bf787132b7",
+          "version": "1.2.7",
+          "buildVersion": "20",
+          "date": "2026-11-15T05:45:13Z",
+          "localizedDescription": "v1.2.7 Build 20 — 官方云端画廊重塑至 20 套博物馆级意境美学 + 私有仓库内测 GitHub Token 直连授权 | 20 Museum-Grade Official Cloud Packs & Private-Repo Token Testing:\n1. 官方云端壁纸库美学重塑与扩容（15 → 20 套）：全面退役早期粗糙风格主题，以长期耐看的意境美学标准重制 20 套精品——涵盖极致自然风光（罗弗敦极夜、乌尤尼盐镜、巴塔哥尼亚日照、贝加尔冰渊）、深空宇宙奇观（韦伯创生之柱、黑洞事件视界、卡西尼土星逆光环、阿波罗地出）、东方诗意审美（千里江山青绿、敦煌月牙星穹、苔庭听雨、水墨寒松）与大师光影油画/空间建筑（莫奈睡莲、透纳雾海、特瑞尔苍穹天窗、洞石圣殿光束），升级 `600×1300` 摄影级呼吸循环与高质感 WebP 预览并修正叠加黑边渗色。\n   (Rebuilt & Expanded Official Cloud Gallery to 20 Museum-Grade Packs: replaces all 15 earlier packs with 20 contemplative masterpieces spanning Nature, JWST/Cassini/Apollo Cosmos, Eastern Song Scroll & Dunhuang Scrolls, Impressionist/Romanticist Oils, and Turrell/Ando Light Architecture — upgraded to crisp `600×1300` cinemagraphs, seamless crossfades, and `360×780` WebP previews while keeping the IPA ~9 MB.)\n2. 私有仓库内测授权访问与说明完善：在「设备与设置 → 软件源订阅 → 高级」新增可选 `GitHub Token` 配置，内测阶段即使 `Kianuni/Camlo` 保持私有，填写后也可实时拉取官方目录、动画预览、下载 `.tendies` 与检查更新；仓库公开后无需配置即可享全网节点加速。\n   (Optional GitHub Token for Private-Repo Testing: adds an optional Token field in System & Settings -> App Source -> Advanced so testers can stream private `Kianuni/Camlo` cloud catalogs, animated previews, `.tendies`, and OTA updates immediately.)",
+          "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.7/Camlo_v1.2.7_Bilingual.ipa",
+          "size": 9452052,
+          "sha256": "6cdb2ae54637344e0c23eb56a2bcec75d55976c887c8d14f5b0362cac1bde184",
           "minOSVersion": "26.0"
         }
       ],
@@ -40,12 +40,12 @@
           "NSPhotoLibraryUsageDescription": "用于选择锁屏变身图片、视频或实况照片制作动态壁纸。"
         }
       },
-      "version": "1.2.6",
-      "buildVersion": "19",
-      "versionDate": "2026-11-15T03:52:40Z",
-      "versionDescription": "## Camlo · 开幕 v1.2.6 (Build 19)\n\n> **亮屏即开幕，上滑即变身 / Wake to unveil. Swipe to transform.**  \n> 支持 **iOS / iPadOS 26.0 – 27.3 beta 1** 免电脑一键直写系统锁屏画廊（基于 `CSStore2` + 原生 C `worse_query` 跨容器访问桥接，100% 独立原生实现）。\n\n---\n\n### ✨ v1.2.6 修复「陀螺仪 3D 视差」锁屏只显示第一张图 & 金库旧包自动自愈\n\n1. **修复开启 3D 视差 (`ParameterizedCA`) 后真机锁屏不随解锁切换第二张图的问题**：\n   - 深度逆向验证 iOS 26 / iOS 27 系统 `WallpaperKit.framework`（`WKParameterizedCAPackageLoader` & `WKParameterizedCAWallpaperRepresentedView`）：`ParameterizedCA` 不运行 `<LKState>` 状态机，而是根据 `<wallpaperPropertyGroups>` 中的 `v_sleep` / `v_lock` / `v_home`（按 `CALayer.name` 与 `Background` / `Floating` 归属视图匹配）在熄屏、锁屏与 Face ID 解锁/上滑进入主屏时实时 KVC 插值驱动图层属性；\n   - `CAMLCompiler` 现已为所有 3D 陀螺仪壁纸（包括 6 种变身曲线、AI 主体破框遮挡层、8 款粒子/体积光及动态视频壁纸）完整生成 `<wallpaperPropertyGroups>`，自动将 `transform.scale.xy` 展开为 `transform.scale.x` + `transform.scale.y`，改用原生 `<CALayer>` 承载视差容器以保留 `plusL` 体积光与 `CAEmitterLayer` 混合效果，并消除交叉叠化中点的暗场渗色。\n   - *(Fixes 3D Gyroscope `ParameterizedCA` freeze on the first image: generates complete `WallpaperKit`-compliant `<wallpaperPropertyGroups>` with `v_sleep`/`v_lock`/`v_home` interpolation, `CALayer.name` + `Background`/`Floating` routing, `transform.scale.x/y` expansion, `<CALayer>` parallax containers, and black-bleed-free crossfades.)*\n2. **金库旧版 3D 壁纸原位自愈 & 社区 3D `.tendies` 实时预览增强**：\n   - 更新至 **v1.2.6** 后，**之前在金库保存过的 3D `.tendies` 无需重新制作**：重新点击「立即应用此壁纸到锁屏」或「导出 .tendies」时，`PosterBoardBridge` 与 `TendiesPackager` 会自动在原位补全 `<wallpaperPropertyGroups>` 并升级视差层；\n   - 应用内 `120Hz` 实时舞台（`LiveCAPreviewView`）与 `X-Ray` 透视同步支持直接解析并驱动仅含 `<wallpaperPropertyGroups>` 的社区 3D `.tendies`。\n   - *(Vault Self-Healing & Community 3D Support: heals previously saved `v1.2.0–v1.2.5` 3D packs automatically on re-apply/export, and supports `<wallpaperPropertyGroups>` in `LiveCAPreviewView` and Vault X-Ray.)*\n\n---\n\n### 📦 安装说明 & 校验信息\n\n- **产物文件**：`Camlo_v1.2.6_Bilingual.ipa`（9443339 bytes / 9.01 MB · 保持仅内置 6 套获奖风光极限瘦身）\n- **SHA-256**：`b82debfbfd28cbb15bf8bfc060a55a5409fa46246b4ef488ca4bd7bf787132b7`\n- **最低系统**：iOS / iPadOS 26.0+（实测支持至 iOS 27.0 – 27.3 beta 1）\n- **签名要求**：使用 **SideStore / AltStore / Feather / Sideloadly / Impactor / iLoader** 或支持 `App Group` 的个人开发者证书签名安装，以启用免电脑一键直写 `PosterBoard`（无 `App Group` 仍可完整创作并导出 `.tendies`）。",
-      "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.6/Camlo_v1.2.6_Bilingual.ipa",
-      "size": 9443339
+      "version": "1.2.7",
+      "buildVersion": "20",
+      "versionDate": "2026-11-15T05:45:13Z",
+      "versionDescription": "v1.2.7 Build 20 — 官方云端画廊重塑至 20 套博物馆级意境美学 + 私有仓库内测 GitHub Token 直连授权 | 20 Museum-Grade Official Cloud Packs & Private-Repo Token Testing:\n1. 官方云端壁纸库美学重塑与扩容（15 → 20 套）：全面退役早期粗糙风格主题，以长期耐看的意境美学标准重制 20 套精品——涵盖极致自然风光（罗弗敦极夜、乌尤尼盐镜、巴塔哥尼亚日照、贝加尔冰渊）、深空宇宙奇观（韦伯创生之柱、黑洞事件视界、卡西尼土星逆光环、阿波罗地出）、东方诗意审美（千里江山青绿、敦煌月牙星穹、苔庭听雨、水墨寒松）与大师光影油画/空间建筑（莫奈睡莲、透纳雾海、特瑞尔苍穹天窗、洞石圣殿光束），升级 `600×1300` 摄影级呼吸循环与高质感 WebP 预览并修正叠加黑边渗色。\n   (Rebuilt & Expanded Official Cloud Gallery to 20 Museum-Grade Packs: replaces all 15 earlier packs with 20 contemplative masterpieces spanning Nature, JWST/Cassini/Apollo Cosmos, Eastern Song Scroll & Dunhuang Scrolls, Impressionist/Romanticist Oils, and Turrell/Ando Light Architecture — upgraded to crisp `600×1300` cinemagraphs, seamless crossfades, and `360×780` WebP previews while keeping the IPA ~9 MB.)\n2. 私有仓库内测授权访问与说明完善：在「设备与设置 → 软件源订阅 → 高级」新增可选 `GitHub Token` 配置，内测阶段即使 `Kianuni/Camlo` 保持私有，填写后也可实时拉取官方目录、动画预览、下载 `.tendies` 与检查更新；仓库公开后无需配置即可享全网节点加速。\n   (Optional GitHub Token for Private-Repo Testing: adds an optional Token field in System & Settings -> App Source -> Advanced so testers can stream private `Kianuni/Camlo` cloud catalogs, animated previews, `.tendies`, and OTA updates immediately.)",
+      "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.7/Camlo_v1.2.7_Bilingual.ipa",
+      "size": 9452052
     }
   ],
   "news": []

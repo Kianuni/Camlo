@@ -37,8 +37,8 @@ struct PackMeta: Decodable {
 
 // MARK: - CoreGraphics / ImageIO / WebP Helpers
 
-let previewWidth = 300
-let previewHeight = 650
+let previewWidth = 360
+let previewHeight = 780
 
 func resolveImg2WebPExecutable() throws -> URL {
     let candidates = [
@@ -197,9 +197,23 @@ func drawParticleSprites(
     height: CGFloat,
     opacityScale: CGFloat = 1.0
 ) {
-    guard let sprite, opacityScale > 0.02 else { return }
+    guard let sprite, opacityScale > 0.02, preset != "none" else { return }
     ctx.saveGState()
-    let count = (preset == "sakura" || preset == "embers" || preset == "starlight" || preset == "fireflies") ? 9 : 6
+    if preset == "sunbeamRays" {
+        ctx.setBlendMode(.screen)
+        for i in 0..<3 {
+            let phaseShift = sin((phase + CGFloat(i) * 0.28) * .pi * 2.0)
+            let x = width * (0.25 + CGFloat(i) * 0.24) + phaseShift * 14.0
+            let beamW = width * 0.42
+            let beamH = height * 0.86
+            let alpha = (0.16 + 0.12 * (0.5 + 0.5 * phaseShift)) * opacityScale
+            ctx.setAlpha(max(0, min(1, alpha)))
+            ctx.draw(sprite, in: CGRect(x: x - beamW * 0.5, y: height * 0.14, width: beamW, height: beamH))
+        }
+        ctx.restoreGState()
+        return
+    }
+    let count = (preset == "sakura" || preset == "embers" || preset == "starlight" || preset == "fireflies" || preset == "snowfall") ? 7 : 5
     for i in 0..<count {
         let seed = CGFloat(i)
         let normT = (phase + seed * 0.137).truncatingRemainder(dividingBy: 1.0)
@@ -213,23 +227,23 @@ func drawParticleSprites(
             x = width * (0.12 + CGFloat((i * 29) % 76) / 100.0) + sin(normT * .pi * 2 + seed) * 12
             y = height * normT
             size = 10 + CGFloat(i % 4) * 3.5
-            alpha = sin(normT * .pi) * 0.85 * opacityScale
-        case "sakura":
-            x = width * (0.08 + CGFloat((i * 31) % 84) / 100.0) + sin(normT * .pi * 2 + seed) * 16
+            alpha = sin(normT * .pi) * 0.80 * opacityScale
+        case "sakura", "snowfall":
+            x = width * (0.08 + CGFloat((i * 31) % 84) / 100.0) + sin(normT * .pi * 2 + seed) * 14
             y = height * (1.0 - normT)
-            size = 12 + CGFloat(i % 4) * 4.0
-            alpha = sin(normT * .pi) * 0.90 * opacityScale
+            size = (preset == "snowfall" ? 9 : 12) + CGFloat(i % 4) * 3.5
+            alpha = sin(normT * .pi) * 0.78 * opacityScale
         case "meteorShower":
             let diag = normT
             x = width * (0.95 - diag * 0.85) - seed * 10
             y = height * (0.92 - diag * 0.55) - CGFloat(i % 3) * 40
             size = 20 + CGFloat(i % 3) * 6.5
-            alpha = sin(diag * .pi) * 0.80 * opacityScale
+            alpha = sin(diag * .pi) * 0.75 * opacityScale
         default:
             x = width * (0.10 + CGFloat((i * 23) % 80) / 100.0) + cos(normT * .pi * 2 + seed) * 8
             y = height * (0.15 + CGFloat((i * 19) % 75) / 100.0) + sin(normT * .pi * 2 + seed) * 10
-            size = 11 + CGFloat(i % 3) * 4.0
-            alpha = (0.35 + 0.55 * abs(sin((normT + seed * 0.2) * .pi))) * opacityScale
+            size = 9 + CGFloat(i % 3) * 3.2
+            alpha = (0.28 + 0.44 * abs(sin((normT + seed * 0.2) * .pi))) * opacityScale
         }
 
         ctx.setAlpha(max(0, min(1, alpha)))
@@ -399,7 +413,7 @@ func generateMotionLoopPreview(
         }
     }
 
-    try writeAnimatedWebP(frames: encodedFrames, to: outURL, workDir: workDir, img2webp: img2webp, quality: 68)
+    try writeAnimatedWebP(frames: encodedFrames, to: outURL, workDir: workDir, img2webp: img2webp, quality: 74)
 }
 
 func generateMorphPairPreview(
@@ -471,26 +485,28 @@ func generateMorphPairPreview(
 
             switch pack.transitionPreset {
             case "burstZoom":
-                lockScale = 1.0 + 0.12 * t
-                unlockScale = 0.94 + 0.06 * t
-                flashOverlayAlpha = sin(t * .pi) * 0.20
+                lockScale = 1.0 + 0.10 * t
+                unlockScale = 0.95 + 0.05 * t
+                flashOverlayAlpha = sin(t * .pi) * 0.10
             case "curtainRise":
                 lockShiftY = 22 * t
-                unlockShiftY = -15 * (1.0 - t)
-                clockShiftY = 18 * t
+                unlockShiftY = -14 * (1.0 - t)
+                clockShiftY = 16 * t
             case "holoCard":
                 lockShiftX = -12 * t
                 unlockShiftX = 12 * (1.0 - t)
-                flashOverlayAlpha = sin(t * .pi) * 0.18
+                flashOverlayAlpha = sin(t * .pi) * 0.12
             case "aodGaze":
                 lockScale = 1.0 + 0.03 * t
-                unlockScale = 1.02 - 0.02 * t
-                flashOverlayAlpha = sin(t * .pi) * 0.22
+                unlockScale = 1.04 - 0.04 * t
+            case "crossfade":
+                lockScale = 1.0 + 0.03 * t
+                unlockScale = 1.04 - 0.04 * t
             default: // flashAwaken
                 let peak = sin(t * .pi)
-                lockScale = 1.0 + 0.04 * peak
-                unlockScale = 1.0 + 0.04 * (1.0 - t)
-                flashOverlayAlpha = peak * 0.28
+                lockScale = 1.0 + 0.03 * peak
+                unlockScale = 1.0 + 0.03 * (1.0 - t)
+                flashOverlayAlpha = peak * 0.18
             }
         } else if idx == 9 {
             // Frame 9 (680ms): Unlocked Hero Hold
@@ -541,7 +557,7 @@ func generateMorphPairPreview(
         }
     }
 
-    try writeAnimatedWebP(frames: encodedFrames, to: outURL, workDir: workDir, img2webp: img2webp, quality: 68)
+    try writeAnimatedWebP(frames: encodedFrames, to: outURL, workDir: workDir, img2webp: img2webp, quality: 74)
 }
 
 // MARK: - Main
