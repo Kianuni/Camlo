@@ -3,8 +3,8 @@
   "identifier": "com.kianuni.Camlo.esign",
   "news": {
     "title": "Camlo · 开幕 官方更新源",
-    "caption": "最新版本：v1.2.9 · 同步于 2026-11-15 18:22",
-    "date": "2026-11-15 18:22",
+    "caption": "最新版本：v1.2.9 · 同步于 2026-11-15 18:23",
+    "date": "2026-11-15 18:23",
     "tintColor": "6B4EFF",
     "isUnlock": 1,
     "key": "",
@@ -18,13 +18,13 @@
       "bundleIdentifier": "com.kianuni.Camlo",
       "developerName": "Kianuni",
       "version": "1.2.9",
-      "versionDate": "2026-11-15 18:22:39",
+      "versionDate": "2026-11-15 18:23:33",
       "downloadURL": "https://github.com/Kianuni/Camlo/releases/download/v1.2.9/Camlo_v1.2.9_Bilingual.ipa",
       "iconURL": "https://raw.githubusercontent.com/Kianuni/Camlo/main/PreviewIcon.png",
       "size": 9462433,
       "isNeedlock": 0,
       "appType": 1,
-      "localizedDescription": "1. 优化首页右上角「直写就绪 / 导出模式」状态指示器与 iOS 26 / iOS 27 原生液态玻璃（Liquid Glass）导航栏的视觉融合：移除多余的内层胶囊底色与双层描边，使状态指示灯与文字直接承载于单层原生液态玻璃外框中，深浅色模式更通透协调；\n2. 同步首页「云端壁纸广场」卡片精选徽章数量至 `375+`。\n(UI Polish: integrates the Studio Home top-right container status indicator directly into iOS 26/27's native Liquid Glass toolbar platter—removing the nested inner capsule and double hairline border—and updates the Cloud Gallery card badge to `375+`.)"
+      "localizedDescription": "### iOS 26 / iOS 27 Liquid Glass Toolbar Polish\n- Integrated the Studio Home top-right container status indicator (`Direct Ready` / `Export Mode`) directly into iOS 26/27's native Liquid Glass toolbar platter, removing the nested inner capsule fill and double hairline border for clean, balanced translucency in both Dark and Light modes.\n- Synced the Cloud Gallery Bento card badge to **375+** curated packs.\n\n### 首页右上角状态指示器液态玻璃视觉融合优化\n- 移除首页右上角「直写就绪 / 导出模式」按钮外多余的内层灰底胶囊与双层描边，将状态指示灯与文字直接融入 iOS 26 / iOS 27 导航栏原生的单层液态玻璃（Liquid Glass）外框，深浅色模式下边框、通透度与左右留白完全一致。\n- 同步首页「云端壁纸广场」卡片精选徽章为 **375+**。"
     }
   ]
 }
