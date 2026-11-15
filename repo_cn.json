@@ -1,0 +1,52 @@
+{
+  "name": "Camlo · 开幕 官方软件源（国内加速源）",
+  "subtitle": "亮屏即开幕，上滑即变身 — 官方版本自动更新源",
+  "description": "支持 Feather、SideStore、AltStore、TrollApps、LiveContainer 一键订阅与覆盖更新 Camlo（开幕）动态锁屏工坊。",
+  "identifier": "com.kianuni.Camlo.repo.cn",
+  "iconURL": "https://ghfast.top/https://raw.githubusercontent.com/Kianuni/Camlo/main/PreviewIcon.png",
+  "website": "https://github.com/Kianuni/Camlo",
+  "tintColor": "#6B4EFF",
+  "featuredApps": [
+    "com.kianuni.Camlo"
+  ],
+  "apps": [
+    {
+      "name": "Camlo · 开幕",
+      "bundleIdentifier": "com.kianuni.Camlo",
+      "developerName": "Kianuni",
+      "subtitle": "零门槛「滑动解锁变身 + 动态锁屏」壁纸工坊",
+      "localizedDescription": "Camlo（开幕）是一款零门槛 iOS / iPadOS 原生 Core Animation (.tendies / CAML) 动态与滑动变身锁屏制作工坊。内置 120Hz 原生 `.ca` 实时交互试穿、陀螺仪 3D 裸眼视差 (ParameterizedCA)、昼夜双生壁纸 (appearanceAware)、智能时钟配色字体与主屏柔焦配套、11 套高清双态破框预设、8 款异形粒子与体积流光特效、AI 主体抠图遮挡时钟、视频/实况抽帧无缝循环与免电脑一键直写 iOS 26 / iOS 27 锁屏画廊。",
+      "iconURL": "https://ghfast.top/https://raw.githubusercontent.com/Kianuni/Camlo/main/PreviewIcon.png",
+      "tintColor": "#6B4EFF",
+      "category": "utilities",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "1.2.3",
+          "buildVersion": "16",
+          "date": "2026-11-15T01:27:23Z",
+          "localizedDescription": "v1.2.3 Build 16 — 社区/外部壁纸写入可见性修复 & 云端多镜像原生下载重构 | Community .tendies Visibility & Cloud Multi-Mirror Downloader Fix:\n1. 修复外部导入 / 金库已有 `.tendies` 写入并注销后在锁屏画廊（「收藏」/「专为 iPhone 设计」）找不到的问题：移除 `purgeLegacyBrokenVideoDescriptors` 对合法 `keyPath=\"speed\"` 与离散帧动画的误删，统一将 `userInfo` 中的 `wallpaperRepresentingIdentifier` 写入整型 (`Int`)，清理碰撞的 `7400.DYNAMIC` `suggestionMetadata.plist` 并恢复非陀螺仪壁纸 `logicalScreenClass` 与最高版本号 `PRBPosterExtensionDataStore` 扩展目录定位；金库中之前下载的包在点击写入时自动原地自愈，无需重新下载。\n   (Fix External/Community & Vault `.tendies` Missing After Respring: removes over-eager CAML `keyPath=\"speed\"` self-deletion, enforces integer `wallpaperRepresentingIdentifier`, strips colliding `7400.DYNAMIC` `suggestionMetadata.plist`, preserves/heals `logicalScreenClass`, and picks the highest active DataStore version.)\n2. 修复国内无代理环境下云端壁纸库下载报 `TLS错误导致安全连接失败`：移除已失效的 `raw.jsdmirror.com`，接入 `ghfast.top` / `gh-proxy.com` / `ghproxy.net` / `cdn.jsdmirror.com` / `fastly.jsdelivr.net` 多线路容灾与大陆地区自动优选默认线路；改用原生 `URLSessionDownloadTask` 分块落盘 + `PK\\x03\\x04` ZIP 魔数校验并解耦导入重试环，避免错误码被尾随镜像 TLS 错误覆盖。\n   (Fix Cloud Download TLS Error on CN Networks: drops dead `raw.jsdmirror.com`, adds multi-mirror CDN/proxy fallback with smart CN default routing, replaces byte-by-byte streaming with `URLSessionDownloadTask` + ZIP magic verification, and decouples local import from mirror retries.)\n3. 优化 CAPlayground 云端目录毫秒级时间戳显示：自动将 `1766052000000` 等 Unix 毫秒时间格式化为 `yyyy-MM-dd` 标准日期。\n   (Format CAPlayground Unix millisecond timestamps into `yyyy-MM-dd` dates.)",
+          "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.3/Camlo_v1.2.3_Bilingual.ipa",
+          "size": 14006240,
+          "sha256": "2d4ff70d3f011ed79d8ed41a0c6b1102ea9cd446edaef0618d724b33f0c7bebb",
+          "minOSVersion": "26.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.security.application-groups"
+        ],
+        "privacy": {
+          "NSPhotoLibraryUsageDescription": "用于选择锁屏变身图片、视频或实况照片制作动态壁纸。"
+        }
+      },
+      "version": "1.2.3",
+      "buildVersion": "16",
+      "versionDate": "2026-11-15T01:27:23Z",
+      "versionDescription": "v1.2.3 Build 16 — 社区/外部壁纸写入可见性修复 & 云端多镜像原生下载重构 | Community .tendies Visibility & Cloud Multi-Mirror Downloader Fix:\n1. 修复外部导入 / 金库已有 `.tendies` 写入并注销后在锁屏画廊（「收藏」/「专为 iPhone 设计」）找不到的问题：移除 `purgeLegacyBrokenVideoDescriptors` 对合法 `keyPath=\"speed\"` 与离散帧动画的误删，统一将 `userInfo` 中的 `wallpaperRepresentingIdentifier` 写入整型 (`Int`)，清理碰撞的 `7400.DYNAMIC` `suggestionMetadata.plist` 并恢复非陀螺仪壁纸 `logicalScreenClass` 与最高版本号 `PRBPosterExtensionDataStore` 扩展目录定位；金库中之前下载的包在点击写入时自动原地自愈，无需重新下载。\n   (Fix External/Community & Vault `.tendies` Missing After Respring: removes over-eager CAML `keyPath=\"speed\"` self-deletion, enforces integer `wallpaperRepresentingIdentifier`, strips colliding `7400.DYNAMIC` `suggestionMetadata.plist`, preserves/heals `logicalScreenClass`, and picks the highest active DataStore version.)\n2. 修复国内无代理环境下云端壁纸库下载报 `TLS错误导致安全连接失败`：移除已失效的 `raw.jsdmirror.com`，接入 `ghfast.top` / `gh-proxy.com` / `ghproxy.net` / `cdn.jsdmirror.com` / `fastly.jsdelivr.net` 多线路容灾与大陆地区自动优选默认线路；改用原生 `URLSessionDownloadTask` 分块落盘 + `PK\\x03\\x04` ZIP 魔数校验并解耦导入重试环，避免错误码被尾随镜像 TLS 错误覆盖。\n   (Fix Cloud Download TLS Error on CN Networks: drops dead `raw.jsdmirror.com`, adds multi-mirror CDN/proxy fallback with smart CN default routing, replaces byte-by-byte streaming with `URLSessionDownloadTask` + ZIP magic verification, and decouples local import from mirror retries.)\n3. 优化 CAPlayground 云端目录毫秒级时间戳显示：自动将 `1766052000000` 等 Unix 毫秒时间格式化为 `yyyy-MM-dd` 标准日期。\n   (Format CAPlayground Unix millisecond timestamps into `yyyy-MM-dd` dates.)",
+      "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.3/Camlo_v1.2.3_Bilingual.ipa",
+      "size": 14006240
+    }
+  ],
+  "news": []
+}

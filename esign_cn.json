@@ -1,0 +1,30 @@
+{
+  "name": "Camlo · 开幕 官方软件源（国内加速源）",
+  "identifier": "com.kianuni.Camlo.esign.cn",
+  "news": {
+    "title": "Camlo · 开幕 官方更新源",
+    "caption": "最新版本：v1.2.3 · 同步于 2026-11-15 09:27",
+    "date": "2026-11-15 09:27",
+    "tintColor": "6B4EFF",
+    "isUnlock": 1,
+    "key": "",
+    "imageURL": "",
+    "url": "https://github.com/Kianuni/Camlo",
+    "pay": ""
+  },
+  "apps": [
+    {
+      "name": "Camlo · 开幕",
+      "bundleIdentifier": "com.kianuni.Camlo",
+      "developerName": "Kianuni",
+      "version": "1.2.3",
+      "versionDate": "2026-11-15 09:27:23",
+      "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.2.3/Camlo_v1.2.3_Bilingual.ipa",
+      "iconURL": "https://ghfast.top/https://raw.githubusercontent.com/Kianuni/Camlo/main/PreviewIcon.png",
+      "size": 14006240,
+      "isNeedlock": 0,
+      "appType": 1,
+      "localizedDescription": "v1.2.3 Build 16 — 社区/外部壁纸写入可见性修复 & 云端多镜像原生下载重构 | Community .tendies Visibility & Cloud Multi-Mirror Downloader Fix:\n1. 修复外部导入 / 金库已有 `.tendies` 写入并注销后在锁屏画廊（「收藏」/「专为 iPhone 设计」）找不到的问题：移除 `purgeLegacyBrokenVideoDescriptors` 对合法 `keyPath=\"speed\"` 与离散帧动画的误删，统一将 `userInfo` 中的 `wallpaperRepresentingIdentifier` 写入整型 (`Int`)，清理碰撞的 `7400.DYNAMIC` `suggestionMetadata.plist` 并恢复非陀螺仪壁纸 `logicalScreenClass` 与最高版本号 `PRBPosterExtensionDataStore` 扩展目录定位；金库中之前下载的包在点击写入时自动原地自愈，无需重新下载。\n   (Fix External/Community & Vault `.tendies` Missing After Respring: removes over-eager CAML `keyPath=\"speed\"` self-deletion, enforces integer `wallpaperRepresentingIdentifier`, strips colliding `7400.DYNAMIC` `suggestionMetadata.plist`, preserves/heals `logicalScreenClass`, and picks the highest active DataStore version.)\n2. 修复国内无代理环境下云端壁纸库下载报 `TLS错误导致安全连接失败`：移除已失效的 `raw.jsdmirror.com`，接入 `ghfast.top` / `gh-proxy.com` / `ghproxy.net` / `cdn.jsdmirror.com` / `fastly.jsdelivr.net` 多线路容灾与大陆地区自动优选默认线路；改用原生 `URLSessionDownloadTask` 分块落盘 + `PK\\x03\\x04` ZIP 魔数校验并解耦导入重试环，避免错误码被尾随镜像 TLS 错误覆盖。\n   (Fix Cloud Download TLS Error on CN Networks: drops dead `raw.jsdmirror.com`, adds multi-mirror CDN/proxy fallback with smart CN default routing, replaces byte-by-byte streaming with `URLSessionDownloadTask` + ZIP magic verification, and decouples local import from mirror retries.)\n3. 优化 CAPlayground 云端目录毫秒级时间戳显示：自动将 `1766052000000` 等 Unix 毫秒时间格式化为 `yyyy-MM-dd` 标准日期。\n   (Format CAPlayground Unix millisecond timestamps into `yyyy-MM-dd` dates.)"
+    }
+  ]
+}

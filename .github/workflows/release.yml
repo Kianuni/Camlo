@@ -1,0 +1,69 @@
+name: Build & Publish IPA + Signing Repo
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: "本次版本更新说明 (留空则使用默认说明)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build Camlo Release IPA
+        run: |
+          chmod +x ipabuild.sh scripts/update_repo.py
+          ./ipabuild.sh
+
+      - name: Upload IPA Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Camlo-IPA
+          path: Camlo_v*.ipa
+
+      - name: Publish GitHub Release & Sync Repo Manifests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CUSTOM_NOTES: ${{ github.event.inputs.release_notes }}
+        run: |
+          IPA_FILE=$(ls Camlo_v*_Bilingual.ipa | head -n 1)
+          APP_VER=$(grep -m1 'MARKETING_VERSION =' Camlo.xcodeproj/project.pbxproj | sed -E 's/.*= *([^;]+);/\1/' | tr -d '[:space:]')
+          TAG_NAME="${GITHUB_REF_NAME}"
+          if [[ "$TAG_NAME" != v* ]]; then
+            TAG_NAME="v${APP_VER}"
+          fi
+
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" "$IPA_FILE" --clobber
+          else
+            if [[ -n "$CUSTOM_NOTES" ]]; then
+              gh release create "$TAG_NAME" "$IPA_FILE" --title "Camlo · 开幕 ${TAG_NAME}" --notes "$CUSTOM_NOTES"
+            else
+              gh release create "$TAG_NAME" "$IPA_FILE" --title "Camlo · 开幕 ${TAG_NAME}" --generate-notes
+            fi
+          fi
+
+          REL_BODY=$(gh release view "$TAG_NAME" --json body -q .body || true)
+          python3 scripts/update_repo.py \
+            --ipa "$IPA_FILE" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "$TAG_NAME" \
+            --notes "$REL_BODY"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps.json repo.json esign.json repo_cn.json esign_cn.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(repo): sync signing source manifests for ${TAG_NAME} [skip ci]"
+            git push origin HEAD:main
+          fi
