@@ -32,6 +32,11 @@ ALT_TINT_COLOR = "#6B4EFF"
 ESIGN_TINT_COLOR = "6B4EFF"
 
 DEFAULT_CHANGELOG_BY_VER: dict[str, str] = {
+    "1.2.9": (
+        "1. 优化首页右上角「直写就绪 / 导出模式」状态指示器与 iOS 26 / iOS 27 原生液态玻璃（Liquid Glass）导航栏的视觉融合：移除多余的内层胶囊底色与双层描边，使状态指示灯与文字直接承载于单层原生液态玻璃外框中，深浅色模式更通透协调；\n"
+        "2. 同步首页「云端壁纸广场」卡片精选徽章数量至 `375+`。\n"
+        "(UI Polish: integrates the Studio Home top-right container status indicator directly into iOS 26/27's native Liquid Glass toolbar platter—removing the nested inner capsule and double hairline border—and updates the Cloud Gallery card badge to `375+`.)"
+    ),
     "1.2.8": (
         "1. 官方云端壁纸广场扩容至 50 套馆藏殿堂级杰作：新增 30 套大师纯艺术滑动变身壁纸（锚定伦勃朗、维米尔、卡拉瓦乔、拉图尔、萨金特、委拉斯开兹、达芬奇晕涂、莫奈、梵高、索罗利亚、柯罗、毕沙罗、克里姆特、弗里德里希、哈默修伊、怀斯蛋彩、艾瓦佐夫斯基、惠斯勒、霍默、雷东粉画，以及马远、郭熙、宋徽宗、夏圭、米芾、马麟、八大山人、川濑巴水与北斋馆藏意境），真实粗亚麻布厚涂、透明罩染、古绢裂纹与宣纸枯笔质感，全量零体积托管于 wallpapers/；\n"
         "2. 全系 50 套官方壁纸均配备动画 WebP 实时预览、SHA-256 完整性校验、120Hz 原生 .ca 交互试穿与一键直写锁屏，保持 ~9 MB 超轻量安装包。"

@@ -6,7 +6,7 @@
   <p><strong>Wake to unveil. Swipe to transform.</strong> — Zero-threshold Slide-to-Unlock Morph &amp; Dynamic Lock Screen (<code>.tendies</code> / CAML) Studio for iOS &amp; iPadOS</p>
   <p>Craft native Core Animation wallpapers on-device and apply directly to <code>PosterBoard</code> in 1 tap on iOS 26.x &amp; iOS 27.0 – 27.3 beta 1 — zero PC required.</p>
   <p><a href="./README.md">简体中文文档</a> · <strong>English</strong> · <a href="https://github.com/Kianuni/Erosion-CN">Erosion-CN Companion Toolkit</a></p>
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.8-6A4DF5?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.9-6A4DF5?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
   <a href="https://altdirect.app/?url=https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json"><img alt="Official AltSource" src="https://img.shields.io/badge/Official%20Source-SideStore%20%2F%20AltStore-0EA5E9?style=flat-square"></a>
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square"></a>
@@ -74,7 +74,7 @@ https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json
 
 ### Option B: Manual IPA Sideloading
 
-1. Download the latest `Camlo_v1.2.8_Bilingual.ipa` from [Releases](https://github.com/Kianuni/Camlo/releases/latest).
+1. Download the latest `Camlo_v1.2.9_Bilingual.ipa` from [Releases](https://github.com/Kianuni/Camlo/releases/latest).
 2. Sideload with any signing tool above; inside the app, **System & Settings → App Source & Updates** also supports switching to the Mainland China accelerated mirror or checking for updates.
 
 ### Quick 3-Step Usage
@@ -92,7 +92,7 @@ chmod +x ./ipabuild.sh
 ./ipabuild.sh
 ```
 
-Produces `Camlo_v1.2.8_Bilingual.ipa` and refreshes `apps.json`, `repo.json`, `esign.json`, `repo_cn.json`, and `esign_cn.json`.
+Produces `Camlo_v1.2.9_Bilingual.ipa` and refreshes `apps.json`, `repo.json`, `esign.json`, `repo_cn.json`, and `esign_cn.json`.
 
 ---
 

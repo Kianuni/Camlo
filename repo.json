@@ -22,13 +22,13 @@
       "screenshots": [],
       "versions": [
         {
-          "version": "1.2.8",
-          "buildVersion": "21",
-          "date": "2026-11-15T08:07:45Z",
-          "localizedDescription": "### Museum-Pantheon Cloud Collection (50 Official Packs)\n- Added **30 museum-pantheon fine-art cloud wallpapers** spanning Old Masters & Chiaroscuro (Rembrandt, Vermeer, Caravaggio, Velazquez, De La Tour, Leonardo, Sargent), Impressionism & Expressive Oil (Monet, Sorolla, Pissarro, Van Gogh, Klimt, Corot, Redon), Romantic & Quietist Luminism (Turner, Friedrich, Whistler, Aivazovsky, Homer, Hammershoi, Wyeth), Song Dynasty Silk/Xuan Scrolls (Guo Xi, Ma Yuan, Xia Gui, Mi Fu, Huizong, Ma Lin, Bada Shanren), and Ukiyo-e Woodblock Prints (Hokusai, Kawase Hasui).\n- Official cloud catalog in `wallpapers/` expanded from **20 → 50 packs** with animated WebP previews and SHA-256 verification.\n- Bundled presets kept strictly slim (6 landscape packs only), keeping `Camlo_v1.2.8_Bilingual.ipa` at **9.03 MB**.\n\n### 馆藏殿堂级官方云端壁纸扩展至 50 套\n- 新增 **30 套博物馆大师原作级云端壁纸**，涵盖古典明暗 oil & chiaroscuro、外光印象派与表现主义、浪漫主义与寂静主义海空微光、宋代院体绢本山水花鸟（郭熙、马远、夏圭、米芾、徽宗、马麟、八大山人）以及浮世绘木版画（北斋、川濑巴水）。\n- 官方 `wallpapers/` 云端目录扩充至 **50 套**，每套均配套动态 WebP 预览与 SHA-256 校验。\n- 安装包严格精简仅内置 6 套获奖风光壁纸，IPA 体积控制为 **9.03 MB**。",
-          "downloadURL": "https://github.com/Kianuni/Camlo/releases/download/v1.2.8/Camlo_v1.2.8_Bilingual.ipa",
-          "size": 9463432,
-          "sha256": "657a4293bbec43fa8225fb66055e131db10b9c8578cb1492b5a835c0d61d3294",
+          "version": "1.2.9",
+          "buildVersion": "22",
+          "date": "2026-11-15T10:22:39Z",
+          "localizedDescription": "1. 优化首页右上角「直写就绪 / 导出模式」状态指示器与 iOS 26 / iOS 27 原生液态玻璃（Liquid Glass）导航栏的视觉融合：移除多余的内层胶囊底色与双层描边，使状态指示灯与文字直接承载于单层原生液态玻璃外框中，深浅色模式更通透协调；\n2. 同步首页「云端壁纸广场」卡片精选徽章数量至 `375+`。\n(UI Polish: integrates the Studio Home top-right container status indicator directly into iOS 26/27's native Liquid Glass toolbar platter—removing the nested inner capsule and double hairline border—and updates the Cloud Gallery card badge to `375+`.)",
+          "downloadURL": "https://github.com/Kianuni/Camlo/releases/download/v1.2.9/Camlo_v1.2.9_Bilingual.ipa",
+          "size": 9462433,
+          "sha256": "50323f357de704d86419328d5dfecbf9007aca6f9002a5603bc68d8dfda80775",
           "minOSVersion": "26.0"
         }
       ],
@@ -40,12 +40,12 @@
           "NSPhotoLibraryUsageDescription": "用于选择锁屏变身图片、视频或实况照片制作动态壁纸。"
         }
       },
-      "version": "1.2.8",
-      "buildVersion": "21",
-      "versionDate": "2026-11-15T08:07:45Z",
-      "versionDescription": "### Museum-Pantheon Cloud Collection (50 Official Packs)\n- Added **30 museum-pantheon fine-art cloud wallpapers** spanning Old Masters & Chiaroscuro (Rembrandt, Vermeer, Caravaggio, Velazquez, De La Tour, Leonardo, Sargent), Impressionism & Expressive Oil (Monet, Sorolla, Pissarro, Van Gogh, Klimt, Corot, Redon), Romantic & Quietist Luminism (Turner, Friedrich, Whistler, Aivazovsky, Homer, Hammershoi, Wyeth), Song Dynasty Silk/Xuan Scrolls (Guo Xi, Ma Yuan, Xia Gui, Mi Fu, Huizong, Ma Lin, Bada Shanren), and Ukiyo-e Woodblock Prints (Hokusai, Kawase Hasui).\n- Official cloud catalog in `wallpapers/` expanded from **20 → 50 packs** with animated WebP previews and SHA-256 verification.\n- Bundled presets kept strictly slim (6 landscape packs only), keeping `Camlo_v1.2.8_Bilingual.ipa` at **9.03 MB**.\n\n### 馆藏殿堂级官方云端壁纸扩展至 50 套\n- 新增 **30 套博物馆大师原作级云端壁纸**，涵盖古典明暗 oil & chiaroscuro、外光印象派与表现主义、浪漫主义与寂静主义海空微光、宋代院体绢本山水花鸟（郭熙、马远、夏圭、米芾、徽宗、马麟、八大山人）以及浮世绘木版画（北斋、川濑巴水）。\n- 官方 `wallpapers/` 云端目录扩充至 **50 套**，每套均配套动态 WebP 预览与 SHA-256 校验。\n- 安装包严格精简仅内置 6 套获奖风光壁纸，IPA 体积控制为 **9.03 MB**。",
-      "downloadURL": "https://github.com/Kianuni/Camlo/releases/download/v1.2.8/Camlo_v1.2.8_Bilingual.ipa",
-      "size": 9463432
+      "version": "1.2.9",
+      "buildVersion": "22",
+      "versionDate": "2026-11-15T10:22:39Z",
+      "versionDescription": "1. 优化首页右上角「直写就绪 / 导出模式」状态指示器与 iOS 26 / iOS 27 原生液态玻璃（Liquid Glass）导航栏的视觉融合：移除多余的内层胶囊底色与双层描边，使状态指示灯与文字直接承载于单层原生液态玻璃外框中，深浅色模式更通透协调；\n2. 同步首页「云端壁纸广场」卡片精选徽章数量至 `375+`。\n(UI Polish: integrates the Studio Home top-right container status indicator directly into iOS 26/27's native Liquid Glass toolbar platter—removing the nested inner capsule and double hairline border—and updates the Cloud Gallery card badge to `375+`.)",
+      "downloadURL": "https://github.com/Kianuni/Camlo/releases/download/v1.2.9/Camlo_v1.2.9_Bilingual.ipa",
+      "size": 9462433
     }
   ],
   "news": []

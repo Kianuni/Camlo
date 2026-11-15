@@ -158,35 +158,31 @@ struct StudioHomeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        CamloHaptics.selection()
                         selectedTab = 2
                     } label: {
-                        let statusColor: Color = bridge.hasContainerAccess ? .green : (bridge.isScanning ? .orange : .secondary)
+                        let statusColor: Color = bridge.hasContainerAccess
+                            ? Color(red: 0.19, green: 0.82, blue: 0.35)
+                            : (bridge.isScanning ? .orange : .secondary)
                         HStack(spacing: 6) {
                             ZStack {
                                 if bridge.hasContainerAccess || bridge.isScanning {
                                     Circle()
-                                        .fill(statusColor.opacity(0.24))
+                                        .fill(statusColor.opacity(0.26))
                                         .frame(width: 12, height: 12)
                                 }
                                 Circle()
                                     .fill(statusColor)
-                                    .frame(width: 7, height: 7)
+                                    .frame(width: 7.5, height: 7.5)
                             }
                             Text(bridge.hasContainerAccess
                                  ? Bi("直写就绪", "Direct Ready")
                                  : (bridge.isScanning ? Bi("连接中", "Scanning") : Bi("导出模式", "Export Mode")))
-                                .font(.caption.weight(.semibold))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundStyle(.primary)
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color(.secondarySystemGroupedBackground), in: Capsule())
-                        .overlay {
-                            Capsule()
-                                .strokeBorder(hairlineBorderColor, lineWidth: 0.8)
-                        }
+                        .padding(.horizontal, 4)
                     }
-                    .buttonStyle(CamloTapButtonStyle())
                 }
             }
             .task {
@@ -853,7 +849,7 @@ struct StudioHomeView: View {
             VStack {
                 HStack {
                     Spacer()
-                    stageCornerPill(Bi("330+ 精选", "330+ Curated"))
+                    stageCornerPill(Bi("375+ 精选", "375+ Curated"))
                 }
                 Spacer()
             }

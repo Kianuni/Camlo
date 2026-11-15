@@ -6,7 +6,7 @@
   <p><strong>亮屏即开幕，上滑即变身</strong> —— 零门槛「滑动解锁变身 + 动态锁屏」原生 Core Animation (<code>.tendies</code>) 壁纸制作工坊</p>
   <p>支持 iOS / iPadOS 26.x 与 iOS / iPadOS 27.0 – 27.3 beta 1 免电脑一键直写系统锁屏画廊，100% 兼容社区 <code>.tendies</code> 生态互传。</p>
   <p><strong>简体中文</strong> · <a href="./README_EN.md">English Documentation</a> · <a href="https://github.com/Kianuni/Erosion-CN">Erosion-CN 关联工具箱</a></p>
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.8-6A4DF5?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.9-6A4DF5?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
   <a href="https://altdirect.app/?url=https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json"><img alt="Official AltSource" src="https://img.shields.io/badge/%E5%AE%98%E6%96%B9%E6%BA%90-SideStore%20%2F%20AltStore-0EA5E9?style=flat-square"></a>
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square"></a>
@@ -88,7 +88,7 @@ https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json
 
 ### 方式二：手动下载 IPA 签名安装
 
-1. 前往 [Releases 页面](https://github.com/Kianuni/Camlo/releases/latest) 下载最新的 `Camlo_v1.2.8_Bilingual.ipa`。
+1. 前往 [Releases 页面](https://github.com/Kianuni/Camlo/releases/latest) 下载最新的 `Camlo_v1.2.9_Bilingual.ipa`。
 2. 使用上述签名工具安装至设备；安装后也可在 App 内 **「设备与设置 → 软件源订阅与在线更新」** 切换国内加速镜像或一键检查更新。
 
 ---
@@ -102,7 +102,7 @@ chmod +x ./ipabuild.sh
 ./ipabuild.sh
 ```
 
-编译完成后将在项目根目录生成 `Camlo_v1.2.8_Bilingual.ipa`，并自动同步刷新软件源清单（`apps.json` / `repo.json` / `esign.json` / `repo_cn.json` / `esign_cn.json`）。
+编译完成后将在项目根目录生成 `Camlo_v1.2.9_Bilingual.ipa`，并自动同步刷新软件源清单（`apps.json` / `repo.json` / `esign.json` / `repo_cn.json` / `esign_cn.json`）。
 
 ---
 
