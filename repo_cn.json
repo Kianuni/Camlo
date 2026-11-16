@@ -24,8 +24,8 @@
         {
           "version": "1.3.0",
           "buildVersion": "23",
-          "date": "2026-11-16T02:16:04Z",
-          "localizedDescription": "Camlo · 开幕 v1.3.0 (Build 23)",
+          "date": "2026-11-16T02:20:27Z",
+          "localizedDescription": "## What's New in Camlo v1.3.0\n\n### 📱 Native iPhone Duo Dual-Screen Canvas (Inner + Outer)\n- Compiles unified WallpaperKit `<wallpapers>` `ParameterizedCA` packages embedding both the **Outer Cover** (`466×678` pt) and **Inner Unfolded Landscape** (`951×669` pt) canvases with `requiresLandscapeScaling = true`, scaled gyro parallax, and synchronized `Sleep / Locked / Unlock` transitions.\n- Auto-detects **iPhone Duo (`iPhone19,4`)** and switches Slide-to-Morph Studio & Video Studio to dual-screen mode by default (with manual toggle available on every iPhone).\n- Interactive **Outer / Inner live preview switcher**, landscape crop guides, dual Vision AI foreground clock-depth cutouts, and 120Hz `.ca` preview support in Vault X-Ray.\n\n### 🎨 10 Exclusive iPhone Duo Official Cloud Packs (60 Official · 385+ Total)\n- Added a dedicated **iPhone Duo** category in Cloud Gallery with **10 bespoke museum-grade Inner+Outer packs** (8 Dual-Screen Depth Morph + 2 Dual-Screen Living Cinemagraphs) hosted outside the IPA for zero app bloat (~9.1 MB IPA).",
           "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.3.0/Camlo_v1.3.0_Bilingual.ipa",
           "size": 9528701,
           "sha256": "ec9e5855ecfdc9e846e615ce2ae33b5a10aae22af9a08cba6e40bed8d022cfbc",
@@ -42,8 +42,8 @@
       },
       "version": "1.3.0",
       "buildVersion": "23",
-      "versionDate": "2026-11-16T02:16:04Z",
-      "versionDescription": "Camlo · 开幕 v1.3.0 (Build 23)",
+      "versionDate": "2026-11-16T02:20:27Z",
+      "versionDescription": "## What's New in Camlo v1.3.0\n\n### 📱 Native iPhone Duo Dual-Screen Canvas (Inner + Outer)\n- Compiles unified WallpaperKit `<wallpapers>` `ParameterizedCA` packages embedding both the **Outer Cover** (`466×678` pt) and **Inner Unfolded Landscape** (`951×669` pt) canvases with `requiresLandscapeScaling = true`, scaled gyro parallax, and synchronized `Sleep / Locked / Unlock` transitions.\n- Auto-detects **iPhone Duo (`iPhone19,4`)** and switches Slide-to-Morph Studio & Video Studio to dual-screen mode by default (with manual toggle available on every iPhone).\n- Interactive **Outer / Inner live preview switcher**, landscape crop guides, dual Vision AI foreground clock-depth cutouts, and 120Hz `.ca` preview support in Vault X-Ray.\n\n### 🎨 10 Exclusive iPhone Duo Official Cloud Packs (60 Official · 385+ Total)\n- Added a dedicated **iPhone Duo** category in Cloud Gallery with **10 bespoke museum-grade Inner+Outer packs** (8 Dual-Screen Depth Morph + 2 Dual-Screen Living Cinemagraphs) hosted outside the IPA for zero app bloat (~9.1 MB IPA).",
       "downloadURL": "https://ghfast.top/https://github.com/Kianuni/Camlo/releases/download/v1.3.0/Camlo_v1.3.0_Bilingual.ipa",
       "size": 9528701
     }
