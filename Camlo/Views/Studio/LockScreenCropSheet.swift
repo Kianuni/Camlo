@@ -14,6 +14,7 @@ struct LockScreenCropSheet: View {
     let title: String
     let image: UIImage
     let initialFraming: CropFraming
+    var canvasSize: CGSize = CGSize(width: 390, height: 844)
     var pairedSlotSyncLabel: String? = nil
     let onApply: (CropFraming, Bool) -> Void
 
@@ -28,19 +29,30 @@ struct LockScreenCropSheet: View {
     @State private var showLockGuides: Bool = true
     @State private var syncToPaired: Bool = false
 
+    private var canvasAspect: CGFloat {
+        canvasSize.width / max(canvasSize.height, 1)
+    }
+
+    private var isLandscapeCanvas: Bool {
+        canvasAspect > 1.05
+    }
+
     init(
         title: String,
         image: UIImage,
         initialFraming: CropFraming,
+        canvasSize: CGSize = CGSize(width: 390, height: 844),
         pairedSlotSyncLabel: String? = nil,
         onApply: @escaping (CropFraming, Bool) -> Void
     ) {
         self.title = title
         self.image = image
         self.initialFraming = initialFraming
+        self.canvasSize = canvasSize
         self.pairedSlotSyncLabel = pairedSlotSyncLabel
         self.onApply = onApply
-        _committed = State(initialValue: initialFraming.clamped(for: image.size))
+        let aspect = canvasSize.width / max(canvasSize.height, 1)
+        _committed = State(initialValue: initialFraming.clamped(for: image.size, canvasAspect: aspect))
     }
 
     private func liveFraming(frameW: CGFloat, frameH: CGFloat) -> CropFraming {
@@ -53,7 +65,7 @@ struct LockScreenCropSheet: View {
             offsetY: committed.offsetY * scaleRatio + (dragDelta.height / max(frameH, 1)),
             allowEdgeExtend: committed.allowEdgeExtend
         )
-        return raw.clamped(for: image.size)
+        return raw.clamped(for: image.size, canvasAspect: canvasAspect)
     }
 
     var body: some View {
@@ -65,8 +77,12 @@ struct LockScreenCropSheet: View {
                 topBar
 
                 GeometryReader { geo in
-                    let frameH = max(220, min(geo.size.height - 24, (geo.size.width - 48) * (844.0 / 390.0)))
-                    let frameW = frameH * (390.0 / 844.0)
+                    let maxW = max(180, geo.size.width - 36)
+                    let maxH = max(180, geo.size.height - 24)
+                    let candidateW = maxH * canvasAspect
+                    let frameW = candidateW <= maxW ? candidateW : maxW
+                    let frameH = frameW / max(canvasAspect, 0.2)
+                    let guideCorner = min(frameW, frameH) * (isLandscapeCanvas ? 0.075 : 0.145)
                     let live = liveFraming(frameW: frameW, frameH: frameH)
                     let baseScale = max(frameW / max(image.size.width, 1), frameH / max(image.size.height, 1))
                     let drawW = max(image.size.width, 1) * baseScale * live.zoom
@@ -81,7 +97,7 @@ struct LockScreenCropSheet: View {
                             .opacity(0.28)
                             .allowsHitTesting(false)
 
-                        // Clipped 9:16 Lock Screen Viewport
+                        // Clipped Lock Screen Viewport
                         ZStack {
                             if live.allowEdgeExtend {
                                 Image(uiImage: image)
@@ -109,11 +125,11 @@ struct LockScreenCropSheet: View {
                             }
                         }
                         .frame(width: frameW, height: frameH)
-                        .clipShape(RoundedRectangle(cornerRadius: frameW * 0.145, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: guideCorner, style: .continuous))
                         .allowsHitTesting(false)
 
                         // Sharp viewport frame border
-                        RoundedRectangle(cornerRadius: frameW * 0.145, style: .continuous)
+                        RoundedRectangle(cornerRadius: guideCorner, style: .continuous)
                             .strokeBorder(Color.white.opacity(0.85), lineWidth: 2)
                             .frame(width: frameW, height: frameH)
                             .allowsHitTesting(false)
@@ -170,7 +186,7 @@ struct LockScreenCropSheet: View {
                                     offsetX: 0,
                                     offsetY: 0,
                                     allowEdgeExtend: committed.allowEdgeExtend
-                                ).clamped(for: image.size)
+                                ).clamped(for: image.size, canvasAspect: canvasAspect)
                             }
                             dragDelta = .zero
                             pinchScale = 1.0
@@ -240,52 +256,53 @@ struct LockScreenCropSheet: View {
     }
 
     private func lockScreenGuides(frameW: CGFloat, frameH: CGFloat) -> some View {
-        VStack(spacing: 0) {
+        let guideRef = min(frameW, frameH)
+        return VStack(spacing: 0) {
             // Dynamic Island
             Capsule(style: .continuous)
                 .fill(Color.black)
-                .frame(width: frameW * 0.30, height: frameW * 0.085)
+                .frame(width: guideRef * (isLandscapeCanvas ? 0.22 : 0.30), height: guideRef * (isLandscapeCanvas ? 0.065 : 0.085))
                 .overlay(
                     Capsule(style: .continuous)
                         .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.6)
                 )
-                .padding(.top, frameH * 0.022)
+                .padding(.top, frameH * (isLandscapeCanvas ? 0.032 : 0.022))
 
             // Date & 09:41 Clock Reference
             VStack(spacing: 2) {
                 Text(CamloDevice.formattedLockScreenDate())
-                    .font(.system(size: frameW * 0.052, weight: .semibold, design: .rounded))
+                    .font(.system(size: guideRef * (isLandscapeCanvas ? 0.042 : 0.052), weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.92))
                     .shadow(color: .black.opacity(0.35), radius: 4, x: 0, y: 1)
 
                 Text("09:41")
-                    .font(.system(size: frameW * 0.255, weight: .bold, design: .rounded))
+                    .font(.system(size: guideRef * (isLandscapeCanvas ? 0.195 : 0.255), weight: .bold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.92))
                     .shadow(color: .black.opacity(0.35), radius: 8, x: 0, y: 3)
             }
-            .padding(.top, frameH * 0.055)
+            .padding(.top, frameH * (isLandscapeCanvas ? 0.045 : 0.055))
 
             Spacer()
 
             // Bottom Flashlight / Camera Reference Zone
             VStack(spacing: 8) {
                 HStack {
-                    guideCircleIcon("flashlight.off.fill", frameW: frameW)
+                    guideCircleIcon("flashlight.off.fill", frameW: guideRef)
                     Spacer()
                     Text(Bi("锁屏按钮参考区", "Lock Controls Area"))
-                        .font(.system(size: max(9, frameW * 0.038), weight: .medium))
+                        .font(.system(size: max(9, guideRef * 0.038), weight: .medium))
                         .foregroundStyle(.white.opacity(0.86))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(Color.black.opacity(0.38), in: Capsule())
                     Spacer()
-                    guideCircleIcon("camera.fill", frameW: frameW)
+                    guideCircleIcon("camera.fill", frameW: guideRef)
                 }
-                .padding(.horizontal, frameW * 0.09)
+                .padding(.horizontal, frameW * (isLandscapeCanvas ? 0.06 : 0.09))
 
                 Capsule(style: .continuous)
                     .fill(Color.white.opacity(0.80))
-                    .frame(width: frameW * 0.36, height: max(3, frameW * 0.014))
+                    .frame(width: guideRef * 0.36, height: max(3, guideRef * 0.014))
                     .padding(.bottom, frameH * 0.012)
             }
         }
@@ -317,7 +334,7 @@ struct LockScreenCropSheet: View {
                     offsetX: committed.offsetX * ratio,
                     offsetY: committed.offsetY * ratio,
                     allowEdgeExtend: committed.allowEdgeExtend
-                ).clamped(for: image.size)
+                ).clamped(for: image.size, canvasAspect: canvasAspect)
             }
         )
 
@@ -343,7 +360,7 @@ struct LockScreenCropSheet: View {
                 Button {
                     withAnimation(.spring(duration: 0.25)) {
                         committed.allowEdgeExtend.toggle()
-                        committed = committed.clamped(for: image.size)
+                        committed = committed.clamped(for: image.size, canvasAspect: canvasAspect)
                     }
                     CamloHaptics.selection()
                 } label: {
@@ -407,7 +424,7 @@ struct LockScreenCropSheet: View {
             }
 
             Button {
-                let finalFraming = committed.clamped(for: image.size)
+                let finalFraming = committed.clamped(for: image.size, canvasAspect: canvasAspect)
                 CamloHaptics.impact(.medium)
                 onApply(finalFraming, syncToPaired)
                 dismiss()

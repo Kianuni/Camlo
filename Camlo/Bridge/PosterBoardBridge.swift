@@ -492,7 +492,8 @@ final class PosterBoardBridge: ObservableObject {
 
     nonisolated static func healParameterizedCAMLIfNeeded(at camlURL: URL) {
         guard var xml = try? String(contentsOf: camlURL, encoding: .utf8),
-              xml.contains("id=\"camlo_bg_parallax\"") else {
+              xml.contains("id=\"camlo_bg_parallax\""),
+              !xml.contains("<wallpapers") else {
             return
         }
 

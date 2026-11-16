@@ -26,6 +26,11 @@ enum ResolvedCARenderingMode: Sendable {
     case layered(backgroundURL: URL?, floatingURL: URL?, foregroundURL: URL?)
     case parameterized(caURL: URL)
     case still(imageURL: URL)
+
+    var caBundleURL: URL? {
+        if case .parameterized(let url) = self { return url }
+        return nil
+    }
 }
 
 struct ResolvedCAPackageVariant: Sendable {
@@ -37,6 +42,7 @@ struct ResolvedCAPackageDescriptor: Identifiable, Sendable {
     let title: String
     let wantsDeviceMotion: Bool
     let appearanceAware: Bool
+    let hasDuoInnerVariant: Bool
     let defaultVariant: ResolvedCAPackageVariant
     let darkVariant: ResolvedCAPackageVariant?
     let styleSummary: ParsedPosterStyleSummary
@@ -141,12 +147,19 @@ enum TendiesRuntimeResolver {
             if case .parameterized = defaultVariant.renderMode { return true }
             return false
         }()
+        let hasDuoInner: Bool = {
+            guard let caURL = defaultVariant.renderMode.caBundleURL else { return false }
+            let camlURL = caURL.appendingPathComponent("main.caml")
+            guard let xml = try? String(contentsOf: camlURL, encoding: .utf8) else { return false }
+            return xml.contains("<wallpapers") && xml.contains("BACKGROUND_INNER")
+        }()
 
         return ResolvedCAPackageDescriptor(
             id: wpDir.path + "#\(index)",
             title: title,
             wantsDeviceMotion: wantsMotion || isParam,
             appearanceAware: appearanceAware || darkVariant != nil,
+            hasDuoInnerVariant: hasDuoInner,
             defaultVariant: defaultVariant,
             darkVariant: darkVariant,
             styleSummary: styleSummary
@@ -227,6 +240,7 @@ enum TendiesRuntimeResolver {
                 title: title,
                 wantsDeviceMotion: false,
                 appearanceAware: false,
+                hasDuoInnerVariant: false,
                 defaultVariant: ResolvedCAPackageVariant(
                     renderMode: .layered(backgroundURL: bgCA, floatingURL: flCA, foregroundURL: fgCA)
                 ),
@@ -236,11 +250,16 @@ enum TendiesRuntimeResolver {
         }
 
         if let singleCA = caBundles.first {
+            let camlURL = singleCA.appendingPathComponent("main.caml")
+            let hasDuo = (try? String(contentsOf: camlURL, encoding: .utf8)).map {
+                $0.contains("<wallpapers") && $0.contains("BACKGROUND_INNER")
+            } ?? false
             return ResolvedCAPackageDescriptor(
                 id: dir.path + "#singleca_\(index)",
                 title: title,
                 wantsDeviceMotion: singleCA.lastPathComponent.lowercased().contains("wallpaper"),
                 appearanceAware: false,
+                hasDuoInnerVariant: hasDuo,
                 defaultVariant: ResolvedCAPackageVariant(renderMode: .parameterized(caURL: singleCA)),
                 darkVariant: nil,
                 styleSummary: styleSummary
@@ -253,6 +272,7 @@ enum TendiesRuntimeResolver {
                 title: title,
                 wantsDeviceMotion: false,
                 appearanceAware: false,
+                hasDuoInnerVariant: false,
                 defaultVariant: ResolvedCAPackageVariant(renderMode: .still(imageURL: imageCandidate)),
                 darkVariant: nil,
                 styleSummary: styleSummary
@@ -275,6 +295,7 @@ struct LiveCAPreviewView: View {
     @State private var stage: LockScreenStage = .locked
     @State private var nightMode: Bool = false
     @State private var showHomeScreen: Bool = false
+    @State private var duoSurface: DuoScreenSurface = .outerCover
     @State private var interactiveParallaxInLayered: Bool = true
     @State private var hasDetectedParallaxRules: Bool = false
     @State private var loadErrorMessage: String?
@@ -358,9 +379,24 @@ struct LiveCAPreviewView: View {
                 }
             }
 
+            if activeDescriptor?.hasDuoInnerVariant == true {
+                Picker("", selection: $duoSurface) {
+                    ForEach(DuoScreenSurface.allCases) { surface in
+                        Text(surface.localizedTitle).tag(surface)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
             // Titanium Bezel Phone Stage
+            let isDuo = (activeDescriptor?.hasDuoInnerVariant == true)
+            let activeSurface: DuoScreenSurface = isDuo ? duoSurface : .outerCover
+            let isLandscapeDuo = isDuo && (activeSurface == .innerUnfolded)
+            let stageW: CGFloat = isLandscapeDuo ? 328 : 224
+            let stageH: CGFloat = isLandscapeDuo ? 231 : (isDuo ? 326 : 484)
+            let stageCorner: CGFloat = isLandscapeDuo ? 16 : 34
             ZStack {
-                RoundedRectangle(cornerRadius: 34, style: .continuous)
+                RoundedRectangle(cornerRadius: stageCorner, style: .continuous)
                     .fill(Color.black)
 
                 if let descr = activeDescriptor {
@@ -368,6 +404,7 @@ struct LiveCAPreviewView: View {
                         descriptor: descr,
                         stage: stage,
                         nightMode: nightMode,
+                        duoSurface: activeSurface,
                         showClock: !showHomeScreen,
                         gyroEnabled: isGyroCapable || interactiveParallaxInLayered,
                         sessionToken: sessionToken,
@@ -378,7 +415,7 @@ struct LiveCAPreviewView: View {
                             loadErrorMessage = errMsg
                         }
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: stageCorner, style: .continuous))
                 } else {
                     VStack(spacing: 8) {
                         ProgressView()
@@ -392,7 +429,7 @@ struct LiveCAPreviewView: View {
                 // Home Screen Soft-Focus & Icon Pairing Overlay
                 if showHomeScreen, let descr = activeDescriptor {
                     homeScreenPairingOverlay(summary: descr.styleSummary)
-                        .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: stageCorner, style: .continuous))
                         .transition(.opacity.animation(.easeInOut(duration: 0.25)))
                 }
 
@@ -402,17 +439,30 @@ struct LiveCAPreviewView: View {
                         .allowsHitTesting(false)
                 }
 
+                if isLandscapeDuo {
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [.clear, .black.opacity(0.24), .white.opacity(0.08), .clear],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: 5)
+                        .allowsHitTesting(false)
+                }
+
                 // Dynamic Island & Titanium Outer Frame
                 VStack {
                     Capsule()
                         .fill(Color.black)
-                        .frame(width: 68, height: 19)
+                        .frame(width: isLandscapeDuo ? 50 : 68, height: isLandscapeDuo ? 14 : 19)
                         .padding(.top, 9)
                     Spacer()
                 }
                 .allowsHitTesting(false)
 
-                RoundedRectangle(cornerRadius: 34, style: .continuous)
+                RoundedRectangle(cornerRadius: stageCorner, style: .continuous)
                     .strokeBorder(
                         LinearGradient(
                             colors: [.white.opacity(0.32), .white.opacity(0.10), .white.opacity(0.24)],
@@ -437,7 +487,8 @@ struct LiveCAPreviewView: View {
                     .background(Color.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 12))
                 }
             }
-            .frame(width: 224, height: 484)
+            .frame(width: stageW, height: stageH)
+            .animation(.spring(response: 0.34, dampingFraction: 0.86), value: isLandscapeDuo)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 6)
@@ -599,6 +650,7 @@ struct LiveCAPreviewView: View {
             selectedIndex = 0
             stage = .locked
             nightMode = false
+            duoSurface = .outerCover
             showHomeScreen = false
             hasDetectedParallaxRules = false
             loadErrorMessage = nil
@@ -743,6 +795,7 @@ private struct CAPackageCanvasHostView: UIViewRepresentable {
     let descriptor: ResolvedCAPackageDescriptor
     let stage: LockScreenStage
     let nightMode: Bool
+    let duoSurface: DuoScreenSurface
     let showClock: Bool
     let gyroEnabled: Bool
     let sessionToken: UUID
@@ -760,13 +813,15 @@ private struct CAPackageCanvasHostView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: CamloLiveStageUIView, context: Context) {
-        let key = "\(descriptor.id)|night=\(nightMode)|lang=\(LocalizationManager.effectiveLanguageCode)"
+        let surfaceKey = descriptor.hasDuoInnerVariant ? duoSurface.rawValue : "std"
+        let key = "\(descriptor.id)|night=\(nightMode)|surface=\(surfaceKey)|lang=\(LocalizationManager.effectiveLanguageCode)"
         if context.coordinator.loadedKey != key {
             context.coordinator.loadedKey = key
             let variant = descriptor.variant(nightMode: nightMode)
             let err = uiView.loadVariant(
                 variant,
-                styleSummary: descriptor.styleSummary
+                styleSummary: descriptor.styleSummary,
+                duoSurface: duoSurface
             )
             let detectedParallax = !uiView.parallaxTargets.isEmpty
             DispatchQueue.main.async {
@@ -828,6 +883,7 @@ private final class CamloLiveStageUIView: UIView {
     }
 
     private var currentStage: LockScreenStage = .locked
+    private var activeDuoSurface: DuoScreenSurface = .outerCover
     private var gyroActive = false
     private var showClock = true
 
@@ -868,9 +924,11 @@ private final class CamloLiveStageUIView: UIView {
 
     func loadVariant(
         _ variant: ResolvedCAPackageVariant,
-        styleSummary: ParsedPosterStyleSummary
+        styleSummary: ParsedPosterStyleSummary,
+        duoSurface: DuoScreenSurface = .outerCover
     ) -> String? {
         teardown()
+        activeDuoSurface = duoSurface
         var errorMessages: [String] = []
 
         switch variant.renderMode {
@@ -878,15 +936,15 @@ private final class CamloLiveStageUIView: UIView {
             do {
                 let stage = try CamloCAStageController(packageURL: caURL)
                 stageControllers.append(stage)
-                docSize = sanitizedSize(stage.documentSize)
                 isFlipped = stage.isGeometryFlipped
                 let root = stage.rootLayer
                 root.masksToBounds = false
                 stageContainerLayer.addSublayer(root)
 
-                insertClockBetweenParameterizedPlanes(in: root, summary: styleSummary)
-                collectParallaxTargets(from: stage)
-                collectPropertyTargets(from: stage)
+                let selectedVariantDict = configureDuoDisplayVariantIfNeeded(in: stage, surface: duoSurface, fallbackSize: stage.documentSize)
+                insertClockBetweenParameterizedPlanes(in: root, summary: styleSummary, surface: duoSurface)
+                collectParallaxTargets(from: stage, variantDict: selectedVariantDict)
+                collectPropertyTargets(from: stage, variantDict: selectedVariantDict, surface: duoSurface)
             } catch {
                 errorMessages.append(error.localizedDescription)
             }
@@ -1147,8 +1205,10 @@ private final class CamloLiveStageUIView: UIView {
     }
 
     private func makeClockLayer(fontStyle: ClockFontStyle, color: RGBAColor, flipped: Bool) -> CALayer {
-        let renderW = max(docSize.width, 390)
-        let renderH = max(docSize.height, 844)
+        let renderW = max(docSize.width, 120)
+        let renderH = max(docSize.height, 120)
+        let isLandscape = renderW > renderH
+        let refDim = min(renderW, renderH)
         let scaleFactor: CGFloat = renderW < 600 ? 3.0 : 1.0
 
         let format = UIGraphicsImageRendererFormat()
@@ -1157,8 +1217,8 @@ private final class CamloLiveStageUIView: UIView {
 
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: renderW, height: renderH), format: format)
         let uiColor = color.uiColor
-        let dateFont = UIFont.systemFont(ofSize: renderH * 0.022, weight: .semibold)
-        let timeFont = fontStyle.uiFont(size: renderH * 0.118)
+        let dateFont = UIFont.systemFont(ofSize: refDim * 0.048, weight: .semibold)
+        let timeFont = fontStyle.uiFont(size: refDim * (isLandscape ? 0.195 : 0.255))
 
         var r: CGFloat = 0
         var g: CGFloat = 0
@@ -1175,8 +1235,8 @@ private final class CamloLiveStageUIView: UIView {
         shadow.shadowColor = luminance < 0.35
             ? UIColor.white.withAlphaComponent(0.45)
             : UIColor.black.withAlphaComponent(0.24)
-        shadow.shadowBlurRadius = renderH * 0.014
-        shadow.shadowOffset = CGSize(width: 0, height: renderH * 0.004)
+        shadow.shadowBlurRadius = refDim * 0.025
+        shadow.shadowOffset = CGSize(width: 0, height: refDim * 0.008)
 
         let img = renderer.image { _ in
             let datePara = NSMutableParagraphStyle()
@@ -1191,7 +1251,7 @@ private final class CamloLiveStageUIView: UIView {
                     .shadow: shadow
                 ]
             )
-            dateAttr.draw(in: CGRect(x: 0, y: renderH * 0.095, width: renderW, height: renderH * 0.045))
+            dateAttr.draw(in: CGRect(x: 0, y: renderH * (isLandscape ? 0.08 : 0.095), width: renderW, height: renderH * 0.06))
 
             let timePara = NSMutableParagraphStyle()
             timePara.alignment = .center
@@ -1201,11 +1261,11 @@ private final class CamloLiveStageUIView: UIView {
                     .font: timeFont,
                     .foregroundColor: uiColor,
                     .paragraphStyle: timePara,
-                    .kern: fontStyle.letterSpacing * (renderH / 844.0) * 1.6,
+                    .kern: fontStyle.letterSpacing * (refDim / 390.0) * 1.6,
                     .shadow: shadow
                 ]
             )
-            timeAttr.draw(in: CGRect(x: 0, y: renderH * 0.125, width: renderW, height: renderH * 0.18))
+            timeAttr.draw(in: CGRect(x: 0, y: renderH * (isLandscape ? 0.13 : 0.125), width: renderW, height: refDim * 0.32))
         }
 
         let layer = CALayer()
@@ -1218,10 +1278,65 @@ private final class CamloLiveStageUIView: UIView {
         return layer
     }
 
-    private func insertClockBetweenParameterizedPlanes(in root: CALayer, summary: ParsedPosterStyleSummary) {
+    private func configureDuoDisplayVariantIfNeeded(
+        in stage: CamloCAStageController,
+        surface: DuoScreenSurface,
+        fallbackSize: CGSize
+    ) -> [String: Any]? {
+        let rootSublayers = stage.rootLayer.sublayers ?? []
+        let bgOuter = rootSublayers.first(where: { $0.name?.caseInsensitiveCompare("BACKGROUND") == .orderedSame })
+        let flOuter = rootSublayers.first(where: { $0.name?.caseInsensitiveCompare("FLOATING") == .orderedSame })
+        let bgInner = rootSublayers.first(where: { $0.name?.caseInsensitiveCompare("BACKGROUND_INNER") == .orderedSame })
+        let flInner = rootSublayers.first(where: { $0.name?.caseInsensitiveCompare("FLOATING_INNER") == .orderedSame })
+
+        let variants = stage.rootLayer.style?["wallpapers"] as? [[String: Any]]
+        let targetScreenName = (surface == .innerUnfolded) ? "Inner" : "Outer"
+        let selected = variants?.first(where: {
+            ($0["screenName"] as? String)?.caseInsensitiveCompare(targetScreenName) == .orderedSame
+        })
+
+        let showInner = (surface == .innerUnfolded) && (bgInner != nil || selected != nil)
+        if showInner {
+            bgOuter?.isHidden = true
+            flOuter?.isHidden = true
+            bgInner?.isHidden = false
+            flInner?.isHidden = false
+            bgInner?.zPosition = 0
+            flInner?.zPosition = 10
+            if let iw = numericValue(selected?["idealWidth"]),
+               let ih = numericValue(selected?["idealHeight"]), iw > 1, ih > 1 {
+                docSize = CGSize(width: iw, height: ih)
+            } else {
+                docSize = DuoScreenSurface.innerUnfolded.logicalSize
+            }
+        } else {
+            bgOuter?.isHidden = false
+            flOuter?.isHidden = false
+            bgInner?.isHidden = true
+            flInner?.isHidden = true
+            if let ow = numericValue(selected?["idealWidth"]),
+               let oh = numericValue(selected?["idealHeight"]), ow > 1, oh > 1 {
+                docSize = CGSize(width: ow, height: oh)
+            } else {
+                docSize = sanitizedSize(fallbackSize)
+            }
+        }
+        return selected
+    }
+
+    private func insertClockBetweenParameterizedPlanes(
+        in root: CALayer,
+        summary: ParsedPosterStyleSummary,
+        surface: DuoScreenSurface
+    ) {
         let sublayers = root.sublayers ?? []
-        let bgLayer = sublayers.first(where: { $0.name?.localizedCaseInsensitiveContains("BACKGROUND") == true })
-        let flLayer = sublayers.first(where: { $0.name?.localizedCaseInsensitiveContains("FLOATING") == true })
+        let preferInner = (surface == .innerUnfolded) && sublayers.contains(where: { $0.name?.caseInsensitiveCompare("BACKGROUND_INNER") == .orderedSame })
+        let bgLayer = preferInner
+            ? sublayers.first(where: { $0.name?.caseInsensitiveCompare("BACKGROUND_INNER") == .orderedSame })
+            : sublayers.first(where: { $0.name?.caseInsensitiveCompare("BACKGROUND") == .orderedSame })
+        let flLayer = preferInner
+            ? sublayers.first(where: { $0.name?.caseInsensitiveCompare("FLOATING_INNER") == .orderedSame })
+            : sublayers.first(where: { $0.name?.caseInsensitiveCompare("FLOATING") == .orderedSame })
 
         let cLayer = makeClockLayer(
             fontStyle: summary.clockFontStyle,
@@ -1243,8 +1358,15 @@ private final class CamloLiveStageUIView: UIView {
         }
     }
 
-    private func collectParallaxTargets(from stage: CamloCAStageController) {
-        guard let groups = stage.rootLayer.style?["wallpaperParallaxGroups"] as? [[String: Any]] else {
+    private func collectParallaxTargets(from stage: CamloCAStageController, variantDict: [String: Any]?) {
+        let groups: [[String: Any]]
+        if let variantDict {
+            let bg = (variantDict["backgroundParallaxGroups"] as? [[String: Any]]) ?? []
+            let fg = (variantDict["floatingParallaxGroups"] as? [[String: Any]]) ?? []
+            groups = bg + fg
+        } else if let top = stage.rootLayer.style?["wallpaperParallaxGroups"] as? [[String: Any]] {
+            groups = top
+        } else {
             return
         }
 
@@ -1284,14 +1406,25 @@ private final class CamloLiveStageUIView: UIView {
         parallaxTargets = targets
     }
 
-    private func collectPropertyTargets(from stage: CamloCAStageController) {
-        guard let groups = stage.rootLayer.style?["wallpaperPropertyGroups"] as? [[String: Any]],
-              !groups.isEmpty else {
+    private func collectPropertyTargets(
+        from stage: CamloCAStageController,
+        variantDict: [String: Any]?,
+        surface: DuoScreenSurface
+    ) {
+        let groups: [[String: Any]]
+        if let variantDict {
+            let bg = (variantDict["backgroundPropertyGroups"] as? [[String: Any]]) ?? []
+            let fg = (variantDict["floatingPropertyGroups"] as? [[String: Any]]) ?? []
+            groups = bg + fg
+        } else if let top = stage.rootLayer.style?["wallpaperPropertyGroups"] as? [[String: Any]], !top.isEmpty {
+            groups = top
+        } else {
             return
         }
         let rootSublayers = stage.rootLayer.sublayers ?? []
-        let bgPlane = rootSublayers.first(where: { $0.name?.caseInsensitiveCompare("BACKGROUND") == .orderedSame })
-        let flPlane = rootSublayers.first(where: { $0.name?.caseInsensitiveCompare("FLOATING") == .orderedSame })
+        let useInner = (surface == .innerUnfolded) && rootSublayers.contains(where: { $0.name?.caseInsensitiveCompare("BACKGROUND_INNER") == .orderedSame })
+        let bgPlane = rootSublayers.first(where: { $0.name?.caseInsensitiveCompare(useInner ? "BACKGROUND_INNER" : "BACKGROUND") == .orderedSame })
+        let flPlane = rootSublayers.first(where: { $0.name?.caseInsensitiveCompare(useInner ? "FLOATING_INNER" : "FLOATING") == .orderedSame })
 
         var targets: [PropertyTarget] = []
         for group in groups {

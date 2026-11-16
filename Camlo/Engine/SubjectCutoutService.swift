@@ -28,9 +28,12 @@ enum SubjectCutoutError: LocalizedError {
 }
 
 enum SubjectCutoutService {
-    /// Extracts the foreground subject into an alpha-transparent UIImage sized identically to `sourceImage`.
-    static func extractForegroundSubject(from sourceImage: UIImage) async throws -> UIImage {
-        let normalized = sourceImage.aspectFilled(to: CGSize(width: 1170, height: 2532))
+    /// Extracts the foreground subject into an alpha-transparent UIImage sized to `targetPixelSize`.
+    static func extractForegroundSubject(
+        from sourceImage: UIImage,
+        targetPixelSize: CGSize = CGSize(width: 1170, height: 2532)
+    ) async throws -> UIImage {
+        let normalized = sourceImage.aspectFilled(to: targetPixelSize)
         guard let cgImage = normalized.cgImage else {
             throw SubjectCutoutError.invalidImage
         }

@@ -33,6 +33,18 @@ struct MorphCompileSpec {
     var nightUnlockCutout: UIImage? = nil
     var nightParticlePreset: ParticlePreset? = nil
     var posterStyle: PosterStyleSpec = PosterStyleSpec()
+    var canvasProfile: CanvasDisplayProfile = .standardPhone
+    var innerLockImage: UIImage? = nil
+    var innerUnlockImage: UIImage? = nil
+    var innerSleepImage: UIImage? = nil
+    var innerLockSubjectCutout: UIImage? = nil
+    var innerUnlockSubjectCutout: UIImage? = nil
+    var innerLockLiveSequence: ExtractedVideoSequence? = nil
+    var innerUnlockLiveSequence: ExtractedVideoSequence? = nil
+    var nightInnerLockImage: UIImage? = nil
+    var nightInnerUnlockImage: UIImage? = nil
+    var nightInnerLockCutout: UIImage? = nil
+    var nightInnerUnlockCutout: UIImage? = nil
 }
 
 struct VideoCompileSpec {
@@ -46,9 +58,72 @@ struct VideoCompileSpec {
     var enableGyroParallax: Bool = false
     var gyroIntensity: Double = 0.55
     var posterStyle: PosterStyleSpec = PosterStyleSpec()
+    var canvasProfile: CanvasDisplayProfile = .standardPhone
+    var innerSequence: ExtractedVideoSequence? = nil
 }
 
 enum CAMLCompiler {
+    struct CanvasMetrics: Sendable {
+        let width: Int
+        let height: Int
+        let pixelSize: CGSize
+        let assetPrefix: String
+        let idPrefix: String
+        let namePrefix: String
+        let bgParallaxName: String
+        let bgOverscanName: String
+        let fgParallaxName: String
+        let fgOverscanName: String
+        let fxParallaxName: String
+
+        var centerX: Int { width / 2 }
+        var centerY: Int { height / 2 }
+        var scaleX: Double { Double(width) / 390.0 }
+        var scaleY: Double { Double(height) / 844.0 }
+
+        static let standardPhone = CanvasMetrics(
+            width: 390,
+            height: 844,
+            pixelSize: CGSize(width: 1170, height: 2532),
+            assetPrefix: "",
+            idPrefix: "",
+            namePrefix: "",
+            bgParallaxName: "Camlo_BG_Parallax",
+            bgOverscanName: "Camlo_BG_Overscan",
+            fgParallaxName: "Camlo_FG_Parallax",
+            fgOverscanName: "Camlo_FG_Overscan",
+            fxParallaxName: "Camlo_FX_Parallax"
+        )
+
+        static let duoOuterCover = CanvasMetrics(
+            width: 466,
+            height: 678,
+            pixelSize: CGSize(width: 1164, height: 1696),
+            assetPrefix: "",
+            idPrefix: "",
+            namePrefix: "",
+            bgParallaxName: "Camlo_BG_Parallax",
+            bgOverscanName: "Camlo_BG_Overscan",
+            fgParallaxName: "Camlo_FG_Parallax",
+            fgOverscanName: "Camlo_FG_Overscan",
+            fxParallaxName: "Camlo_FX_Parallax"
+        )
+
+        static let duoInnerUnfolded = CanvasMetrics(
+            width: 951,
+            height: 669,
+            pixelSize: CGSize(width: 1902, height: 1338),
+            assetPrefix: "inner_",
+            idPrefix: "inner_",
+            namePrefix: "Inner ",
+            bgParallaxName: "Camlo_Inner_BG_Parallax",
+            bgOverscanName: "Camlo_Inner_BG_Overscan",
+            fgParallaxName: "Camlo_Inner_FG_Parallax",
+            fgOverscanName: "Camlo_Inner_FG_Overscan",
+            fxParallaxName: "Camlo_Inner_FX_Parallax"
+        )
+    }
+
     static let canvasW = 390
     static let canvasH = 844
     static let centerX = 195
@@ -73,6 +148,65 @@ enum CAMLCompiler {
     // MARK: - Public Bundle Writers
 
     static func writeMorphWallpaperDirectory(spec: MorphCompileSpec, into wallpaperDir: URL) throws {
+        if spec.canvasProfile == .duoDualScreen {
+            try writeDuoMorphParameterizedBundle(
+                bundleName: "wallpaper.ca",
+                outerLockImage: spec.lockImage,
+                outerUnlockImage: spec.unlockImage,
+                outerSleepImage: spec.customSleepImage,
+                outerLockCutout: spec.lockSubjectCutout,
+                outerUnlockCutout: spec.unlockSubjectCutout,
+                outerLockLiveSequence: spec.lockLiveSequence,
+                outerUnlockLiveSequence: spec.unlockLiveSequence,
+                innerLockImage: spec.innerLockImage ?? spec.lockImage,
+                innerUnlockImage: spec.innerUnlockImage ?? spec.unlockImage,
+                innerSleepImage: spec.innerSleepImage ?? spec.customSleepImage,
+                innerLockCutout: spec.innerLockSubjectCutout,
+                innerUnlockCutout: spec.innerUnlockSubjectCutout,
+                innerLockLiveSequence: spec.innerLockLiveSequence,
+                innerUnlockLiveSequence: spec.innerUnlockLiveSequence,
+                particlePreset: spec.particlePreset,
+                spec: spec,
+                into: wallpaperDir
+            )
+            if spec.enableDayNightMode {
+                let nOuterLock = spec.nightLockImage ?? PosterStyleGenerator.synthesizeNightImage(from: spec.lockImage)
+                let nOuterUnlock = spec.nightUnlockImage ?? PosterStyleGenerator.synthesizeNightImage(from: spec.unlockImage)
+                let nOuterLockCut = spec.nightLockCutout ?? (spec.nightLockImage == nil ? spec.lockSubjectCutout.map { PosterStyleGenerator.synthesizeNightImage(from: $0, preserveAlpha: true) } : nil)
+                let nOuterUnlockCut = spec.nightUnlockCutout ?? (spec.nightUnlockImage == nil ? spec.unlockSubjectCutout.map { PosterStyleGenerator.synthesizeNightImage(from: $0, preserveAlpha: true) } : nil)
+
+                let baseInnerLock = spec.innerLockImage ?? spec.lockImage
+                let baseInnerUnlock = spec.innerUnlockImage ?? spec.unlockImage
+                let nInnerLock = spec.nightInnerLockImage ?? PosterStyleGenerator.synthesizeNightImage(from: baseInnerLock)
+                let nInnerUnlock = spec.nightInnerUnlockImage ?? PosterStyleGenerator.synthesizeNightImage(from: baseInnerUnlock)
+                let nInnerLockCut = spec.nightInnerLockCutout ?? (spec.nightInnerLockImage == nil ? spec.innerLockSubjectCutout.map { PosterStyleGenerator.synthesizeNightImage(from: $0, preserveAlpha: true) } : nil)
+                let nInnerUnlockCut = spec.nightInnerUnlockCutout ?? (spec.nightInnerUnlockImage == nil ? spec.innerUnlockSubjectCutout.map { PosterStyleGenerator.synthesizeNightImage(from: $0, preserveAlpha: true) } : nil)
+                let nightParticles = spec.nightParticlePreset ?? spec.particlePreset
+
+                try writeDuoMorphParameterizedBundle(
+                    bundleName: "wallpaper_dark.ca",
+                    outerLockImage: nOuterLock,
+                    outerUnlockImage: nOuterUnlock,
+                    outerSleepImage: nil,
+                    outerLockCutout: nOuterLockCut,
+                    outerUnlockCutout: nOuterUnlockCut,
+                    outerLockLiveSequence: nil,
+                    outerUnlockLiveSequence: nil,
+                    innerLockImage: nInnerLock,
+                    innerUnlockImage: nInnerUnlock,
+                    innerSleepImage: nil,
+                    innerLockCutout: nInnerLockCut,
+                    innerUnlockCutout: nInnerUnlockCut,
+                    innerLockLiveSequence: nil,
+                    innerUnlockLiveSequence: nil,
+                    particlePreset: nightParticles,
+                    spec: spec,
+                    into: wallpaperDir
+                )
+            }
+            return
+        }
+
         if spec.enableGyroParallax {
             try writeMorphParameterizedBundle(
                 bundleName: "wallpaper.ca",
@@ -147,6 +281,64 @@ enum CAMLCompiler {
     }
 
     static func writeVideoWallpaperDirectory(spec: VideoCompileSpec, into wallpaperDir: URL) throws {
+        if spec.canvasProfile == .duoDualScreen {
+            let ca = wallpaperDir.appendingPathComponent("wallpaper.ca", isDirectory: true)
+            let outer = CanvasMetrics.duoOuterCover
+            let inner = CanvasMetrics.duoInnerUnfolded
+            try prepareCABundle(at: ca, documentWidth: outer.width, documentHeight: outer.height)
+            let assetsDir = ca.appendingPathComponent("assets", isDirectory: true)
+
+            let outerBuild = try buildAndEncodeVideoLayers(spec: spec, assetsDir: assetsDir, canvas: outer)
+            let outerFX = try buildAndEncodeForegroundFX(
+                particlePreset: spec.particlePreset,
+                includeFlashPulse: false,
+                assetsDir: assetsDir,
+                canvas: outer,
+                encodeAssets: true
+            )
+
+            let innerSeq = spec.innerSequence ?? spec.sequence
+            let innerBuild = try buildAndEncodeVideoLayers(
+                spec: spec,
+                assetsDir: assetsDir,
+                canvas: inner,
+                sequenceOverride: innerSeq
+            )
+            let innerFX = try buildAndEncodeForegroundFX(
+                particlePreset: spec.particlePreset,
+                includeFlashPulse: false,
+                assetsDir: assetsDir,
+                canvas: inner,
+                encodeAssets: false
+            )
+
+            let fgScale: Double = spec.renderAboveClock
+                ? (1.0 + 0.16 * max(0.20, min(spec.gyroIntensity, 1.0)))
+                : 1.0
+
+            let caml = wrapDuoDualRootCAML(
+                outer: outer,
+                inner: inner,
+                outerBgSublayersXML: spec.renderAboveClock ? "" : outerBuild.sublayersXML,
+                outerFgSublayersXML: spec.renderAboveClock ? outerBuild.sublayersXML : "",
+                outerFxSublayersXML: outerFX.sublayersXML,
+                innerBgSublayersXML: spec.renderAboveClock ? "" : innerBuild.sublayersXML,
+                innerFgSublayersXML: spec.renderAboveClock ? innerBuild.sublayersXML : "",
+                innerFxSublayersXML: innerFX.sublayersXML,
+                outerFgOverscanScale: fgScale,
+                innerFgOverscanScale: fgScale,
+                outerBgOverrides: spec.renderAboveClock ? [] : outerBuild.overrides,
+                outerFloatingOverrides: (spec.renderAboveClock ? outerBuild.overrides : []) + outerFX.overrides,
+                innerBgOverrides: spec.renderAboveClock ? [] : innerBuild.overrides,
+                innerFloatingOverrides: (spec.renderAboveClock ? innerBuild.overrides : []) + innerFX.overrides,
+                duration: 0.75,
+                bounce: 0.35,
+                gyroIntensity: spec.gyroIntensity
+            )
+            try caml.data(using: .utf8)?.write(to: ca.appendingPathComponent("main.caml"), options: .atomic)
+            return
+        }
+
         if spec.enableGyroParallax {
             let ca = wallpaperDir.appendingPathComponent("wallpaper.ca", isDirectory: true)
             try prepareCABundle(at: ca)
@@ -220,9 +412,13 @@ enum CAMLCompiler {
 
     // MARK: - Bundle Variant Composers
 
-    private static func prepareCABundle(at caURL: URL) throws {
+    private static func prepareCABundle(
+        at caURL: URL,
+        documentWidth: Int = canvasW,
+        documentHeight: Int = canvasH
+    ) throws {
         try FileManager.default.createDirectory(at: caURL.appendingPathComponent("assets", isDirectory: true), withIntermediateDirectories: true)
-        try standardIndexXML().data(using: .utf8)?.write(to: caURL.appendingPathComponent("index.xml"), options: .atomic)
+        try standardIndexXML(documentWidth: documentWidth, documentHeight: documentHeight).data(using: .utf8)?.write(to: caURL.appendingPathComponent("index.xml"), options: .atomic)
         try standardAssetManifestXML().data(using: .utf8)?.write(to: caURL.appendingPathComponent("assetManifest.caml"), options: .atomic)
     }
 
@@ -354,6 +550,107 @@ enum CAMLCompiler {
         try caml.data(using: .utf8)?.write(to: ca.appendingPathComponent("main.caml"), options: .atomic)
     }
 
+    private static func writeDuoMorphParameterizedBundle(
+        bundleName: String,
+        outerLockImage: UIImage,
+        outerUnlockImage: UIImage,
+        outerSleepImage: UIImage?,
+        outerLockCutout: UIImage?,
+        outerUnlockCutout: UIImage?,
+        outerLockLiveSequence: ExtractedVideoSequence?,
+        outerUnlockLiveSequence: ExtractedVideoSequence?,
+        innerLockImage: UIImage,
+        innerUnlockImage: UIImage,
+        innerSleepImage: UIImage?,
+        innerLockCutout: UIImage?,
+        innerUnlockCutout: UIImage?,
+        innerLockLiveSequence: ExtractedVideoSequence?,
+        innerUnlockLiveSequence: ExtractedVideoSequence?,
+        particlePreset: ParticlePreset,
+        spec: MorphCompileSpec,
+        into wallpaperDir: URL
+    ) throws {
+        let ca = wallpaperDir.appendingPathComponent(bundleName, isDirectory: true)
+        let outer = CanvasMetrics.duoOuterCover
+        let inner = CanvasMetrics.duoInnerUnfolded
+        try prepareCABundle(at: ca, documentWidth: outer.width, documentHeight: outer.height)
+        let assetsDir = ca.appendingPathComponent("assets", isDirectory: true)
+
+        let outerBg = try buildAndEncodeMorphBackground(
+            lockImage: outerLockImage,
+            unlockImage: outerUnlockImage,
+            sleepImage: outerSleepImage,
+            lockLiveSequence: outerLockLiveSequence,
+            unlockLiveSequence: outerUnlockLiveSequence,
+            autoReversesLive: spec.liveLoopStyle == .pingPong,
+            preset: spec.preset,
+            assetsDir: assetsDir,
+            canvas: outer
+        )
+        let outerFl = try buildAndEncodeMorphFloating(
+            lockCutout: outerLockCutout,
+            unlockCutout: outerUnlockCutout,
+            preset: spec.preset,
+            assetsDir: assetsDir,
+            canvas: outer
+        )
+        let outerFx = try buildAndEncodeForegroundFX(
+            particlePreset: particlePreset,
+            includeFlashPulse: spec.preset == .flashAwaken,
+            assetsDir: assetsDir,
+            canvas: outer,
+            encodeAssets: true
+        )
+
+        let innerBg = try buildAndEncodeMorphBackground(
+            lockImage: innerLockImage,
+            unlockImage: innerUnlockImage,
+            sleepImage: innerSleepImage,
+            lockLiveSequence: innerLockLiveSequence,
+            unlockLiveSequence: innerUnlockLiveSequence,
+            autoReversesLive: spec.liveLoopStyle == .pingPong,
+            preset: spec.preset,
+            assetsDir: assetsDir,
+            canvas: inner
+        )
+        let innerFl = try buildAndEncodeMorphFloating(
+            lockCutout: innerLockCutout,
+            unlockCutout: innerUnlockCutout,
+            preset: spec.preset,
+            assetsDir: assetsDir,
+            canvas: inner
+        )
+        let innerFx = try buildAndEncodeForegroundFX(
+            particlePreset: particlePreset,
+            includeFlashPulse: spec.preset == .flashAwaken,
+            assetsDir: assetsDir,
+            canvas: inner,
+            encodeAssets: false
+        )
+
+        let cutoutOverscan = 1.0 + 0.08 * max(0.20, min(spec.gyroIntensity, 1.0))
+        let caml = wrapDuoDualRootCAML(
+            outer: outer,
+            inner: inner,
+            outerBgSublayersXML: outerBg.sublayersXML,
+            outerFgSublayersXML: outerFl.sublayersXML,
+            outerFxSublayersXML: outerFx.sublayersXML,
+            innerBgSublayersXML: innerBg.sublayersXML,
+            innerFgSublayersXML: innerFl.sublayersXML,
+            innerFxSublayersXML: innerFx.sublayersXML,
+            outerFgOverscanScale: (outerLockCutout != nil || outerUnlockCutout != nil) ? cutoutOverscan : 1.0,
+            innerFgOverscanScale: (innerLockCutout != nil || innerUnlockCutout != nil) ? cutoutOverscan : 1.0,
+            outerBgOverrides: outerBg.overrides,
+            outerFloatingOverrides: outerFl.overrides + outerFx.overrides,
+            innerBgOverrides: innerBg.overrides,
+            innerFloatingOverrides: innerFl.overrides + innerFx.overrides,
+            duration: spec.durationSeconds,
+            bounce: spec.springBounce,
+            gyroIntensity: spec.gyroIntensity
+        )
+        try caml.data(using: .utf8)?.write(to: ca.appendingPathComponent("main.caml"), options: .atomic)
+    }
+
     // MARK: - Internal CAML Builders
 
     private static func buildAndEncodeMorphBackground(
@@ -364,44 +661,48 @@ enum CAMLCompiler {
         unlockLiveSequence: ExtractedVideoSequence?,
         autoReversesLive: Bool,
         preset: MorphTransitionPreset,
-        assetsDir: URL
+        assetsDir: URL,
+        canvas: CanvasMetrics = .standardPhone
     ) throws -> LayerBuildResult {
         let activeUnlockLive = (unlockLiveSequence?.frameJPEGs.isEmpty == false) ? unlockLiveSequence : nil
         let activeLockLive = (lockLiveSequence?.frameJPEGs.isEmpty == false) ? lockLiveSequence : nil
+        let aPrefix = canvas.assetPrefix
+        let idPrefix = canvas.idPrefix
+        let namePrefix = canvas.namePrefix
 
         if let lockSeq = activeLockLive {
             for (idx, frameData) in lockSeq.frameJPEGs.enumerated() {
-                try frameData.write(to: assetsDir.appendingPathComponent("lock_frame_\(idx).jpg"), options: .atomic)
+                try frameData.write(to: assetsDir.appendingPathComponent("\(aPrefix)lock_frame_\(idx).jpg"), options: .atomic)
             }
         } else {
             try autoreleasepool {
-                let lockScaled = lockImage.aspectFilled(to: retinaSize)
+                let lockScaled = lockImage.aspectFilled(to: canvas.pixelSize)
                 guard let lockJPG = lockScaled.jpegData(compressionQuality: 0.88) else {
                     throw NSError(domain: "CamloCompiler", code: -10, userInfo: [NSLocalizedDescriptionKey: Bi("图片编码失败", "Failed to encode wallpaper images")])
                 }
-                try lockJPG.write(to: assetsDir.appendingPathComponent("locked.jpg"), options: .atomic)
+                try lockJPG.write(to: assetsDir.appendingPathComponent("\(aPrefix)locked.jpg"), options: .atomic)
             }
         }
 
         if let unlockSeq = activeUnlockLive {
             for (idx, frameData) in unlockSeq.frameJPEGs.enumerated() {
-                try frameData.write(to: assetsDir.appendingPathComponent("unlock_frame_\(idx).jpg"), options: .atomic)
+                try frameData.write(to: assetsDir.appendingPathComponent("\(aPrefix)unlock_frame_\(idx).jpg"), options: .atomic)
             }
         } else {
             try autoreleasepool {
-                let unlockScaled = unlockImage.aspectFilled(to: retinaSize)
+                let unlockScaled = unlockImage.aspectFilled(to: canvas.pixelSize)
                 guard let unlockJPG = unlockScaled.jpegData(compressionQuality: 0.88) else {
                     throw NSError(domain: "CamloCompiler", code: -10, userInfo: [NSLocalizedDescriptionKey: Bi("图片编码失败", "Failed to encode wallpaper images")])
                 }
-                try unlockJPG.write(to: assetsDir.appendingPathComponent("unlock.jpg"), options: .atomic)
+                try unlockJPG.write(to: assetsDir.appendingPathComponent("\(aPrefix)unlock.jpg"), options: .atomic)
             }
         }
 
         var hasCustomSleep = false
         if let sleepImage {
             autoreleasepool {
-                if let sleepJPG = sleepImage.aspectFilled(to: retinaSize).jpegData(compressionQuality: 0.84),
-                   (try? sleepJPG.write(to: assetsDir.appendingPathComponent("sleep.jpg"), options: .atomic)) != nil {
+                if let sleepJPG = sleepImage.aspectFilled(to: canvas.pixelSize).jpegData(compressionQuality: 0.84),
+                   (try? sleepJPG.write(to: assetsDir.appendingPathComponent("\(aPrefix)sleep.jpg"), options: .atomic)) != nil {
                     hasCustomSleep = true
                 }
             }
@@ -410,99 +711,119 @@ enum CAMLCompiler {
         var sublayers: [String] = []
         var overrides: [StateOverride] = []
 
+        let unlockId = "\(idPrefix)unlock_layer"
+        let unlockName = "\(namePrefix)Unlock Layer"
+        let lockedId = "\(idPrefix)locked_layer"
+        let lockedName = "\(namePrefix)Locked Layer"
+        let sleepId = "\(idPrefix)sleep_layer"
+        let sleepName = "\(namePrefix)Sleep Layer"
+        let sleepDimId = "\(idPrefix)sleep_dimmer"
+        let sleepDimName = "\(namePrefix)Sleep Dimmer"
+
         sublayers.append(
             morphMediaLayerXML(
-                id: "unlock_layer",
-                name: "Unlock Layer",
+                id: unlockId,
+                name: unlockName,
                 zPosition: 0,
-                staticFilename: "unlock.jpg",
-                livePrefix: "unlock_frame",
+                staticFilename: "\(aPrefix)unlock.jpg",
+                livePrefix: "\(aPrefix)unlock_frame",
                 liveSequence: activeUnlockLive,
-                autoReverses: autoReversesLive
+                autoReverses: autoReversesLive,
+                canvas: canvas
             )
         )
 
         sublayers.append(
             morphMediaLayerXML(
-                id: "locked_layer",
-                name: "Locked Layer",
+                id: lockedId,
+                name: lockedName,
                 zPosition: 1,
-                staticFilename: "locked.jpg",
-                livePrefix: "lock_frame",
+                staticFilename: "\(aPrefix)locked.jpg",
+                livePrefix: "\(aPrefix)lock_frame",
                 liveSequence: activeLockLive,
-                autoReverses: autoReversesLive
+                autoReverses: autoReversesLive,
+                canvas: canvas
             )
         )
 
         if hasCustomSleep {
             sublayers.append("""
-                  <CALayer id="sleep_layer" name="Sleep Layer" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="2" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(sleepId)" name="\(sleepName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="2" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents>
-                      <CGImage src="assets/sleep.jpg"/>
+                      <CGImage src="assets/\(aPrefix)sleep.jpg"/>
                     </contents>
                   </CALayer>
             """)
-            overrides.append(StateOverride(targetId: "sleep_layer", layerName: "Sleep Layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 0.0, unlockVal: 0.0, isInteger: false))
+            overrides.append(StateOverride(targetId: sleepId, layerName: sleepName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 0.0, unlockVal: 0.0, isInteger: false))
         } else {
             let sleepDimAlpha = (preset == .aodGaze) ? 0.78 : 0.48
             sublayers.append("""
-                  <CALayer id="sleep_dimmer" name="Sleep Dimmer" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
+                  <CALayer id="\(sleepDimId)" name="\(sleepDimName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
             """)
-            overrides.append(StateOverride(targetId: "sleep_dimmer", layerName: "Sleep Dimmer", keyPath: "opacity", sleepVal: sleepDimAlpha, lockedVal: 0.0, unlockVal: 0.0, isInteger: false))
+            overrides.append(StateOverride(targetId: sleepDimId, layerName: sleepDimName, keyPath: "opacity", sleepVal: sleepDimAlpha, lockedVal: 0.0, unlockVal: 0.0, isInteger: false))
         }
+
+        let cy = Double(canvas.centerY)
+        let cx = Double(canvas.centerX)
+        let lockExitY = (Double(canvas.height) * 1.1137).rounded()
+        let unlockSleepY = (cy - 30.0 * canvas.scaleY).rounded()
+        let unlockLockedY = (cy - 18.0 * canvas.scaleY).rounded()
+        let holoLockUnlockX = (cx + 20.0 * canvas.scaleX).rounded()
+        let holoUnlockSleepX = (cx - 20.0 * canvas.scaleX).rounded()
+        let holoUnlockLockedX = (cx - 17.0 * canvas.scaleX).rounded()
 
         switch preset {
         case .curtainRise:
             overrides.append(contentsOf: [
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "position.y", sleepVal: 422, lockedVal: 422, unlockVal: 940, isInteger: true),
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 0.96, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "position.y", sleepVal: 392, lockedVal: 404, unlockVal: 422, isInteger: true),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "transform.scale.xy", sleepVal: 1.08, lockedVal: 1.06, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: lockExitY, isInteger: true),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 0.96, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "position.y", sleepVal: unlockSleepY, lockedVal: unlockLockedY, unlockVal: cy, isInteger: true),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "transform.scale.xy", sleepVal: 1.08, lockedVal: 1.06, unlockVal: 1.0, isInteger: false),
             ])
 
         case .burstZoom:
             overrides.append(contentsOf: [
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "transform.scale.xy", sleepVal: 1.04, lockedVal: 1.0, unlockVal: 0.86, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "transform.scale.xy", sleepVal: 1.24, lockedVal: 1.22, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "transform.scale.xy", sleepVal: 1.04, lockedVal: 1.0, unlockVal: 0.86, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "transform.scale.xy", sleepVal: 1.24, lockedVal: 1.22, unlockVal: 1.0, isInteger: false),
             ])
 
         case .crossfade:
             overrides.append(contentsOf: [
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 1.03, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "transform.scale.xy", sleepVal: 1.04, lockedVal: 1.03, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 1.03, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "transform.scale.xy", sleepVal: 1.04, lockedVal: 1.03, unlockVal: 1.0, isInteger: false),
             ])
 
         case .flashAwaken:
             overrides.append(contentsOf: [
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 1.08, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "transform.scale.xy", sleepVal: 1.12, lockedVal: 1.10, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 1.08, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "transform.scale.xy", sleepVal: 1.12, lockedVal: 1.10, unlockVal: 1.0, isInteger: false),
             ])
 
         case .holoCard:
             overrides.append(contentsOf: [
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "transform.rotation.y", sleepVal: -0.06, lockedVal: 0.0, unlockVal: 0.24, isInteger: false),
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "position.x", sleepVal: 195, lockedVal: 195, unlockVal: 215, isInteger: true),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "transform.rotation.y", sleepVal: -0.24, lockedVal: -0.22, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "position.x", sleepVal: 175, lockedVal: 178, unlockVal: 195, isInteger: true),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "transform.scale.xy", sleepVal: 1.06, lockedVal: 1.05, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "transform.rotation.y", sleepVal: -0.06, lockedVal: 0.0, unlockVal: 0.24, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "position.x", sleepVal: cx, lockedVal: cx, unlockVal: holoLockUnlockX, isInteger: true),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "transform.rotation.y", sleepVal: -0.24, lockedVal: -0.22, unlockVal: 0.0, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "position.x", sleepVal: holoUnlockSleepX, lockedVal: holoUnlockLockedX, unlockVal: cx, isInteger: true),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "transform.scale.xy", sleepVal: 1.06, lockedVal: 1.05, unlockVal: 1.0, isInteger: false),
             ])
 
         case .aodGaze:
             overrides.append(contentsOf: [
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: "locked_layer", layerName: "Locked Layer", keyPath: "transform.scale.xy", sleepVal: 0.94, lockedVal: 1.0, unlockVal: 1.06, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
-                StateOverride(targetId: "unlock_layer", layerName: "Unlock Layer", keyPath: "transform.scale.xy", sleepVal: 1.14, lockedVal: 1.12, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "transform.scale.xy", sleepVal: 0.94, lockedVal: 1.0, unlockVal: 1.06, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "transform.scale.xy", sleepVal: 1.14, lockedVal: 1.12, unlockVal: 1.0, isInteger: false),
             ])
         }
 
@@ -513,22 +834,29 @@ enum CAMLCompiler {
         lockCutout: UIImage?,
         unlockCutout: UIImage?,
         preset: MorphTransitionPreset,
-        assetsDir: URL
+        assetsDir: URL,
+        canvas: CanvasMetrics = .standardPhone
     ) throws -> LayerBuildResult {
+        let aPrefix = canvas.assetPrefix
+        let idPrefix = canvas.idPrefix
+        let namePrefix = canvas.namePrefix
+
         var hasLockCutout = false
         var hasUnlockCutout = false
         if let lockCut = lockCutout {
             try autoreleasepool {
-                if let png = lockCut.pngData() {
-                    try png.write(to: assetsDir.appendingPathComponent("cutout_lock.png"), options: .atomic)
+                let scaled = lockCut.aspectFilled(to: canvas.pixelSize)
+                if let png = scaled.pngData() {
+                    try png.write(to: assetsDir.appendingPathComponent("\(aPrefix)cutout_lock.png"), options: .atomic)
                     hasLockCutout = true
                 }
             }
         }
         if let unlockCut = unlockCutout {
             try autoreleasepool {
-                if let png = unlockCut.pngData() {
-                    try png.write(to: assetsDir.appendingPathComponent("cutout_unlock.png"), options: .atomic)
+                let scaled = unlockCut.aspectFilled(to: canvas.pixelSize)
+                if let png = scaled.pngData() {
+                    try png.write(to: assetsDir.appendingPathComponent("\(aPrefix)cutout_unlock.png"), options: .atomic)
                     hasUnlockCutout = true
                 }
             }
@@ -542,33 +870,38 @@ enum CAMLCompiler {
         var overrides: [StateOverride] = []
 
         if hasUnlockCutout {
+            let fid = "\(idPrefix)float_unlock"
+            let fname = "\(namePrefix)Floating Unlock Subject"
             sublayers.append("""
-                  <CALayer id="float_unlock" name="Floating Unlock Subject" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="1" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(fid)" name="\(fname)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="1" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents>
-                      <CGImage src="assets/cutout_unlock.png"/>
+                      <CGImage src="assets/\(aPrefix)cutout_unlock.png"/>
                     </contents>
                   </CALayer>
             """)
             overrides.append(contentsOf: [
-                StateOverride(targetId: "float_unlock", layerName: "Floating Unlock Subject", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 1.0, isInteger: false),
-                StateOverride(targetId: "float_unlock", layerName: "Floating Unlock Subject", keyPath: "transform.scale.xy", sleepVal: 1.16, lockedVal: 1.14, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: fid, layerName: fname, keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 1.0, isInteger: false),
+                StateOverride(targetId: fid, layerName: fname, keyPath: "transform.scale.xy", sleepVal: 1.16, lockedVal: 1.14, unlockVal: 1.0, isInteger: false),
             ])
         }
 
         if hasLockCutout {
+            let fid = "\(idPrefix)float_lock"
+            let fname = "\(namePrefix)Floating Lock Subject"
+            let cy = Double(canvas.centerY)
             sublayers.append("""
-                  <CALayer id="float_lock" name="Floating Lock Subject" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="2" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(fid)" name="\(fname)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="2" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents>
-                      <CGImage src="assets/cutout_lock.png"/>
+                      <CGImage src="assets/\(aPrefix)cutout_lock.png"/>
                     </contents>
                   </CALayer>
             """)
-            let unlockY: Double = (preset == .curtainRise) ? 960 : 422
+            let unlockY: Double = (preset == .curtainRise) ? (Double(canvas.height) * 1.137).rounded() : cy
             let unlockScale: Double = (preset == .burstZoom) ? 0.84 : 1.06
             overrides.append(contentsOf: [
-                StateOverride(targetId: "float_lock", layerName: "Floating Lock Subject", keyPath: "opacity", sleepVal: 0.72, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: "float_lock", layerName: "Floating Lock Subject", keyPath: "position.y", sleepVal: 422, lockedVal: 422, unlockVal: unlockY, isInteger: true),
-                StateOverride(targetId: "float_lock", layerName: "Floating Lock Subject", keyPath: "transform.scale.xy", sleepVal: 0.98, lockedVal: 1.0, unlockVal: unlockScale, isInteger: false),
+                StateOverride(targetId: fid, layerName: fname, keyPath: "opacity", sleepVal: 0.72, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+                StateOverride(targetId: fid, layerName: fname, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: unlockY, isInteger: true),
+                StateOverride(targetId: fid, layerName: fname, keyPath: "transform.scale.xy", sleepVal: 0.98, lockedVal: 1.0, unlockVal: unlockScale, isInteger: false),
             ])
         }
 
@@ -609,7 +942,8 @@ enum CAMLCompiler {
         staticFilename: String,
         livePrefix: String,
         liveSequence: ExtractedVideoSequence?,
-        autoReverses: Bool
+        autoReverses: Bool,
+        canvas: CanvasMetrics = .standardPhone
     ) -> String {
         let bodyXML: String
         if let seq = liveSequence, !seq.frameJPEGs.isEmpty {
@@ -628,7 +962,7 @@ enum CAMLCompiler {
         }
 
         return """
-              <CALayer id="\(id)" name="\(name)" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="\(zPosition)" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(id)" name="\(name)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="\(zPosition)" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
         \(bodyXML)
               </CALayer>
         """
@@ -636,35 +970,46 @@ enum CAMLCompiler {
 
     private static func buildAndEncodeVideoLayers(
         spec: VideoCompileSpec,
-        assetsDir: URL
+        assetsDir: URL,
+        canvas: CanvasMetrics = .standardPhone,
+        sequenceOverride: ExtractedVideoSequence? = nil
     ) throws -> LayerBuildResult {
-        for (idx, frameData) in spec.sequence.frameJPEGs.enumerated() {
-            try frameData.write(to: assetsDir.appendingPathComponent("frame_\(idx).jpg"), options: .atomic)
+        let seq = sequenceOverride ?? spec.sequence
+        let aPrefix = canvas.assetPrefix
+        let idPrefix = canvas.idPrefix
+        let namePrefix = canvas.namePrefix
+
+        for (idx, frameData) in seq.frameJPEGs.enumerated() {
+            try frameData.write(to: assetsDir.appendingPathComponent("\(aPrefix)frame_\(idx).jpg"), options: .atomic)
         }
 
         let animBody = discreteContentsAnimationXML(
-            prefix: "frame",
-            frameCount: spec.sequence.frameJPEGs.count,
-            duration: spec.sequence.durationSeconds,
+            prefix: "\(aPrefix)frame",
+            frameCount: seq.frameJPEGs.count,
+            duration: seq.durationSeconds,
             autoReverses: spec.loopStyle == .pingPong
         )
 
+        let seqId = "\(idPrefix)video_seq_layer"
+        let seqName = "\(namePrefix)Video Sequence Layer"
         var sublayers: [String] = []
         sublayers.append("""
-              <CALayer id="video_seq_layer" name="Video Sequence Layer" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(seqId)" name="\(seqName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
         \(animBody)
               </CALayer>
         """)
 
         var overrides: [StateOverride] = [
-            StateOverride(targetId: "video_seq_layer", layerName: "Video Sequence Layer", keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: spec.unlockZoomScale, isInteger: false)
+            StateOverride(targetId: seqId, layerName: seqName, keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: spec.unlockZoomScale, isInteger: false)
         ]
 
         if spec.dimInSleepMode {
+            let dimId = "\(idPrefix)video_sleep_dim"
+            let dimName = "\(namePrefix)Sleep Dimmer"
             sublayers.append("""
-                  <CALayer id="video_sleep_dim" name="Sleep Dimmer" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
+                  <CALayer id="\(dimId)" name="\(dimName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
             """)
-            overrides.append(StateOverride(targetId: "video_sleep_dim", layerName: "Sleep Dimmer", keyPath: "opacity", sleepVal: 0.65, lockedVal: 0.0, unlockVal: 0.0, isInteger: false))
+            overrides.append(StateOverride(targetId: dimId, layerName: dimName, keyPath: "opacity", sleepVal: 0.65, lockedVal: 0.0, unlockVal: 0.0, isInteger: false))
         }
 
         return LayerBuildResult(sublayersXML: sublayers.joined(separator: "\n"), overrides: overrides)
@@ -673,9 +1018,11 @@ enum CAMLCompiler {
     private static func buildAndEncodeForegroundFX(
         particlePreset: ParticlePreset,
         includeFlashPulse: Bool,
-        assetsDir: URL
+        assetsDir: URL,
+        canvas: CanvasMetrics = .standardPhone,
+        encodeAssets: Bool = true
     ) throws -> LayerBuildResult {
-        if particlePreset != .none {
+        if encodeAssets && particlePreset != .none {
             let spriteAssets = ParticleSpriteRenderer.assets(for: particlePreset)
             for asset in spriteAssets {
                 try asset.data.write(to: assetsDir.appendingPathComponent(asset.filename), options: .atomic)
@@ -690,18 +1037,22 @@ enum CAMLCompiler {
         var overrides: [StateOverride] = []
 
         if includeFlashPulse {
+            let fid = "\(canvas.idPrefix)flash_veil"
+            let fname = "\(canvas.namePrefix)Flash Veil"
+            let veilW = Int((510.0 * canvas.scaleX).rounded())
+            let veilH = Int((964.0 * canvas.scaleY).rounded())
             sublayers.append("""
-                  <CALayer id="flash_veil" name="Flash Veil" bounds="0 0 510 964" position="\(centerX) \(centerY)" zPosition="1" opacity="0" backgroundColor="1 0.98 0.94" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
+                  <CALayer id="\(fid)" name="\(fname)" bounds="0 0 \(veilW) \(veilH)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="1" opacity="0" backgroundColor="1 0.98 0.94" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
             """)
-            overrides.append(StateOverride(targetId: "flash_veil", layerName: "Flash Veil", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 0.06, isInteger: false))
+            overrides.append(StateOverride(targetId: fid, layerName: fname, keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 0.06, isInteger: false))
         }
 
         if particlePreset != .none {
-            let volumetric = buildVolumetricLightLayers(for: particlePreset)
+            let volumetric = buildVolumetricLightLayers(for: particlePreset, canvas: canvas)
             sublayers.append(contentsOf: volumetric.layersXML)
             overrides.append(contentsOf: volumetric.overrides)
 
-            let emitters = buildEmitterLayers(for: particlePreset)
+            let emitters = buildEmitterLayers(for: particlePreset, canvas: canvas)
             sublayers.append(contentsOf: emitters.layersXML)
             for emitter in emitters.layerRefs {
                 overrides.append(StateOverride(targetId: emitter.id, layerName: emitter.name, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 0.88, isInteger: false))
@@ -803,11 +1154,34 @@ enum CAMLCompiler {
         let cells: [EmitterCellSpec]
     }
 
-    private static func buildVolumetricLightLayers(for preset: ParticlePreset) -> (layersXML: [String], overrides: [StateOverride]) {
+    private static func buildVolumetricLightLayers(
+        for preset: ParticlePreset,
+        canvas: CanvasMetrics = .standardPhone
+    ) -> (layersXML: [String], overrides: [StateOverride]) {
+        let sx = canvas.scaleX
+        let sy = canvas.scaleY
+        let idP = canvas.idPrefix
+        let nP = canvas.namePrefix
+
         switch preset {
         case .sunbeamRays:
+            let s0Id = "\(idP)sunbeam_layer_0"
+            let s0Name = "\(nP)Sunbeam Shaft A"
+            let s1Id = "\(idP)sunbeam_layer_1"
+            let s1Name = "\(nP)Sunbeam Shaft B"
+            let s0W = Int((520.0 * sx).rounded())
+            let s0H = Int((960.0 * sy).rounded())
+            let s0X = Int((165.0 * sx).rounded())
+            let s0Y = Int((480.0 * sy).rounded())
+            let s0MinX = Int((145.0 * sx).rounded())
+            let s0MaxX = Int((195.0 * sx).rounded())
+            let s1W = Int((480.0 * sx).rounded())
+            let s1H = Int((920.0 * sy).rounded())
+            let s1X = Int((235.0 * sx).rounded())
+            let s1Y = Int((450.0 * sy).rounded())
+
             let layer0 = """
-                  <CALayer id="sunbeam_layer_0" name="Sunbeam Shaft A" bounds="0 0 520 960" position="165 480" zPosition="2" opacity="0.78" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(s0Id)" name="\(s0Name)" bounds="0 0 \(s0W) \(s0H)" position="\(s0X) \(s0Y)" zPosition="2" opacity="0.78" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents type="CGImage" src="assets/particle_sunbeam_veil.png"/>
                     <compositingFilter type="CAFilter" filter="plusL" name="plusL"/>
                     <animations>
@@ -827,15 +1201,15 @@ enum CAMLCompiler {
                           <integer value="1"/>
                         </keyTimes>
                         <values>
-                          <real value="145"/>
-                          <real value="195"/>
+                          <real value="\(s0MinX)"/>
+                          <real value="\(s0MaxX)"/>
                         </values>
                       </animation>
                     </animations>
                   </CALayer>
             """
             let layer1 = """
-                  <CALayer id="sunbeam_layer_1" name="Sunbeam Shaft B" bounds="0 0 480 920" position="235 450" zPosition="3" opacity="0.55" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(s1Id)" name="\(s1Name)" bounds="0 0 \(s1W) \(s1H)" position="\(s1X) \(s1Y)" zPosition="3" opacity="0.55" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents type="CGImage" src="assets/particle_sunbeam_veil.png"/>
                     <compositingFilter type="CAFilter" filter="plusL" name="plusL"/>
                     <animations>
@@ -865,16 +1239,31 @@ enum CAMLCompiler {
             return (
                 [layer0, layer1],
                 [
-                    StateOverride(targetId: "sunbeam_layer_0", layerName: "Sunbeam Shaft A", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.78, unlockVal: 0.65, isInteger: false),
-                    StateOverride(targetId: "sunbeam_layer_0", layerName: "Sunbeam Shaft A", keyPath: "speed", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
-                    StateOverride(targetId: "sunbeam_layer_1", layerName: "Sunbeam Shaft B", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.55, unlockVal: 0.45, isInteger: false),
-                    StateOverride(targetId: "sunbeam_layer_1", layerName: "Sunbeam Shaft B", keyPath: "speed", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false)
+                    StateOverride(targetId: s0Id, layerName: s0Name, keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.78, unlockVal: 0.65, isInteger: false),
+                    StateOverride(targetId: s0Id, layerName: s0Name, keyPath: "speed", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+                    StateOverride(targetId: s1Id, layerName: s1Name, keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.55, unlockVal: 0.45, isInteger: false),
+                    StateOverride(targetId: s1Id, layerName: s1Name, keyPath: "speed", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false)
                 ]
             )
 
         case .auroraRibbon:
+            let a0Id = "\(idP)aurora_layer_0"
+            let a0Name = "\(nP)Aurora Silk Veil A"
+            let a1Id = "\(idP)aurora_layer_1"
+            let a1Name = "\(nP)Aurora Silk Veil B"
+            let a0W = Int((560.0 * sx).rounded())
+            let a0H = Int((620.0 * sy).rounded())
+            let a0X = Int((195.0 * sx).rounded())
+            let a0Y = Int((570.0 * sy).rounded())
+            let a1W = Int((540.0 * sx).rounded())
+            let a1H = Int((560.0 * sy).rounded())
+            let a1X = Int((195.0 * sx).rounded())
+            let a1Y = Int((390.0 * sy).rounded())
+            let minX = Int((145.0 * sx).rounded())
+            let maxX = Int((245.0 * sx).rounded())
+
             let layer0 = """
-                  <CALayer id="aurora_layer_0" name="Aurora Silk Veil A" bounds="0 0 560 620" position="195 570" zPosition="2" opacity="0.80" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(a0Id)" name="\(a0Name)" bounds="0 0 \(a0W) \(a0H)" position="\(a0X) \(a0Y)" zPosition="2" opacity="0.80" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents type="CGImage" src="assets/particle_aurora_silk_a.png"/>
                     <compositingFilter type="CAFilter" filter="plusL" name="plusL"/>
                     <animations>
@@ -884,8 +1273,8 @@ enum CAMLCompiler {
                           <integer value="1"/>
                         </keyTimes>
                         <values>
-                          <real value="145"/>
-                          <real value="245"/>
+                          <real value="\(minX)"/>
+                          <real value="\(maxX)"/>
                         </values>
                       </animation>
                       <animation type="CAKeyframeAnimation" keyPath="transform.scale.x" autoreverses="1" beginTime="1e-100" duration="5.4" fillMode="both" removedOnCompletion="0" repeatCount="inf" timingFunction="easeInEaseOut">
@@ -912,7 +1301,7 @@ enum CAMLCompiler {
                   </CALayer>
             """
             let layer1 = """
-                  <CALayer id="aurora_layer_1" name="Aurora Silk Veil B" bounds="0 0 540 560" position="195 390" zPosition="3" opacity="0.58" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(a1Id)" name="\(a1Name)" bounds="0 0 \(a1W) \(a1H)" position="\(a1X) \(a1Y)" zPosition="3" opacity="0.58" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents type="CGImage" src="assets/particle_aurora_silk_a.png"/>
                     <compositingFilter type="CAFilter" filter="plusL" name="plusL"/>
                     <animations>
@@ -922,8 +1311,8 @@ enum CAMLCompiler {
                           <integer value="1"/>
                         </keyTimes>
                         <values>
-                          <real value="245"/>
-                          <real value="145"/>
+                          <real value="\(maxX)"/>
+                          <real value="\(minX)"/>
                         </values>
                       </animation>
                       <animation type="CAKeyframeAnimation" keyPath="transform.rotation.z" autoreverses="1" beginTime="1e-100" duration="9.2" fillMode="both" removedOnCompletion="0" repeatCount="inf" timingFunction="easeInEaseOut">
@@ -952,10 +1341,10 @@ enum CAMLCompiler {
             return (
                 [layer0, layer1],
                 [
-                    StateOverride(targetId: "aurora_layer_0", layerName: "Aurora Silk Veil A", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.80, unlockVal: 0.68, isInteger: false),
-                    StateOverride(targetId: "aurora_layer_0", layerName: "Aurora Silk Veil A", keyPath: "speed", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
-                    StateOverride(targetId: "aurora_layer_1", layerName: "Aurora Silk Veil B", keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.58, unlockVal: 0.48, isInteger: false),
-                    StateOverride(targetId: "aurora_layer_1", layerName: "Aurora Silk Veil B", keyPath: "speed", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false)
+                    StateOverride(targetId: a0Id, layerName: a0Name, keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.80, unlockVal: 0.68, isInteger: false),
+                    StateOverride(targetId: a0Id, layerName: a0Name, keyPath: "speed", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+                    StateOverride(targetId: a1Id, layerName: a1Name, keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.58, unlockVal: 0.48, isInteger: false),
+                    StateOverride(targetId: a1Id, layerName: a1Name, keyPath: "speed", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false)
                 ]
             )
 
@@ -964,7 +1353,10 @@ enum CAMLCompiler {
         }
     }
 
-    private static func buildEmitterLayers(for preset: ParticlePreset) -> (layersXML: [String], layerRefs: [(id: String, name: String)]) {
+    private static func buildEmitterLayers(
+        for preset: ParticlePreset,
+        canvas: CanvasMetrics = .standardPhone
+    ) -> (layersXML: [String], layerRefs: [(id: String, name: String)]) {
         let specs: [EmitterLayerSpec]
         switch preset {
         case .none:
@@ -1416,10 +1808,16 @@ enum CAMLCompiler {
         var xmls: [String] = []
         var refs: [(id: String, name: String)] = []
         for layer in specs {
-            refs.append((id: layer.id, name: layer.name))
+            let scaledID = "\(canvas.idPrefix)\(layer.id)"
+            let scaledName = "\(canvas.namePrefix)\(layer.name)"
+            let ePosX = Int((Double(layer.emitterPosX) * canvas.scaleX).rounded())
+            let ePosY = Int((Double(layer.emitterPosY) * canvas.scaleY).rounded())
+            let eW = Int((Double(layer.emitterW) * canvas.scaleX).rounded())
+            let eH = Int((Double(layer.emitterH) * canvas.scaleY).rounded())
+            refs.append((id: scaledID, name: scaledName))
             let cellsXML = layer.cells.map { c in
                 """
-                          <CAEmitterCell id="\(c.id)" name="\(c.id)" contentsScale="2" birthRate="\(c.birthRate)" lifetime="\(c.lifetime)" velocity="\(c.velocity)" velocityRange="\(c.velocityRange)" emissionRange="\(c.emissionRange)" emissionLongitude="\(c.emissionLong)" emissionLatitude="0" scale="\(c.scale)" scaleRange="\(c.scaleRange)" scaleSpeed="\(c.scaleSpeed)" alphaRange="\(c.alphaRange)" alphaSpeed="\(c.alphaSpeed)" spin="\(c.spin)" spinRange="\(c.spinRange)" xAcceleration="\(c.xAccel)" yAcceleration="\(c.yAccel)" redRange="\(c.redRange)" greenRange="\(c.greenRange)" blueRange="\(c.blueRange)" redSpeed="0" greenSpeed="\(c.greenSpeed)" blueSpeed="\(c.blueSpeed)">
+                          <CAEmitterCell id="\(canvas.idPrefix)\(c.id)" name="\(canvas.idPrefix)\(c.id)" contentsScale="2" birthRate="\(c.birthRate)" lifetime="\(c.lifetime)" velocity="\(c.velocity)" velocityRange="\(c.velocityRange)" emissionRange="\(c.emissionRange)" emissionLongitude="\(c.emissionLong)" emissionLatitude="0" scale="\(c.scale)" scaleRange="\(c.scaleRange)" scaleSpeed="\(c.scaleSpeed)" alphaRange="\(c.alphaRange)" alphaSpeed="\(c.alphaSpeed)" spin="\(c.spin)" spinRange="\(c.spinRange)" xAcceleration="\(c.xAccel)" yAcceleration="\(c.yAccel)" redRange="\(c.redRange)" greenRange="\(c.greenRange)" blueRange="\(c.blueRange)" redSpeed="0" greenSpeed="\(c.greenSpeed)" blueSpeed="\(c.blueSpeed)">
                             <color value="\(c.colorRGB)" opacity="\(c.colorAlpha)"/>
                             <contents>
                               <CGImage src="assets/\(c.spriteFilename)"/>
@@ -1429,7 +1827,7 @@ enum CAMLCompiler {
             }.joined(separator: "\n")
 
             xmls.append("""
-                  <CAEmitterLayer id="\(layer.id)" name="\(layer.name)" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="\(layer.zPos)" emitterPosition="\(layer.emitterPosX) \(layer.emitterPosY)" emitterSize="\(layer.emitterW) \(layer.emitterH)" emitterShape="rectangle" emitterMode="volume" renderMode="\(layer.renderMode)" birthRate="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CAEmitterLayer id="\(scaledID)" name="\(scaledName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="\(layer.zPos)" emitterPosition="\(ePosX) \(ePosY)" emitterSize="\(eW) \(eH)" emitterShape="rectangle" emitterMode="volume" renderMode="\(layer.renderMode)" birthRate="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <emitterCells>
             \(cellsXML)
                     </emitterCells>
@@ -1717,7 +2115,232 @@ enum CAMLCompiler {
         """
     }
 
-    private static func standardIndexXML() -> String {
+    private static func dualParallaxEntries(for canvas: CanvasMetrics, gyroIntensity: Double) -> (bg: [String], fg: [String], bgOverscan: String) {
+        let clampedGyro = max(0.20, min(gyroIntensity, 1.0))
+        let bgShiftX = Int((26.0 * clampedGyro * canvas.scaleX).rounded())
+        let bgShiftY = Int((34.0 * clampedGyro * canvas.scaleY).rounded())
+        let fgShiftX = Int((34.0 * clampedGyro * canvas.scaleX).rounded())
+        let fgShiftY = Int((44.0 * clampedGyro * canvas.scaleY).rounded())
+        let fxShiftX = Int((46.0 * clampedGyro * canvas.scaleX).rounded())
+        let fxShiftY = Int((58.0 * clampedGyro * canvas.scaleY).rounded())
+
+        let bg = [
+            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: canvas.bgParallaxName, minVal: -bgShiftX, maxVal: bgShiftX, title: "\(canvas.namePrefix)Camlo BG X", view: "Background"),
+            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: canvas.bgParallaxName, minVal: -bgShiftY, maxVal: bgShiftY, title: "\(canvas.namePrefix)Camlo BG Y", view: "Background")
+        ]
+        let fg = [
+            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: canvas.fgParallaxName, minVal: fgShiftX, maxVal: -fgShiftX, title: "\(canvas.namePrefix)Camlo FG X", view: "Floating"),
+            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: canvas.fgParallaxName, minVal: fgShiftY, maxVal: -fgShiftY, title: "\(canvas.namePrefix)Camlo FG Y", view: "Floating"),
+            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: canvas.fxParallaxName, minVal: fxShiftX, maxVal: -fxShiftX, title: "\(canvas.namePrefix)Camlo FX X", view: "Floating"),
+            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: canvas.fxParallaxName, minVal: fxShiftY, maxVal: -fxShiftY, title: "\(canvas.namePrefix)Camlo FX Y", view: "Floating")
+        ]
+        return (bg, fg, String(format: "%.4f", 1.0 + 0.16 * clampedGyro))
+    }
+
+    private static func displayVariantDictionaryXML(
+        screenName: String,
+        backgroundLayerName: String,
+        floatingLayerName: String,
+        canvas: CanvasMetrics,
+        bgParallaxEntries: [String],
+        fgParallaxEntries: [String],
+        bgPropertyEntries: [String],
+        fgPropertyEntries: [String]
+    ) -> String {
+        let bgPropBlock = bgPropertyEntries.isEmpty
+            ? "          <backgroundPropertyGroups type=\"NSArray\"/>"
+            : "          <backgroundPropertyGroups type=\"NSArray\">\n\(bgPropertyEntries.joined(separator: "\n"))\n          </backgroundPropertyGroups>"
+        let fgPropBlock = fgPropertyEntries.isEmpty
+            ? "          <floatingPropertyGroups type=\"NSArray\"/>"
+            : "          <floatingPropertyGroups type=\"NSArray\">\n\(fgPropertyEntries.joined(separator: "\n"))\n          </floatingPropertyGroups>"
+        return """
+                <NSDictionary>
+                  <screenName type="string" value="\(screenName)"/>
+                  <backgroundLayerName type="string" value="\(backgroundLayerName)"/>
+                  <floatingLayerName type="string" value="\(floatingLayerName)"/>
+                  <idealWidth type="integer" value="\(canvas.width)"/>
+                  <idealHeight type="integer" value="\(canvas.height)"/>
+                  <retinaMultiplier type="integer" value="3"/>
+                  <backgroundParallaxGroups type="NSArray">
+        \(bgParallaxEntries.joined(separator: "\n"))
+                  </backgroundParallaxGroups>
+                  <floatingParallaxGroups type="NSArray">
+        \(fgParallaxEntries.joined(separator: "\n"))
+                  </floatingParallaxGroups>
+        \(bgPropBlock)
+        \(fgPropBlock)
+                </NSDictionary>
+        """
+    }
+
+    private static func wrapDuoDualRootCAML(
+        outer: CanvasMetrics,
+        inner: CanvasMetrics,
+        outerBgSublayersXML: String,
+        outerFgSublayersXML: String,
+        outerFxSublayersXML: String,
+        innerBgSublayersXML: String,
+        innerFgSublayersXML: String,
+        innerFxSublayersXML: String,
+        outerFgOverscanScale: Double,
+        innerFgOverscanScale: Double,
+        outerBgOverrides: [StateOverride],
+        outerFloatingOverrides: [StateOverride],
+        innerBgOverrides: [StateOverride],
+        innerFloatingOverrides: [StateOverride],
+        duration: Double,
+        bounce: Double,
+        gyroIntensity: Double
+    ) -> String {
+        let outerPx = dualParallaxEntries(for: outer, gyroIntensity: gyroIntensity)
+        let innerPx = dualParallaxEntries(for: inner, gyroIntensity: gyroIntensity)
+
+        let outerBgProps = outerBgOverrides.flatMap { propertyGroupEntriesXML(for: $0, view: "Background") }
+        let outerFgProps = outerFloatingOverrides.flatMap { propertyGroupEntriesXML(for: $0, view: "Floating") }
+        let innerBgProps = innerBgOverrides.flatMap { propertyGroupEntriesXML(for: $0, view: "Background") }
+        let innerFgProps = innerFloatingOverrides.flatMap { propertyGroupEntriesXML(for: $0, view: "Floating") }
+
+        let allOuterProps = outerBgProps + outerFgProps
+        let topPropertyGroupsXML: String = allOuterProps.isEmpty
+            ? "      <wallpaperPropertyGroups type=\"NSArray\"/>"
+            : "      <wallpaperPropertyGroups type=\"NSArray\">\n\(allOuterProps.joined(separator: "\n"))\n      </wallpaperPropertyGroups>"
+
+        let wallpapersXML = [
+            displayVariantDictionaryXML(
+                screenName: "Outer",
+                backgroundLayerName: "BACKGROUND",
+                floatingLayerName: "FLOATING",
+                canvas: outer,
+                bgParallaxEntries: outerPx.bg,
+                fgParallaxEntries: outerPx.fg,
+                bgPropertyEntries: outerBgProps,
+                fgPropertyEntries: outerFgProps
+            ),
+            displayVariantDictionaryXML(
+                screenName: "Inner",
+                backgroundLayerName: "BACKGROUND_INNER",
+                floatingLayerName: "FLOATING_INNER",
+                canvas: inner,
+                bgParallaxEntries: innerPx.bg,
+                fgParallaxEntries: innerPx.fg,
+                bgPropertyEntries: innerBgProps,
+                fgPropertyEntries: innerFgProps
+            )
+        ].joined(separator: "\n")
+
+        func planePairXML(
+            canvas: CanvasMetrics,
+            bgID: String,
+            bgName: String,
+            fgID: String,
+            fgName: String,
+            bgZ: Int,
+            fgZ: Int,
+            bgOverscan: String,
+            fgOverscan: Double,
+            bgSublayers: String,
+            fgSublayers: String,
+            fxSublayers: String
+        ) -> String {
+            let fgScaleStr = String(format: "%.4f", max(1.0, fgOverscan))
+            let bIn = bgSublayers.isEmpty ? "" : "\n                <sublayers>\n\(bgSublayers)\n                </sublayers>"
+            let fIn = fgSublayers.isEmpty ? "" : "\n                <sublayers>\n\(fgSublayers)\n                </sublayers>"
+            let xIn = fxSublayers.isEmpty ? "" : "\n              <sublayers>\n\(fxSublayers)\n              </sublayers>"
+            let w = canvas.width
+            let h = canvas.height
+            let cx = canvas.centerX
+            let cy = canvas.centerY
+            return """
+              <CALayer id="\(bgID)" name="\(bgName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="\(bgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                <sublayers>
+                  <CALayer id="\(canvas.idPrefix)camlo_bg_parallax" name="\(canvas.bgParallaxName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                    <sublayers>
+                      <CALayer id="\(canvas.idPrefix)camlo_bg_overscan" name="\(canvas.bgOverscanName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="0" opacity="1" transform="scale(\(bgOverscan), \(bgOverscan), 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bIn)
+                      </CALayer>
+                    </sublayers>
+                  </CALayer>
+                </sublayers>
+              </CALayer>
+              <CALayer id="\(fgID)" name="\(fgName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="\(fgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                <sublayers>
+                  <CALayer id="\(canvas.idPrefix)camlo_fg_parallax" name="\(canvas.fgParallaxName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                    <sublayers>
+                      <CALayer id="\(canvas.idPrefix)camlo_fg_overscan" name="\(canvas.fgOverscanName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="0" opacity="1" transform="scale(\(fgScaleStr), \(fgScaleStr), 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fIn)
+                      </CALayer>
+                    </sublayers>
+                  </CALayer>
+                  <CALayer id="\(canvas.idPrefix)camlo_fx_parallax" name="\(canvas.fxParallaxName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(xIn)
+                  </CALayer>
+                </sublayers>
+              </CALayer>
+            """
+        }
+
+        let innerPlanes = planePairXML(
+            canvas: inner,
+            bgID: "background_inner",
+            bgName: "BACKGROUND_INNER",
+            fgID: "floating_inner",
+            fgName: "FLOATING_INNER",
+            bgZ: -10,
+            fgZ: -9,
+            bgOverscan: innerPx.bgOverscan,
+            fgOverscan: innerFgOverscanScale,
+            bgSublayers: innerBgSublayersXML,
+            fgSublayers: innerFgSublayersXML,
+            fxSublayers: innerFxSublayersXML
+        )
+        let outerPlanes = planePairXML(
+            canvas: outer,
+            bgID: "background",
+            bgName: "BACKGROUND",
+            fgID: "floating",
+            fgName: "FLOATING",
+            bgZ: 0,
+            fgZ: 10,
+            bgOverscan: outerPx.bgOverscan,
+            fgOverscan: outerFgOverscanScale,
+            bgSublayers: outerBgSublayersXML,
+            fgSublayers: outerFgSublayersXML,
+            fxSublayers: outerFxSublayersXML
+        )
+
+        let statesXML = statesAndTransitionsXML(
+            overrides: outerBgOverrides + outerFloatingOverrides + innerBgOverrides + innerFloatingOverrides,
+            duration: duration,
+            bounce: bounce
+        )
+
+        return """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!-- Generated by Camlo · 开幕 (iPhone Duo Dual-Canvas ParameterizedCA Engine) -->
+        <caml xmlns="http://www.apple.com/CoreAnimation/1.0">
+          <CALayer id="__capRootLayer__" name="Root Layer" bounds="0 0 \(outer.width) \(outer.height)" position="\(outer.centerX) \(outer.centerY)" zPosition="0" geometryFlipped="0" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+            <style>
+              <wallpaperBackgroundAssetNames type="NSArray"/>
+              <wallpaperFloatingAssetNames type="NSArray"/>
+              <wallpaperParallaxGroups type="NSArray">
+        \((outerPx.bg + outerPx.fg).joined(separator: "\n"))
+              </wallpaperParallaxGroups>
+        \(topPropertyGroupsXML)
+              <wallpapers type="NSArray">
+        \(wallpapersXML)
+              </wallpapers>
+            </style>
+            <sublayers>
+        \(innerPlanes)
+        \(outerPlanes)
+            </sublayers>
+        \(statesXML)
+          </CALayer>
+        </caml>
+        """
+    }
+
+    private static func standardIndexXML(
+        documentWidth: Int = canvasW,
+        documentHeight: Int = canvasH
+    ) -> String {
         """
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -1726,11 +2349,11 @@ enum CAMLCompiler {
         \t<key>assetManifest</key>
         \t<string>assetManifest.caml</string>
         \t<key>documentHeight</key>
-        \t<real>\(canvasH)</real>
+        \t<real>\(documentHeight)</real>
         \t<key>documentResizesToView</key>
         \t<false/>
         \t<key>documentWidth</key>
-        \t<real>\(canvasW)</real>
+        \t<real>\(documentWidth)</real>
         \t<key>geometryFlipped</key>
         \t<false/>
         \t<key>loopEnd</key>

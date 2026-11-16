@@ -90,6 +90,7 @@ final class TendiesVaultStore: ObservableObject {
             at: descrDir,
             enableGyro: spec.enableGyroParallax,
             enableDayNight: spec.enableDayNightMode,
+            canvasProfile: spec.canvasProfile,
             posterStyle: spec.posterStyle,
             dayMetrics: dayMetrics,
             nightMetrics: nightMetrics
@@ -103,6 +104,9 @@ final class TendiesVaultStore: ObservableObject {
             : spec.title.trimmingCharacters(in: .whitespacesAndNewlines)
 
         var summaryParts = [spec.preset.title]
+        if spec.canvasProfile == .duoDualScreen {
+            summaryParts.append(Bi("Duo 双屏", "Duo Dual"))
+        }
         if spec.enableGyroParallax {
             summaryParts.append(Bi("3D 陀螺仪", "3D Gyro"))
         }
@@ -154,6 +158,7 @@ final class TendiesVaultStore: ObservableObject {
             at: descrDir,
             enableGyro: spec.enableGyroParallax,
             enableDayNight: false,
+            canvasProfile: spec.canvasProfile,
             posterStyle: spec.posterStyle,
             dayMetrics: metrics,
             nightMetrics: nil
@@ -172,6 +177,9 @@ final class TendiesVaultStore: ObservableObject {
 
         let durText = String(format: "%.1fs · %dfps", spec.sequence.durationSeconds, spec.sequence.fps)
         var summaryParts = [durText, spec.loopStyle.title]
+        if spec.canvasProfile == .duoDualScreen {
+            summaryParts.append(Bi("Duo 双屏", "Duo Dual"))
+        }
         if spec.enableGyroParallax {
             summaryParts.append(Bi("3D 陀螺仪", "3D Gyro"))
         }
@@ -647,6 +655,7 @@ final class TendiesVaultStore: ObservableObject {
         var detectedType = "LayeredAnimation"
         var hasGyroParallax = false
         var isAppearanceAware = false
+        var hasDuoDualCanvas = false
         var canvasW = 390
         var canvasH = 844
         var assets: [(name: String, image: UIImage)] = []
@@ -710,6 +719,9 @@ final class TendiesVaultStore: ObservableObject {
                     if xml.contains("<wallpaperParallaxGroups") && xml.contains("<NSDictionary") {
                         hasGyroParallax = true
                     }
+                    if xml.contains("<wallpapers") && xml.contains("BACKGROUND_INNER") {
+                        hasDuoDualCanvas = true
+                    }
                     for st in ["Sleep", "Locked", "Unlock"] where xml.contains("LKState name=\"\(st)\"") {
                         stateNamesSet.insert(st)
                     }
@@ -757,6 +769,7 @@ final class TendiesVaultStore: ObservableObject {
             isAppearanceAware: isAppearanceAware,
             clockFontIdentifier: styleSummary?.clockFontIdentifier,
             hasHomeLegibilityBlur: styleSummary?.hasLegibilityBlur ?? false,
+            hasDuoDualCanvas: hasDuoDualCanvas,
             assetImages: assets,
             packageSizeBytes: totalBytes
         )
@@ -875,17 +888,19 @@ final class TendiesVaultStore: ObservableObject {
         at descrDir: URL,
         enableGyro: Bool,
         enableDayNight: Bool,
+        canvasProfile: CanvasDisplayProfile = .standardPhone,
         posterStyle: PosterStyleSpec,
         dayMetrics: WallpaperPaletteMetrics,
         nightMetrics: WallpaperPaletteMetrics?
     ) throws -> URL {
+        let useParameterized = enableGyro || (canvasProfile == .duoDualScreen)
         let fm = FileManager.default
         let ver1Dir = descrDir.appendingPathComponent("versions/1", isDirectory: true)
         let contentsDir = ver1Dir.appendingPathComponent("contents", isDirectory: true)
         let supplements0Dir = ver1Dir.appendingPathComponent("supplements/0", isDirectory: true)
-        let baseIDInt = enableGyro ? 7920 : 7400
+        let baseIDInt = useParameterized ? 7920 : 7400
         let baseIDString = String(baseIDInt)
-        let wallpaperBundleName = enableGyro
+        let wallpaperBundleName = useParameterized
             ? "7920.Camlo_3D-390w-844h@3x~iphone.wallpaper"
             : "7400.WWDC_2022-390w-844h@3x~iphone.wallpaper"
         let wallpaperDir = contentsDir.appendingPathComponent(wallpaperBundleName, isDirectory: true)
@@ -957,7 +972,7 @@ final class TendiesVaultStore: ObservableObject {
         var lockAndHomeDict: [String: Any] = [:]
         let wallpaperPlistDict: [String: Any]
 
-        if enableGyro {
+        if useParameterized {
             lockAndHomeDict["default"] = [
                 "assetFileName": "wallpaper.ca",
                 "identifier": 7920,
@@ -974,14 +989,15 @@ final class TendiesVaultStore: ObservableObject {
             }
             wallpaperPlistDict = [
                 "appearanceAware": enableDayNight,
-                "contentVersion": 1.07,
+                "contentVersion": canvasProfile == .duoDualScreen ? 1.11 : 1.07,
                 "family": "Marble",
                 "identifier": 7920,
                 "logicalScreenClass": "any",
                 "name": "Lavender",
                 "preferredProminentColor": prominentColorDict,
                 "preferredTitleColor": [preferredTitleHex],
-                "version": 6,
+                "requiresLandscapeScaling": true,
+                "version": canvasProfile == .duoDualScreen ? 7 : 6,
                 "wantsDeviceMotion": true,
                 "assets": [
                     "lockAndHome": lockAndHomeDict

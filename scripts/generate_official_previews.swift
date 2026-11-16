@@ -316,13 +316,15 @@ func writeAnimatedWebP(
     let proc = Process()
     proc.executableURL = img2webp
     proc.arguments = args
+    proc.standardInput = FileHandle.nullDevice
     let errPipe = Pipe()
     proc.standardError = errPipe
     proc.standardOutput = FileHandle.nullDevice
     try proc.run()
+    let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
     proc.waitUntilExit()
     if proc.terminationStatus != 0 {
-        let errText = String(data: errPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        let errText = String(data: errData, encoding: .utf8) ?? ""
         throw NSError(domain: "GenPreviews", code: 5, userInfo: [NSLocalizedDescriptionKey: "img2webp failed (\(proc.terminationStatus)) for \(url.lastPathComponent): \(errText)"])
     }
 
@@ -334,11 +336,159 @@ func unzipArchive(_ zipURL: URL, to destDir: URL) throws {
     let proc = Process()
     proc.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
     proc.arguments = ["-q", zipURL.path, "-d", destDir.path]
+    proc.standardInput = FileHandle.nullDevice
     try proc.run()
     proc.waitUntilExit()
     if proc.terminationStatus != 0 {
         throw NSError(domain: "GenPreviews", code: 6, userInfo: [NSLocalizedDescriptionKey: "unzip failed with status \(proc.terminationStatus) for \(zipURL.lastPathComponent)"])
     }
+}
+
+func generateDuoPreview(
+    pack: PackMeta,
+    extractedDir: URL,
+    outURL: URL,
+    workDir: URL,
+    img2webp: URL
+) throws {
+    guard let caDir = findDirectory(named: "wallpaper.ca", under: extractedDir) else {
+        throw NSError(domain: "GenPreviews", code: 12, userInfo: [NSLocalizedDescriptionKey: "Missing wallpaper.ca for \(pack.id)"])
+    }
+    let assetsDir = caDir.appendingPathComponent("assets", isDirectory: true)
+    let w: CGFloat = 560
+    let h: CGFloat = 394
+    let innerRect = CGRect(x: 0, y: 0, width: w, height: h)
+    let pipRect = CGRect(x: 18, y: 18, width: 108, height: 157)
+    let pipCorner: CGFloat = 16
+    let accent = colorFromHex(pack.accentHex)
+
+    let outerSprite: CGImage? = {
+        let files = (try? FileManager.default.contentsOfDirectory(at: assetsDir, includingPropertiesForKeys: nil)) ?? []
+        return files.first(where: { $0.pathExtension.lowercased() == "png" && $0.lastPathComponent.hasPrefix("particle_") }).flatMap { loadCGImage(at: $0) }
+    }()
+
+    var encodedFrames: [(CGImage, Int)] = []
+
+    func drawBeveledPiP(_ outerImg: CGImage, scale: CGFloat, clockAlpha: CGFloat, cutout: CGImage?, in ctx: CGContext) {
+        ctx.saveGState()
+        let shadowRect = pipRect.insetBy(dx: -3, dy: -3)
+        let shadowPath = CGPath(roundedRect: shadowRect, cornerWidth: pipCorner + 2, cornerHeight: pipCorner + 2, transform: nil)
+        ctx.setShadow(offset: CGSize(width: 0, height: -4), blur: 10, color: NSColor.black.withAlphaComponent(0.65).cgColor)
+        ctx.setFillColor(NSColor(white: 0.08, alpha: 1.0).cgColor)
+        ctx.addPath(shadowPath)
+        ctx.fillPath()
+        ctx.restoreGState()
+
+        ctx.saveGState()
+        let clipPath = CGPath(roundedRect: pipRect, cornerWidth: pipCorner, cornerHeight: pipCorner, transform: nil)
+        ctx.addPath(clipPath)
+        ctx.clip()
+        drawAspectFill(outerImg, in: ctx, rect: pipRect, alpha: 1.0, scale: scale)
+
+        if clockAlpha > 0.04 {
+            drawLockClock(in: ctx, width: pipRect.width, height: pipRect.height, alpha: clockAlpha * 0.9)
+        }
+        if let cutout {
+            drawAspectFill(cutout, in: ctx, rect: pipRect, alpha: 1.0, scale: scale)
+        }
+        ctx.restoreGState()
+
+        ctx.saveGState()
+        let borderPath = CGPath(roundedRect: pipRect, cornerWidth: pipCorner, cornerHeight: pipCorner, transform: nil)
+        ctx.setStrokeColor(NSColor.white.withAlphaComponent(0.75).cgColor)
+        ctx.setLineWidth(2.0)
+        ctx.addPath(borderPath)
+        ctx.strokePath()
+        ctx.restoreGState()
+    }
+
+    if pack.kind == "duoMotion" {
+        let count = max(12, pack.motion?.frameCount ?? 16)
+        let delayMs = Int(round(1000.0 / Double(max(8, pack.motion?.fps ?? 12))))
+        for idx in 0..<count {
+            guard let innerCG = loadCGImage(at: assetsDir.appendingPathComponent("inner_frame_\(idx).jpg")),
+                  let outerCG = loadCGImage(at: assetsDir.appendingPathComponent("frame_\(idx).jpg")) else { continue }
+            let ctx = try makeRGBContext(width: Int(w), height: Int(h))
+            drawAspectFill(innerCG, in: ctx, rect: innerRect)
+            let phase = CGFloat(idx) / CGFloat(max(1, count))
+            drawParticleSprites(outerSprite, preset: pack.particlePreset, phase: phase, in: ctx, width: w, height: h, opacityScale: 0.80)
+            drawLockClock(in: ctx, width: w, height: h, alpha: 0.85)
+            // Subtle book crease
+            ctx.setFillColor(NSColor.white.withAlphaComponent(0.10).cgColor)
+            ctx.fill(CGRect(x: w * 0.5 - 0.5, y: 0, width: 1, height: h))
+            drawBeveledPiP(outerCG, scale: 1.0, clockAlpha: 0.0, cutout: nil, in: ctx)
+            if let outImg = ctx.makeImage() {
+                encodedFrames.append((outImg, delayMs))
+            }
+        }
+    } else {
+        guard let outerLock = loadCGImage(at: assetsDir.appendingPathComponent("locked.jpg")),
+              let outerUnlock = loadCGImage(at: assetsDir.appendingPathComponent("unlock.jpg")),
+              let innerLock = loadCGImage(at: assetsDir.appendingPathComponent("inner_locked.jpg")),
+              let innerUnlock = loadCGImage(at: assetsDir.appendingPathComponent("inner_unlock.jpg")) else {
+            throw NSError(domain: "GenPreviews", code: 13, userInfo: [NSLocalizedDescriptionKey: "Missing Duo morph images for \(pack.id)"])
+        }
+        let innerCutLock = loadCGImage(at: assetsDir.appendingPathComponent("inner_cutout_lock.png"))
+        let innerCutUnlock = loadCGImage(at: assetsDir.appendingPathComponent("inner_cutout_unlock.png"))
+
+        let totalFrames = 16
+        for idx in 0..<totalFrames {
+            let ctx = try makeRGBContext(width: Int(w), height: Int(h))
+            let phase = CGFloat(idx) / CGFloat(totalFrames)
+            let delayMs: Int
+            let lockAlpha: CGFloat, unlockAlpha: CGFloat
+            let clockAlpha: CGFloat
+            let flashAlpha: CGFloat
+
+            if idx == 0 {
+                delayMs = 680; lockAlpha = 1.0; unlockAlpha = 0.0; clockAlpha = 0.94; flashAlpha = 0.0
+            } else if idx <= 8 {
+                delayMs = 80
+                let t = easeInOut(CGFloat(idx) / 9.0)
+                lockAlpha = 1.0 - t; unlockAlpha = t
+                clockAlpha = max(0, (1.0 - t * 1.45) * 0.94)
+                flashAlpha = (pack.transitionPreset == "flashAwaken" || pack.transitionPreset == "burstZoom") ? sin(t * .pi) * 0.14 : 0.0
+            } else if idx == 9 {
+                delayMs = 680; lockAlpha = 0.0; unlockAlpha = 1.0; clockAlpha = 0.0; flashAlpha = 0.0
+            } else {
+                delayMs = 85
+                let b = easeInOut(CGFloat(idx - 9) / 7.0)
+                unlockAlpha = 1.0 - b; lockAlpha = b; clockAlpha = b * 0.94; flashAlpha = 0.0
+            }
+
+            drawAspectFill(innerLock, in: ctx, rect: innerRect, alpha: lockAlpha)
+            drawAspectFill(innerUnlock, in: ctx, rect: innerRect, alpha: unlockAlpha)
+            if flashAlpha > 0.005 {
+                ctx.setFillColor(accent.withAlphaComponent(flashAlpha).cgColor)
+                ctx.fill(innerRect)
+            }
+            drawLockClock(in: ctx, width: w, height: h, alpha: clockAlpha)
+            if let icl = innerCutLock, lockAlpha > 0.05 {
+                drawAspectFill(icl, in: ctx, rect: innerRect, alpha: lockAlpha)
+            }
+            if let icu = innerCutUnlock, unlockAlpha > 0.05 && lockAlpha > 0.02 {
+                drawAspectFill(icu, in: ctx, rect: innerRect, alpha: min(1.0, unlockAlpha * 0.85))
+            }
+            drawParticleSprites(outerSprite, preset: pack.particlePreset, phase: phase, in: ctx, width: w, height: h, opacityScale: 0.88)
+            ctx.setFillColor(NSColor.white.withAlphaComponent(0.10).cgColor)
+            ctx.fill(CGRect(x: w * 0.5 - 0.5, y: 0, width: 1, height: h))
+
+            // Draw matching outer screen inside PiP bezel
+            let pipCtx = try makeRGBContext(width: Int(pipRect.width), height: Int(pipRect.height))
+            let rP = CGRect(x: 0, y: 0, width: pipRect.width, height: pipRect.height)
+            drawAspectFill(outerLock, in: pipCtx, rect: rP, alpha: lockAlpha)
+            drawAspectFill(outerUnlock, in: pipCtx, rect: rP, alpha: unlockAlpha)
+            if let pipImg = pipCtx.makeImage() {
+                drawBeveledPiP(pipImg, scale: 1.0, clockAlpha: 0.0, cutout: nil, in: ctx)
+            }
+
+            if let outImg = ctx.makeImage() {
+                encodedFrames.append((outImg, delayMs))
+            }
+        }
+    }
+
+    try writeAnimatedWebP(frames: encodedFrames, to: outURL, workDir: workDir, img2webp: img2webp, quality: 72)
 }
 
 func findDirectory(named suffix: String, under root: URL) -> URL? {
@@ -590,7 +740,9 @@ func run() throws {
         let unpackDir = workTempRoot.appendingPathComponent(pack.id, isDirectory: true)
         try unzipArchive(tendiesURL, to: unpackDir)
 
-        if pack.category == "motion" {
+        if pack.category == "duo" {
+            try generateDuoPreview(pack: pack, extractedDir: unpackDir, outURL: outWebP, workDir: workTempRoot, img2webp: img2webp)
+        } else if pack.category == "motion" {
             try generateMotionLoopPreview(pack: pack, extractedDir: unpackDir, outURL: outWebP, workDir: workTempRoot, img2webp: img2webp)
         } else {
             try generateMorphPairPreview(pack: pack, extractedDir: unpackDir, outURL: outWebP, workDir: workTempRoot, img2webp: img2webp)

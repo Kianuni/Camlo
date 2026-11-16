@@ -19,7 +19,7 @@ private enum PickedMorphSlotMedia {
 
 struct MorphEditorView: View {
     private enum CropSlot: String, Identifiable {
-        case lock, unlock, sleep
+        case lock, unlock, sleep, innerLock, innerUnlock
         var id: String { rawValue }
     }
 
@@ -86,10 +86,22 @@ struct MorphEditorView: View {
     @State private var isSynthesizingNight: Bool = false
     @State private var isCuttingNightSubject: Bool = false
 
-    // 3D Gyroscope Parallax (ParameterizedCA) & Smart Poster Style
+    // 3D Gyroscope Parallax (ParameterizedCA) & Smart Poster Style & iPhone Duo Dual Canvas
     @State private var enableGyroParallax: Bool = false
     @State private var gyroIntensity: Double = 0.65
     @State private var posterStyle: PosterStyleSpec = PosterStyleSpec()
+    @State private var canvasProfile: CanvasDisplayProfile = CamloDevice.isDuoFoldable ? .duoDualScreen : .standardPhone
+    @State private var previewDuoSurface: DuoScreenSurface = .outerCover
+    @State private var innerLockImage: UIImage?
+    @State private var innerUnlockImage: UIImage?
+    @State private var rawInnerLockImage: UIImage?
+    @State private var rawInnerUnlockImage: UIImage?
+    @State private var innerLockCutout: UIImage?
+    @State private var innerUnlockCutout: UIImage?
+    @State private var innerLockPickerItem: PhotosPickerItem?
+    @State private var innerUnlockPickerItem: PhotosPickerItem?
+    @State private var innerLockFraming: CropFraming = .identity
+    @State private var innerUnlockFraming: CropFraming = .identity
     @State private var showHomeScreenPreview: Bool = false
     @State private var dayPaletteMetrics: WallpaperPaletteMetrics? = nil
     @State private var nightPaletteMetrics: WallpaperPaletteMetrics? = nil
@@ -120,24 +132,60 @@ struct MorphEditorView: View {
             || enableDayNightMode
     }
 
+    private var activeOuterPixelSize: CGSize {
+        canvasProfile == .duoDualScreen
+            ? DuoScreenSurface.outerCover.morphPixelSize
+            : CAMLCompiler.retinaSize
+    }
+
+    private var activeCanvasLogicalSize: CGSize {
+        canvasProfile == .duoDualScreen
+            ? previewDuoSurface.logicalSize
+            : CGSize(width: 390, height: 844)
+    }
+
+    private var isShowingInnerDuoSurface: Bool {
+        canvasProfile == .duoDualScreen && previewDuoSurface == .innerUnfolded
+    }
+
     private var isShowingNightInSimulator: Bool {
         enableDayNightMode && previewNightMode
     }
 
     private var simulatorLockImage: UIImage? {
-        isShowingNightInSimulator ? (nightLockImage ?? lockImage) : lockImage
+        if isShowingInnerDuoSurface {
+            let base = innerLockImage ?? lockImage
+            if isShowingNightInSimulator, let base {
+                return PosterStyleGenerator.synthesizeNightImage(from: base)
+            }
+            return base
+        }
+        return isShowingNightInSimulator ? (nightLockImage ?? lockImage) : lockImage
     }
 
     private var simulatorUnlockImage: UIImage? {
-        isShowingNightInSimulator ? (nightUnlockImage ?? unlockImage) : unlockImage
+        if isShowingInnerDuoSurface {
+            let base = innerUnlockImage ?? unlockImage
+            if isShowingNightInSimulator, let base {
+                return PosterStyleGenerator.synthesizeNightImage(from: base)
+            }
+            return base
+        }
+        return isShowingNightInSimulator ? (nightUnlockImage ?? unlockImage) : unlockImage
     }
 
     private var simulatorLockCutout: UIImage? {
-        isShowingNightInSimulator ? nightLockCutout : lockCutout
+        if isShowingInnerDuoSurface {
+            return innerLockCutout
+        }
+        return isShowingNightInSimulator ? nightLockCutout : lockCutout
     }
 
     private var simulatorUnlockCutout: UIImage? {
-        isShowingNightInSimulator ? nightUnlockCutout : unlockCutout
+        if isShowingInnerDuoSurface {
+            return innerUnlockCutout
+        }
+        return isShowingNightInSimulator ? nightUnlockCutout : unlockCutout
     }
 
     private var simulatorParticlePreset: ParticlePreset {
@@ -145,6 +193,7 @@ struct MorphEditorView: View {
     }
 
     private var simulatorLockLiveFrames: [UIImage] {
+        guard !isShowingInnerDuoSurface else { return [] }
         guard isLockActivelyLive, !(isShowingNightInSimulator && nightLockImage != nil) else {
             return []
         }
@@ -152,6 +201,7 @@ struct MorphEditorView: View {
     }
 
     private var simulatorUnlockLiveFrames: [UIImage] {
+        guard !isShowingInnerDuoSurface else { return [] }
         guard isUnlockActivelyLive, !(isShowingNightInSimulator && nightUnlockImage != nil) else {
             return []
         }
@@ -165,6 +215,23 @@ struct MorphEditorView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                Picker("", selection: $canvasProfile) {
+                    ForEach(CanvasDisplayProfile.allCases) { profile in
+                        Text(profile.shortBadgeTitle).tag(profile)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.top, 4)
+
+                if canvasProfile == .duoDualScreen {
+                    Picker("", selection: $previewDuoSurface) {
+                        ForEach(DuoScreenSurface.allCases) { surface in
+                            Text(surface.localizedTitle).tag(surface)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 // 1. Live Interactive Lock Screen Simulator
                 LockScreenSimulatorView(
                     content: .morph(
@@ -184,7 +251,8 @@ struct MorphEditorView: View {
                     ),
                     particlePreset: simulatorParticlePreset,
                     stage: $simulatorStage,
-                    phoneWidth: 236,
+                    phoneWidth: isShowingInnerDuoSurface ? 316 : 236,
+                    canvasSize: activeCanvasLogicalSize,
                     gyroEnabled: enableGyroParallax,
                     gyroIntensity: gyroIntensity,
                     posterStyle: posterStyle,
@@ -193,7 +261,7 @@ struct MorphEditorView: View {
                     previewNightMode: $previewNightMode,
                     showHomeScreenPreview: $showHomeScreenPreview
                 )
-                .padding(.top, 6)
+                .padding(.top, 2)
 
                 // 2. Quick Sample Switcher Strip
                 demoSamplerStrip
@@ -256,7 +324,7 @@ struct MorphEditorView: View {
             sleepPickerItem = nil
             Task {
                 if let img = await loadPhoto(from: newItem) {
-                    let fitted = autoreleasepool { img.aspectFilled(to: CAMLCompiler.retinaSize, framing: .identity) }
+                    let fitted = autoreleasepool { img.aspectFilled(to: activeOuterPixelSize, framing: .identity) }
                     await MainActor.run {
                         rawSleepImage = img
                         sleepFraming = .identity
@@ -264,7 +332,8 @@ struct MorphEditorView: View {
                         simulatorStage = .sleep
                         ensureLiveSequencesFitMemoryBudget()
                         CamloHaptics.impact(.light)
-                        if img.needsInteractiveCropSuggestion {
+                        let outerAspect = canvasProfile == .duoDualScreen ? DuoScreenSurface.outerCover.aspectRatio : (390.0 / 844.0)
+                        if img.needsInteractiveCropSuggestion(targetAspect: outerAspect) {
                             activeCropSlot = .sleep
                         }
                     }
@@ -280,6 +349,33 @@ struct MorphEditorView: View {
             guard let newItem else { return }
             nightUnlockPickerItem = nil
             handleNightPickerSelection(item: newItem, isLock: false)
+        }
+        .onChange(of: innerLockPickerItem) { _, newItem in
+            guard let newItem else { return }
+            innerLockPickerItem = nil
+            handleInnerPhotoSelection(item: newItem, isLock: true)
+        }
+        .onChange(of: innerUnlockPickerItem) { _, newItem in
+            guard let newItem else { return }
+            innerUnlockPickerItem = nil
+            handleInnerPhotoSelection(item: newItem, isLock: false)
+        }
+        .onChange(of: canvasProfile) { _, newProfile in
+            if newProfile == .standardPhone {
+                previewDuoSurface = .outerCover
+            }
+            let targetSize = activeOuterPixelSize
+            if let rawL = rawLockImage {
+                lockImage = autoreleasepool { rawL.aspectFilled(to: targetSize, framing: lockFraming) }
+            }
+            if let rawU = rawUnlockImage {
+                unlockImage = autoreleasepool { rawU.aspectFilled(to: targetSize, framing: unlockFraming) }
+            }
+            if let rawS = rawSleepImage {
+                sleepImage = autoreleasepool { rawS.aspectFilled(to: targetSize, framing: sleepFraming) }
+            }
+            lockCutout = nil
+            unlockCutout = nil
         }
         .onChange(of: lockImage) { _, newImg in
             refreshDayPalette(for: newImg)
@@ -573,7 +669,124 @@ struct MorphEditorView: View {
             }
             .padding(12)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            if canvasProfile == .duoDualScreen {
+                duoInnerMediaSection
+            }
         }
+    }
+
+    private var duoInnerMediaSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label(Bi("iPhone Duo 内展开屏画面（4:3 横屏 · 可选）", "Duo Inner Unfolded Media (4:3 · Optional)"), systemImage: "book.pages.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.accentColor)
+                Spacer()
+                if innerLockImage != nil || innerUnlockImage != nil {
+                    Button(Bi("重置跟随外屏", "Clear")) {
+                        rawInnerLockImage = nil
+                        rawInnerUnlockImage = nil
+                        innerLockImage = nil
+                        innerUnlockImage = nil
+                        innerLockCutout = nil
+                        innerUnlockCutout = nil
+                        innerLockFraming = .identity
+                        innerUnlockFraming = .identity
+                        CamloHaptics.selection()
+                    }
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                }
+            }
+
+            HStack(spacing: 10) {
+                PhotosPicker(selection: $innerLockPickerItem, matching: .images) {
+                    duoInnerSlotTile(
+                        title: Bi("内屏 · 锁屏画面", "Inner Lock"),
+                        image: innerLockImage
+                    )
+                }
+                .buttonStyle(CamloTapButtonStyle())
+
+                PhotosPicker(selection: $innerUnlockPickerItem, matching: .images) {
+                    duoInnerSlotTile(
+                        title: Bi("内屏 · 解锁画面", "Inner Unlock"),
+                        image: innerUnlockImage
+                    )
+                }
+                .buttonStyle(CamloTapButtonStyle())
+            }
+
+            if rawInnerLockImage != nil || rawInnerUnlockImage != nil {
+                HStack(spacing: 10) {
+                    Button {
+                        activeCropSlot = .innerLock
+                        CamloHaptics.selection()
+                    } label: {
+                        Label(Bi("裁剪内屏锁屏", "Crop Inner Lock"), systemImage: "crop")
+                            .font(.caption2.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                            .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(CamloTapButtonStyle())
+                    .disabled(rawInnerLockImage == nil)
+
+                    Button {
+                        activeCropSlot = .innerUnlock
+                        CamloHaptics.selection()
+                    } label: {
+                        Label(Bi("裁剪内屏解锁", "Crop Inner Unlock"), systemImage: "crop")
+                            .font(.caption2.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                            .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(CamloTapButtonStyle())
+                    .disabled(rawInnerUnlockImage == nil)
+                }
+            }
+
+            Text(Bi("未单独选图时，系统会自动从外屏画面智能横屏延展适配", "When left empty, inner unfolded frames automatically adapt from outer screen media."))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(12)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private func duoInnerSlotTile(title: String, image: UIImage?) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.secondary.opacity(0.12))
+                    .aspectRatio(951.0 / 669.0, contentMode: .fit)
+                if let image {
+                    Color.clear
+                        .aspectRatio(951.0 / 669.0, contentMode: .fit)
+                        .overlay {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                } else {
+                    VStack(spacing: 4) {
+                        Image(systemName: "photo.badge.plus")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color.accentColor)
+                        Text(Bi("选 4:3 横图", "Pick 4:3 Photo"))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.primary)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var liveMotionControlCard: some View {
@@ -1258,14 +1471,22 @@ struct MorphEditorView: View {
         rawLockImage = built.lock
         rawUnlockImage = built.unlock
         rawSleepImage = nil
+        rawInnerLockImage = nil
+        rawInnerUnlockImage = nil
         lockFraming = .identity
         unlockFraming = .identity
         sleepFraming = .identity
-        lockImage = built.lock
-        unlockImage = built.unlock
+        innerLockFraming = .identity
+        innerUnlockFraming = .identity
+        lockImage = canvasProfile == .duoDualScreen ? built.lock.aspectFilled(to: activeOuterPixelSize) : built.lock
+        unlockImage = canvasProfile == .duoDualScreen ? built.unlock.aspectFilled(to: activeOuterPixelSize) : built.unlock
         sleepImage = nil
-        lockCutout = built.lockCutout
-        unlockCutout = built.unlockCutout
+        innerLockImage = nil
+        innerUnlockImage = nil
+        lockCutout = canvasProfile == .duoDualScreen ? nil : built.lockCutout
+        unlockCutout = canvasProfile == .duoDualScreen ? nil : built.unlockCutout
+        innerLockCutout = nil
+        innerUnlockCutout = nil
         nightLockImage = nil
         nightUnlockImage = nil
         nightLockCutout = nil
@@ -1285,6 +1506,13 @@ struct MorphEditorView: View {
 
     @ViewBuilder
     private func cropSheet(for slot: CropSlot) -> some View {
+        let outerCanvasSize = (canvasProfile == .duoDualScreen)
+            ? DuoScreenSurface.outerCover.logicalSize
+            : CGSize(width: 390, height: 844)
+        let outerPixels = activeOuterPixelSize
+        let innerCanvasSize = DuoScreenSurface.innerUnfolded.logicalSize
+        let innerPixels = DuoScreenSurface.innerUnfolded.morphPixelSize
+
         switch slot {
         case .lock:
             if let raw = rawLockImage {
@@ -1292,19 +1520,20 @@ struct MorphEditorView: View {
                     title: Bi("裁剪锁屏常态画面", "Crop Lock Image"),
                     image: raw,
                     initialFraming: lockFraming,
+                    canvasSize: outerCanvasSize,
                     pairedSlotSyncLabel: rawUnlockImage != nil
                         ? Bi("同步相同裁剪到「解锁变身」画面", "Apply same crop to Unlock media")
                         : nil
                 ) { newFraming, syncPaired in
                     lockFraming = newFraming
-                    lockImage = autoreleasepool { raw.aspectFilled(to: CAMLCompiler.retinaSize, framing: newFraming) }
+                    lockImage = autoreleasepool { raw.aspectFilled(to: outerPixels, framing: newFraming) }
                     lockCutout = nil
                     if isLockActivelyLive {
                         reextractLiveSequence(forLock: true)
                     }
                     if syncPaired, let rawU = rawUnlockImage {
                         unlockFraming = newFraming
-                        unlockImage = autoreleasepool { rawU.aspectFilled(to: CAMLCompiler.retinaSize, framing: newFraming) }
+                        unlockImage = autoreleasepool { rawU.aspectFilled(to: outerPixels, framing: newFraming) }
                         unlockCutout = nil
                         if isUnlockActivelyLive {
                             reextractLiveSequence(forLock: false)
@@ -1319,19 +1548,20 @@ struct MorphEditorView: View {
                     title: Bi("裁剪解锁变身画面", "Crop Unlock Image"),
                     image: raw,
                     initialFraming: unlockFraming,
+                    canvasSize: outerCanvasSize,
                     pairedSlotSyncLabel: rawLockImage != nil
                         ? Bi("同步相同裁剪到「锁屏常态」画面", "Apply same crop to Lock media")
                         : nil
                 ) { newFraming, syncPaired in
                     unlockFraming = newFraming
-                    unlockImage = autoreleasepool { raw.aspectFilled(to: CAMLCompiler.retinaSize, framing: newFraming) }
+                    unlockImage = autoreleasepool { raw.aspectFilled(to: outerPixels, framing: newFraming) }
                     unlockCutout = nil
                     if isUnlockActivelyLive {
                         reextractLiveSequence(forLock: false)
                     }
                     if syncPaired, let rawL = rawLockImage {
                         lockFraming = newFraming
-                        lockImage = autoreleasepool { rawL.aspectFilled(to: CAMLCompiler.retinaSize, framing: newFraming) }
+                        lockImage = autoreleasepool { rawL.aspectFilled(to: outerPixels, framing: newFraming) }
                         lockCutout = nil
                         if isLockActivelyLive {
                             reextractLiveSequence(forLock: true)
@@ -1345,11 +1575,58 @@ struct MorphEditorView: View {
                 LockScreenCropSheet(
                     title: Bi("裁剪熄屏常显图片", "Crop Sleep Image"),
                     image: raw,
-                    initialFraming: sleepFraming
+                    initialFraming: sleepFraming,
+                    canvasSize: outerCanvasSize
                 ) { newFraming, _ in
                     sleepFraming = newFraming
-                    sleepImage = autoreleasepool { raw.aspectFilled(to: CAMLCompiler.retinaSize, framing: newFraming) }
+                    sleepImage = autoreleasepool { raw.aspectFilled(to: outerPixels, framing: newFraming) }
                     simulatorStage = .sleep
+                }
+            }
+        case .innerLock:
+            if let raw = rawInnerLockImage {
+                LockScreenCropSheet(
+                    title: Bi("裁剪 Duo 内屏锁屏画面", "Crop Duo Inner Lock"),
+                    image: raw,
+                    initialFraming: innerLockFraming,
+                    canvasSize: innerCanvasSize,
+                    pairedSlotSyncLabel: rawInnerUnlockImage != nil
+                        ? Bi("同步裁剪到内屏解锁画面", "Apply same crop to Inner Unlock")
+                        : nil
+                ) { newFraming, syncPaired in
+                    innerLockFraming = newFraming
+                    innerLockImage = autoreleasepool { raw.aspectFilled(to: innerPixels, framing: newFraming) }
+                    innerLockCutout = nil
+                    if syncPaired, let rawU = rawInnerUnlockImage {
+                        innerUnlockFraming = newFraming
+                        innerUnlockImage = autoreleasepool { rawU.aspectFilled(to: innerPixels, framing: newFraming) }
+                        innerUnlockCutout = nil
+                    }
+                    previewDuoSurface = .innerUnfolded
+                    simulatorStage = .locked
+                }
+            }
+        case .innerUnlock:
+            if let raw = rawInnerUnlockImage {
+                LockScreenCropSheet(
+                    title: Bi("裁剪 Duo 内屏解锁画面", "Crop Duo Inner Unlock"),
+                    image: raw,
+                    initialFraming: innerUnlockFraming,
+                    canvasSize: innerCanvasSize,
+                    pairedSlotSyncLabel: rawInnerLockImage != nil
+                        ? Bi("同步裁剪到内屏锁屏画面", "Apply same crop to Inner Lock")
+                        : nil
+                ) { newFraming, syncPaired in
+                    innerUnlockFraming = newFraming
+                    innerUnlockImage = autoreleasepool { raw.aspectFilled(to: innerPixels, framing: newFraming) }
+                    innerUnlockCutout = nil
+                    if syncPaired, let rawL = rawInnerLockImage {
+                        innerLockFraming = newFraming
+                        innerLockImage = autoreleasepool { rawL.aspectFilled(to: innerPixels, framing: newFraming) }
+                        innerLockCutout = nil
+                    }
+                    previewDuoSurface = .innerUnfolded
+                    replayUnlockPreview()
                 }
             }
         }
@@ -1374,9 +1651,12 @@ struct MorphEditorView: View {
                     unlockCutout = nil
                 }
 
+                let targetPixels = activeOuterPixelSize
+                let targetAspect = canvasProfile == .duoDualScreen ? DuoScreenSurface.outerCover.aspectRatio : (390.0 / 844.0)
+
                 switch picked {
                 case let .live(videoURL, poster, still):
-                    let fitted = autoreleasepool { poster.aspectFilled(to: CAMLCompiler.retinaSize, framing: .identity) }
+                    let fitted = autoreleasepool { poster.aspectFilled(to: targetPixels, framing: .identity) }
                     if isLock {
                         lockSourceVideoURL = videoURL
                         lockVideoPosterImage = poster
@@ -1402,12 +1682,12 @@ struct MorphEditorView: View {
                     }
                     ensureLiveSequencesFitMemoryBudget()
                     CamloHaptics.impact(.light)
-                    if poster.needsInteractiveCropSuggestion {
+                    if poster.needsInteractiveCropSuggestion(targetAspect: targetAspect) {
                         activeCropSlot = isLock ? .lock : .unlock
                     }
 
                 case let .staticPhoto(img):
-                    let fitted = autoreleasepool { img.aspectFilled(to: CAMLCompiler.retinaSize, framing: .identity) }
+                    let fitted = autoreleasepool { img.aspectFilled(to: targetPixels, framing: .identity) }
                     if isLock {
                         lockSourceVideoURL = nil
                         lockVideoPosterImage = nil
@@ -1432,9 +1712,41 @@ struct MorphEditorView: View {
                         replayUnlockPreview()
                     }
                     CamloHaptics.impact(.light)
-                    if img.needsInteractiveCropSuggestion {
+                    if img.needsInteractiveCropSuggestion(targetAspect: targetAspect) {
                         activeCropSlot = isLock ? .lock : .unlock
                     }
+                }
+            }
+        }
+    }
+
+    private func handleInnerPhotoSelection(item: PhotosPickerItem, isLock: Bool) {
+        Task {
+            guard let img = await loadPhoto(from: item) else { return }
+            let innerPixels = DuoScreenSurface.innerUnfolded.morphPixelSize
+            let innerAspect = DuoScreenSurface.innerUnfolded.aspectRatio
+            let fitted = await Task.detached(priority: .userInitiated) {
+                autoreleasepool { img.aspectFilled(to: innerPixels, framing: .identity) }
+            }.value
+            await MainActor.run {
+                if isLock {
+                    rawInnerLockImage = img
+                    innerLockFraming = .identity
+                    innerLockImage = fitted
+                    innerLockCutout = nil
+                    previewDuoSurface = .innerUnfolded
+                    simulatorStage = .locked
+                } else {
+                    rawInnerUnlockImage = img
+                    innerUnlockFraming = .identity
+                    innerUnlockImage = fitted
+                    innerUnlockCutout = nil
+                    previewDuoSurface = .innerUnfolded
+                    replayUnlockPreview()
+                }
+                CamloHaptics.impact(.light)
+                if img.needsInteractiveCropSuggestion(targetAspect: innerAspect) {
+                    activeCropSlot = isLock ? .innerLock : .innerUnlock
                 }
             }
         }
@@ -1511,6 +1823,7 @@ struct MorphEditorView: View {
         }
         let framing = isLock ? lockFraming : unlockFraming
         let useCompact = needsCompactLiveBudget
+        let targetCanvas: CGSize? = (canvasProfile == .duoDualScreen) ? DuoScreenSurface.outerCover.videoPixelSize : nil
 
         if isLock {
             lockExtractionTask?.cancel()
@@ -1527,7 +1840,8 @@ struct MorphEditorView: View {
                 let seq = try await VideoFrameExtractor.extractMorphLiveSequence(
                     from: url,
                     framing: framing,
-                    compactResolution: useCompact
+                    compactResolution: useCompact,
+                    targetCanvasSize: targetCanvas
                 )
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
@@ -1622,22 +1936,40 @@ struct MorphEditorView: View {
         }
 
         isExtractingCutout = true
+        let outerPixels = activeOuterPixelSize
+        let includeInner = (canvasProfile == .duoDualScreen)
+        let targetInnerL = includeInner ? innerLockImage : nil
+        let targetInnerU = includeInner ? innerUnlockImage : nil
+        let innerPixels = DuoScreenSurface.innerUnfolded.morphPixelSize
+
         Task {
             let resolvedL: UIImage?
             if let targetLock {
-                resolvedL = try? await SubjectCutoutService.extractForegroundSubject(from: targetLock)
+                resolvedL = try? await SubjectCutoutService.extractForegroundSubject(from: targetLock, targetPixelSize: outerPixels)
             } else {
                 resolvedL = nil
             }
             let resolvedU: UIImage?
             if let targetUnlock {
-                resolvedU = try? await SubjectCutoutService.extractForegroundSubject(from: targetUnlock)
+                resolvedU = try? await SubjectCutoutService.extractForegroundSubject(from: targetUnlock, targetPixelSize: outerPixels)
             } else {
                 resolvedU = nil
             }
+            let resolvedInnerL: UIImage?
+            if let targetInnerL {
+                resolvedInnerL = try? await SubjectCutoutService.extractForegroundSubject(from: targetInnerL, targetPixelSize: innerPixels)
+            } else {
+                resolvedInnerL = nil
+            }
+            let resolvedInnerU: UIImage?
+            if let targetInnerU {
+                resolvedInnerU = try? await SubjectCutoutService.extractForegroundSubject(from: targetInnerU, targetPixelSize: innerPixels)
+            } else {
+                resolvedInnerU = nil
+            }
             await MainActor.run {
                 isExtractingCutout = false
-                if resolvedL == nil && resolvedU == nil {
+                if resolvedL == nil && resolvedU == nil && resolvedInnerL == nil && resolvedInnerU == nil {
                     showOpenPosterBoardAction = false
                     alertTitle = Bi("未识别到前景主体", "No Foreground Subject")
                     alertMessage = SubjectCutoutError.noSubjectDetected.localizedDescription
@@ -1649,6 +1981,12 @@ struct MorphEditorView: View {
                     }
                     if targetUnlock == nil || self.unlockImage === targetUnlock {
                         unlockCutout = resolvedU
+                    }
+                    if targetInnerL != nil && self.innerLockImage === targetInnerL {
+                        innerLockCutout = resolvedInnerL
+                    }
+                    if targetInnerU != nil && self.innerUnlockImage === targetInnerU {
+                        innerUnlockCutout = resolvedInnerU
                     }
                     ensureLiveSequencesFitMemoryBudget()
                     CamloHaptics.notify(.success)
@@ -1681,7 +2019,12 @@ struct MorphEditorView: View {
             nightLockCutout: enableDayNightMode ? nightLockCutout : nil,
             nightUnlockCutout: enableDayNightMode ? nightUnlockCutout : nil,
             nightParticlePreset: enableDayNightMode ? nightParticlePreset : nil,
-            posterStyle: posterStyle
+            posterStyle: posterStyle,
+            canvasProfile: canvasProfile,
+            innerLockImage: canvasProfile == .duoDualScreen ? innerLockImage : nil,
+            innerUnlockImage: canvasProfile == .duoDualScreen ? innerUnlockImage : nil,
+            innerLockSubjectCutout: canvasProfile == .duoDualScreen ? innerLockCutout : nil,
+            innerUnlockSubjectCutout: canvasProfile == .duoDualScreen ? innerUnlockCutout : nil
         )
     }
 
@@ -1751,10 +2094,11 @@ struct MorphEditorView: View {
     }
 
     private func handleNightPickerSelection(item: PhotosPickerItem, isLock: Bool) {
+        let targetPixels = activeOuterPixelSize
         Task {
             guard let img = await loadPhoto(from: item) else { return }
             let fitted = await Task.detached(priority: .userInitiated) {
-                autoreleasepool { img.aspectFilled(to: CAMLCompiler.retinaSize, framing: .identity) }
+                autoreleasepool { img.aspectFilled(to: targetPixels, framing: .identity) }
             }.value
             await MainActor.run {
                 if isLock {

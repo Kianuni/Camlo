@@ -163,6 +163,28 @@ enum CamloDevice {
         }
     }
 
+    static var effectiveModelIdentifier: String {
+        let raw = machineIdentifier
+        if let simModel = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"],
+           !simModel.isEmpty,
+           raw == "arm64" || raw == "x86_64" {
+            return simModel
+        }
+        return raw
+    }
+
+    static var isDuoFoldable: Bool {
+        let model = effectiveModelIdentifier
+        if model == "iPhone19,4" || model.hasPrefix("iPhone19,4") {
+            return true
+        }
+        if let simName = ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"],
+           simName.localizedCaseInsensitiveContains("Duo") {
+            return true
+        }
+        return false
+    }
+
     static var appVersion: String {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.2.1"
     }

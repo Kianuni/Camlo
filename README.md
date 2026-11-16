@@ -9,10 +9,10 @@
     <strong>简体中文</strong> ·
     <a href="./README_EN.md">English</a> ·
     <a href="./docs/FEATURES.md">📖 详细介绍与技术原理</a> ·
-    <a href="./wallpapers/README.md">🎨 50 套大师壁纸图鉴</a>
+    <a href="./wallpapers/README.md">🎨 60 套大师壁纸图鉴</a>
   </p>
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.9-6A4DF5?style=flat-square">
-  <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.3.0-6A4DF5?style=flat-square">
+  <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS%20%2F%20iPhone%20Duo-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
   <img alt="IPA Size" src="https://img.shields.io/badge/IPA-~9%20MB-10B981?style=flat-square">
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square"></a>
 </div>
@@ -27,7 +27,7 @@
     <img src="./wallpapers/previews/lofoten_arctic_silence.webp" width="108" alt="罗弗敦 · 极夜孤屿"/>
   </a>
   <br>
-  <sub>▲ 官方云端部分壁纸真实动态预览（支持锁屏 120Hz 实时试穿，点击查看全部 50 套馆藏作品）</sub>
+  <sub>▲ 官方云端部分壁纸真实动态预览（支持锁屏 120Hz 实时试穿，点击查看全部 60 套馆藏作品）</sub>
 </div>
 
 ---
@@ -35,9 +35,10 @@
 ## ✨ 它可以让你的锁屏变成什么样？
 
 - **🎬 上滑解锁，画面跟着活起来**：从相册挑 2 张图（比如 *暮色雪山 → 日照金山*、*黑白剪影 → 彩色觉醒*），每次点亮屏幕、上滑解锁都有舞台揭幕般的动态过渡。
+- **📱 原生适配 iPhone Duo 内外双屏画布（Inner + Outer）**：支持单包直编外屏封面（`466×678` pt）+ 展开横屏画布（`951×669` pt）统一 `WallpaperKit` `<wallpapers>` `ParameterizedCA` 工程，工坊实时双屏切换裁切；
 - **🎞️ 实况照片 & 短视频直出动态锁屏**：相册里的 Live Photo 或短视频直接做成无缝循环的动态锁屏，点亮即动，息屏自动休眠不耗电。
 - **🪄 裸眼 3D · 人物挡时间 · 昼夜换装 · 漫天流光**：晃动手机有 3D 视差；一键把人物或山峰叠在 `09:41` 时间前面；白天黑夜自动换壁纸；还能叠加上流星、樱花、极光、飞雪等动态光效。
-- **🏛️ 仅 ~9 MB 小体积，免费畅享 375+ 款云端壁纸**：内置 6 套获奖风光，云端免费直连 **50 套博物馆馆藏名画意境壁纸**（伦勃朗、莫奈、梵高、宋代山水等）与 300+ 款社区作品，App 内直接试穿、喜欢再下。
+- **🏛️ 仅 ~9 MB 小体积，免费畅享 385+ 款云端壁纸**：内置 6 套获奖风光，云端免费直连 **60 套博物馆馆藏名画意境壁纸**（含 **10 套 iPhone Duo 内外双屏专享壁纸**、伦勃朗、莫奈、宋代山水等）与 300+ 款社区作品，App 内直接试穿、喜欢再下。
 
 ---
 
@@ -59,7 +60,7 @@
 
 ### 方式二：下载 IPA 安装包
 
-前往 **[Releases 最新版本页面](https://github.com/Kianuni/Camlo/releases/latest)** 下载 `Camlo_v1.2.9_Bilingual.ipa`，使用 SideStore / AltStore / Feather / 轻松签 ESign / Sideloadly 等工具签名安装。
+前往 **[Releases 最新版本页面](https://github.com/Kianuni/Camlo/releases/latest)** 下载 `Camlo_v1.3.0_Bilingual.ipa`，使用 SideStore / AltStore / Feather / 轻松签 ESign / Sideloadly 等工具签名安装。
 
 > [!TIP]
 > 推荐使用支持保留 `App Group` 权限的签名工具（如 SideStore / AltStore / Feather），即可解锁**手机端一键直写系统锁屏**；无此权限也依然可以完整创作、预览并导出 `.tendies` 壁纸包。
@@ -77,6 +78,6 @@
 ## 📚 了解更多
 
 - **[📖 完整功能详解、技术原理与源码编译指南 →](./docs/FEATURES.md)**
-- **[🎨 浏览官方 50 套馆藏级云端壁纸图鉴（支持预览与直接下载）→](./wallpapers/README.md)**
+- **[🎨 浏览官方 60 套馆藏级云端壁纸图鉴（含 10 套 iPhone Duo 专享 · 支持预览与直接下载）→](./wallpapers/README.md)**
 - **🛠️ 同作者开源项目**：[Erosion-CN](https://github.com/Kianuni/Erosion-CN) · [AppleFlow](https://github.com/Kianuni/AppleFlow) · [WQGuard](https://github.com/Kianuni/WQGuard)
 - **⚖️ 开源许可**：基于 **[GPLv3](./LICENSE)** 开源 · [致谢与参考项目](./docs/FEATURES.md#开源许可与致谢)

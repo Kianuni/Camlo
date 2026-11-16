@@ -849,7 +849,7 @@ struct StudioHomeView: View {
             VStack {
                 HStack {
                     Spacer()
-                    stageCornerPill(Bi("375+ 精选", "375+ Curated"))
+                    stageCornerPill(Bi("385+ 精选", "385+ Curated"))
                 }
                 Spacer()
             }

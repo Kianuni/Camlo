@@ -233,10 +233,16 @@ struct TendiesDetailSheet: View {
                                 )
                             }
 
-                            featureBadge(
-                                title: Bi("iOS 原生主屏柔焦虚化 (Legibility Blur)", "Native Home Screen Legibility Blur"),
-                                active: report.hasHomeLegibilityBlur
-                            )
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                                featureBadge(
+                                    title: Bi("iPhone Duo 内外双屏", "iPhone Duo Dual-Screen"),
+                                    active: report.hasDuoDualCanvas
+                                )
+                                featureBadge(
+                                    title: Bi("原生主屏柔焦虚化", "Home Legibility Blur"),
+                                    active: report.hasHomeLegibilityBlur
+                                )
+                            }
 
                             if !report.stateNames.isEmpty {
                                 HStack(spacing: 6) {

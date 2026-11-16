@@ -3,14 +3,15 @@
 <p>
   <a href="../README.md">← 返回首页简介</a> ·
   <a href="./FEATURES_EN.md">English Detailed Guide</a> ·
-  <a href="../wallpapers/README.md">🎨 官方 50 套云端壁纸目录</a>
+  <a href="../wallpapers/README.md">🎨 官方 60 套云端壁纸目录</a>
 </p>
 
 ---
 
 ## 核心技术能力概览
 
-- **120Hz 原生 `.ca` 实时交互预览 (`LiveCAPreviewView`)**：通过纯原创异常安全 Objective-C `CamloCAStageController`（`CAPackage` + `CAStateController`）与 `MotionTiltManager` 120Hz `CADisplayLink`，在金库透视与云端下载页以真实原生 Core Animation 渲染树试穿 `.tendies`（同时兼容 `LayeredAnimation`、`ParameterizedCA` 与 `Still`），支持 `Sleep`/`Locked`/`Unlock` 过渡、手指横向摆动视差、日夜间切换与主屏对照预览；
+- **iPhone Duo 原生内外双屏渲染引擎 (`Inner` + `Outer` `<wallpapers>`)**：单包编译写入统一 `WallpaperKit` `ParameterizedCA`（`Marble` / `requiresLandscapeScaling = true`），内嵌外屏 `466×678` pt（`BACKGROUND`/`FLOATING`）与展开内屏 `951×669` pt 横屏书本画布（`BACKGROUND_INNER`/`FLOATING_INNER`）两套独立图层树、陀螺仪视差组与状态属性组；支持工坊双屏选图裁剪、双面 AI 抠图破框与 120Hz 实时交互切换预览；
+- **120Hz 原生 `.ca` 实时交互预览 (`LiveCAPreviewView`)**：通过纯原创异常安全 Objective-C `CamloCAStageController`（`CAPackage` + `CAStateController`）与 `MotionTiltManager` 120Hz `CADisplayLink`，在金库透视与云端下载页以真实原生 Core Animation 渲染树试穿 `.tendies`（同时兼容 `LayeredAnimation`、`ParameterizedCA` 与 `Still`），支持 `Sleep`/`Locked`/`Unlock` 过渡、iPhone Duo 外屏/展开内屏即时切换、手指横向摆动视差、日夜间切换与主屏对照预览；
 - **陀螺仪 3D 裸眼视差 (`ParameterizedCA`)**：滑动变身与视频工坊支持开启 3D 裸眼空间视差、调节立体深度（`25%–100%`）并一键 3D 摆动演示；导出包含 `wantsDeviceMotion = true`、6 组 `<wallpaperParallaxGroups>` 及完整 `<wallpaperPropertyGroups>`（`v_sleep`/`v_lock`/`v_home` 解锁变身与前景破框三态插值）的 `wallpaper.ca`（背景层自动超采样放大防露边，前景破框与粒子平面反相位移）；
 - **昼夜双生壁纸 (`appearanceAware`)**：支持在「滑动解锁变身工坊」开启昼夜双生模式，一键生成 `CoreImage` 月色夜景调色或分别定制夜间双态底图、夜间 Vision 主体破框与夜间粒子，`Wallpaper.plist` 自动声明 `appearanceAware = true` 并打包 `default` / `dark` 双态变体；
 - **智能时钟配色字体 & 主屏柔焦配套 (`PosterStyleGenerator`)**：自动采样壁纸顶部 `09:41` 区域亮度与全画幅主题色，提供 6 款 `PosterKit` 字体（`Soft` / `Default` / `Rounded` / `NewYork` / `Stencil` / `Rail`）、8 种对比/取色策略及 4 种主屏配套方案（原生柔焦虚化 / 清晰直通 / 同色渐变 / 暗调纯色），通过二进制 `NSKeyedArchiver` 直接写入 `titleStyleConfiguration.plist`、`homescreenConfiguration.plist` 与 `RuntimeSnapshotMetadata`；
@@ -32,8 +33,8 @@
   - **光栅幻卡 (`Holo Flip`)**：仿立体光栅闪卡 3D 微倾与横向视差翻转；
   - **暗夜睁眼 (`AOD Gaze`)**：熄屏常显微光剪影 → 亮屏完全展开 → 上滑二次进化。
 - **无级物理调参**：自由调节 `0.35s – 1.40s` 过渡时长与 `0% – 100%` 弹簧回弹张力，并支持单独指定「熄屏常显 (AOD)」专属画面。
-- **内置 6 套获奖风光像素级对齐高清预设 (`PresetGallery.bundle`)**：精选 **6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光），附带预提取 8-bit 天际线/山峰破框蒙版，零选图直接上锁屏（保持极限 ~9 MB 超轻量安装包，50 套馆藏殿堂级云端官方壁纸全量托管于云端仓库）。
-- **云端 `.tendies` 壁纸广场（4 大频道 375+ 套 · [`wallpapers/`](../wallpapers/README.md) 零体积 OTA）**：支持 **Camlo 官方（50 套馆藏殿堂级古典油画、外光印象派、东方宋画敦煌与宇宙自然大师壁纸全量托管于仓库 `wallpapers/`，零安装包体积占用，支持动画 WebP 实时预览、`120Hz 原生交互试穿` 与 SHA-256 校验）** + **CAPlayground（183+ 动画库）** + **Nugget 创意（111+ 社区作品）** + **Apple 原厂机型库（32+ 原生包）**，采用 Camlo 原生 `CamloEndpointRanker`（5 分钟 host EWMA 延迟缓存 + `Range: bytes=0-1` 轻量探测）、`CamloRemotePreview` Core Animation 离散关键帧动画预览，并彻底修复 iOS `/var -> /private/var` 解压路径规范化及外源壁纸跨 `versions/0` / `.wallpaperCollection` 打包兼容。
+- **内置 6 套获奖风光像素级对齐高清预设 (`PresetGallery.bundle`)**：精选 **6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光），附带预提取 8-bit 天际线/山峰破框蒙版，零选图直接上锁屏（保持极限 ~9 MB 超轻量安装包，60 套馆藏殿堂级云端官方壁纸全量托管于云端仓库）。
+- **云端 `.tendies` 壁纸广场（4 大频道 385+ 套 · [`wallpapers/`](../wallpapers/README.md) 零体积 OTA）**：支持 **Camlo 官方（60 套馆藏殿堂级古典油画、外光印象派、东方宋画敦煌、宇宙极境与 10 套 iPhone Duo 内外双屏专享大师壁纸全量托管于仓库 `wallpapers/`，零安装包体积占用，支持动画 WebP 实时预览、`120Hz 原生交互试穿` 与 SHA-256 校验）** + **CAPlayground（183+ 动画库）** + **Nugget 创意（111+ 社区作品）** + **Apple 原厂机型库（32+ 原生包）**，采用 Camlo 原生 `CamloEndpointRanker`（5 分钟 host EWMA 延迟缓存 + `Range: bytes=0-1` 轻量探测）、`CamloRemotePreview` Core Animation 离散关键帧动画预览，并彻底修复 iOS `/var -> /private/var` 解压路径规范化及外源壁纸跨 `versions/0` / `.wallpaperCollection` 打包兼容。
 - **系统已装锁屏视觉管理与通用 `.tendies` 引擎**：基于 100% Camlo 原生 `SystemPosterStore` 与 ImageIO 磁盘缩略图缓存预览已安装的锁屏模板与配置、按 `RoleIndex` 批量安全清理并自动追踪中文名称；兼容单遍流式解压、多扩展（含 `*CollectionsPoster*` / `*MercuryPoster*`）镜像注入，以及纯 POSIX C `worse_query` App Group `Library/Caches` 原生守卫。
 - **实况动态 × 滑动变身融合 & 交互式锁屏取景裁剪**：支持在「锁屏常态 / 解锁变身」槽位直接导入 **Live Photo 实况照片** 或短视频实现边动边变身（自适应 Jetsam 安全内存预算）；内置真实 `09:41` 时钟与底栏避让预览的交互式拖拽/双指缩放裁剪工作台（支持「超界自由挪动」柔焦延展填充与双槽位一键同步裁剪）。
 
@@ -87,7 +88,7 @@ chmod +x ./ipabuild.sh
 ./ipabuild.sh
 ```
 
-编译完成后将在项目根目录生成 `Camlo_v1.2.9_Bilingual.ipa`，并自动同步刷新软件源清单（[`apps.json`](../apps.json) / [`repo.json`](../repo.json) / [`esign.json`](../esign.json) / [`repo_cn.json`](../repo_cn.json) / [`esign_cn.json`](../esign_cn.json)）。
+编译完成后将在项目根目录生成 `Camlo_v1.3.0_Bilingual.ipa`，并自动同步刷新软件源清单（[`apps.json`](../apps.json) / [`repo.json`](../repo.json) / [`esign.json`](../esign.json) / [`repo_cn.json`](../repo_cn.json) / [`esign_cn.json`](../esign_cn.json)）。
 
 ---
 

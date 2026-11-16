@@ -31,7 +31,7 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def verify_tendies_zip(tendies_path: Path) -> dict[str, object]:
+def verify_tendies_zip(tendies_path: Path, is_duo: bool = False) -> dict[str, object]:
     """Verify .tendies archive has zero Zip-Slip paths, valid descriptor & CAML files."""
     if not zipfile.is_zipfile(tendies_path):
         raise ValueError(f"Not a valid zip archive: {tendies_path}")
@@ -40,6 +40,8 @@ def verify_tendies_zip(tendies_path: Path) -> dict[str, object]:
     has_bg_caml = False
     has_floating_caml = False
     has_fg_caml = False
+    has_param_caml = False
+    has_duo_inner = False
     has_cutout = False
     wallpaper_plist_id = None
 
@@ -56,7 +58,14 @@ def verify_tendies_zip(tendies_path: Path) -> dict[str, object]:
                 has_floating_caml = True
             if name.endswith("7400.WWDC_2022_Foreground-390w-844h@3x~iphone.ca/main.caml"):
                 has_fg_caml = True
-            if "7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca/assets/" in name and (name.endswith(".png") or name.endswith(".jpg")):
+            if name.endswith("wallpaper.ca/main.caml"):
+                has_param_caml = True
+                caml_text = zf.read(info).decode("utf-8", errors="ignore")
+                if "<wallpapers" in caml_text and "BACKGROUND_INNER" in caml_text:
+                    has_duo_inner = True
+            if ("7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca/assets/" in name or "wallpaper.ca/assets/" in name) and (
+                "cutout" in Path(name).name and (name.endswith(".png") or name.endswith(".jpg"))
+            ):
                 has_cutout = True
             if name.endswith("Wallpaper.plist"):
                 raw_plist = zf.read(info)
@@ -65,17 +74,20 @@ def verify_tendies_zip(tendies_path: Path) -> dict[str, object]:
 
     if not has_descriptor:
         raise ValueError(f"Missing posterkit descriptor identifier inside {tendies_path.name}")
-    if not (has_bg_caml and has_floating_caml and has_fg_caml):
+    if not (has_param_caml or (has_bg_caml and has_floating_caml and has_fg_caml)):
         raise ValueError(
             f"Missing CAML bundles inside {tendies_path.name}: "
-            f"bg={has_bg_caml}, floating={has_floating_caml}, fg={has_fg_caml}"
+            f"param={has_param_caml}, bg={has_bg_caml}, floating={has_floating_caml}, fg={has_fg_caml}"
         )
+    if is_duo and not has_duo_inner:
+        raise ValueError(f"Duo package missing dual-screen <wallpapers> / BACKGROUND_INNER in {tendies_path.name}")
     if wallpaper_plist_id is None:
         raise ValueError(f"Missing Wallpaper.plist identifier in {tendies_path.name}")
 
     return {
         "wallpaperIdentifier": wallpaper_plist_id,
         "hasClockDepthAssets": has_cutout,
+        "hasDuoDualCanvas": has_duo_inner,
     }
 
 
@@ -99,7 +111,7 @@ def main() -> None:
         if not thumb_file.exists():
             raise FileNotFoundError(f"Missing thumbnail image: {thumb_file}")
 
-        inspect_info = verify_tendies_zip(pkg_file)
+        inspect_info = verify_tendies_zip(pkg_file, is_duo=(entry.get("category") == "duo"))
         size_bytes = pkg_file.stat().st_size
         digest = sha256_file(pkg_file)
         motion = entry.get("motion") or {}
@@ -220,9 +232,18 @@ def main() -> None:
             thumb_rel = f"./thumbs/{p['id']}.jpg"
         size_kb = p["sizeBytes"] / 1024
         size_str = f"{size_kb / 1024:.2f} MB" if size_kb >= 1024 else f"{size_kb:.0f} KB"
-        feat = "Clock Depth · CAML" if p["supportsClockDepth"] else ("Slide Morph · CAML" if p.get("kind") == "morphPair" or p.get("category") == "morph" else f"{p['fps'] or 14} FPS Seamless")
+        is_duo = p.get("category") == "duo"
+        thumb_width = "92" if is_duo else "54"
+        if is_duo:
+            feat = "Duo Inner+Outer · Live 12 FPS" if p.get("kind") == "duoMotion" else "Duo Inner+Outer · 3D CAML"
+        elif p["supportsClockDepth"]:
+            feat = "Clock Depth · CAML"
+        elif p.get("kind") == "morphPair" or p.get("category") == "morph":
+            feat = "Slide Morph · CAML"
+        else:
+            feat = f"{p['fps'] or 14} FPS Seamless"
         lines.append(
-            f"| <img src=\"{thumb_rel}\" width=\"54\"/> "
+            f"| <img src=\"{thumb_rel}\" width=\"{thumb_width}\"/> "
             f"| **{p['titleZh']}**<br/><sub>{p['titleEn']}</sub> "
             f"| `{p['badgeEn']}` "
             f"| {feat} "

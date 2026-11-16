@@ -34,10 +34,13 @@ struct VideoEditorView: View {
     @State private var enableGyroParallax: Bool = false
     @State private var gyroIntensity: Double = 0.55
     @State private var posterStyle: PosterStyleSpec = PosterStyleSpec()
+    @State private var canvasProfile: CanvasDisplayProfile = CamloDevice.isDuoFoldable ? .duoDualScreen : .standardPhone
+    @State private var previewDuoSurface: DuoScreenSurface = .outerCover
     @State private var showHomeScreenPreview: Bool = false
     @State private var paletteMetrics: WallpaperPaletteMetrics? = nil
 
     @State private var extractedSequence: ExtractedVideoSequence?
+    @State private var innerExtractedSequence: ExtractedVideoSequence?
     @State private var extractionProgress: Double = 0
     @State private var isExtracting: Bool = false
     @State private var isBuilding: Bool = false
@@ -45,6 +48,7 @@ struct VideoEditorView: View {
     @State private var extractionTask: Task<Void, Never>? = nil
     @State private var sourcePosterImage: UIImage?
     @State private var cropFraming: CropFraming = .identity
+    @State private var innerCropFraming: CropFraming = .identity
     @State private var showCropSheet: Bool = false
 
     @State private var alertTitle = ""
@@ -52,14 +56,48 @@ struct VideoEditorView: View {
     @State private var showResultAlert = false
     @State private var showOpenPosterBoardAction = false
 
+    private var activeCanvasSize: CGSize {
+        switch canvasProfile {
+        case .standardPhone:
+            return CGSize(width: 390, height: 844)
+        case .duoDualScreen:
+            return previewDuoSurface.logicalSize
+        }
+    }
+
+    private var activeSimulatorSequence: ExtractedVideoSequence? {
+        if canvasProfile == .duoDualScreen && previewDuoSurface == .innerUnfolded {
+            return innerExtractedSequence ?? extractedSequence
+        }
+        return extractedSequence
+    }
+
     var body: some View {
+        let isLandscapeSim = (canvasProfile == .duoDualScreen && previewDuoSurface == .innerUnfolded)
         ScrollView {
             VStack(spacing: 20) {
+                Picker("", selection: $canvasProfile) {
+                    ForEach(CanvasDisplayProfile.allCases) { profile in
+                        Text(profile.shortBadgeTitle).tag(profile)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.top, 4)
+
+                if canvasProfile == .duoDualScreen {
+                    Picker("", selection: $previewDuoSurface) {
+                        ForEach(DuoScreenSurface.allCases) { surface in
+                            Text(surface.localizedTitle).tag(surface)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 // 1. Live Animated Simulator
                 LockScreenSimulatorView(
                     content: .video(
-                        frames: extractedSequence?.previewImages ?? [],
-                        fps: extractedSequence?.fps ?? targetFPS,
+                        frames: activeSimulatorSequence?.previewImages ?? [],
+                        fps: activeSimulatorSequence?.fps ?? targetFPS,
                         loopStyle: loopStyle,
                         unlockZoomScale: unlockZoomScale,
                         dimInSleep: dimInSleepMode,
@@ -67,23 +105,27 @@ struct VideoEditorView: View {
                     ),
                     particlePreset: particlePreset,
                     stage: $simulatorStage,
-                    phoneWidth: 236,
+                    phoneWidth: isLandscapeSim ? 316 : 236,
+                    canvasSize: activeCanvasSize,
                     gyroEnabled: enableGyroParallax,
                     gyroIntensity: gyroIntensity,
                     posterStyle: posterStyle,
                     paletteMetrics: paletteMetrics,
                     showHomeScreenPreview: $showHomeScreenPreview
                 )
-                .padding(.top, 6)
+                .padding(.top, 2)
 
                 if sourcePosterImage != nil {
+                    let activeFraming = isLandscapeSim ? innerCropFraming : cropFraming
                     Button {
                         showCropSheet = true
                         CamloHaptics.selection()
                     } label: {
                         Label(
-                            cropFraming.isIdentity
-                                ? Bi("裁剪与挪动人物位置", "Crop & Reposition Subject")
+                            activeFraming.isIdentity
+                                ? (isLandscapeSim
+                                    ? Bi("裁剪内屏 4:3 横屏画面", "Crop Duo Inner Landscape")
+                                    : Bi("裁剪与挪动人物位置", "Crop & Reposition Subject"))
                                 : Bi("已调整裁剪位置 · 点击微调", "Framing Adjusted · Tap to Edit"),
                             systemImage: "crop"
                         )
@@ -176,6 +218,9 @@ struct VideoEditorView: View {
         .onChange(of: highQuality) { _, _ in
             if !isBuilding, let url = sourceVideoURL { runExtraction(from: url) }
         }
+        .onChange(of: canvasProfile) { _, _ in
+            if !isBuilding, let url = sourceVideoURL { runExtraction(from: url) }
+        }
         .alert(alertTitle, isPresented: $showResultAlert) {
             if showOpenPosterBoardAction {
                 Button(Bi("立即注销桌面生效 (推荐)", "Respring Now to Reload (Recommended)")) {
@@ -191,12 +236,23 @@ struct VideoEditorView: View {
         }
         .fullScreenCover(isPresented: $showCropSheet) {
             if let poster = sourcePosterImage {
+                let isInnerTarget = (canvasProfile == .duoDualScreen && previewDuoSurface == .innerUnfolded)
                 LockScreenCropSheet(
-                    title: Bi("调整实况 / 视频画面位置", "Crop Video & Live Photo"),
+                    title: isInnerTarget
+                        ? Bi("调整 iPhone Duo 内展开画面", "Crop Duo Inner Canvas")
+                        : Bi("调整实况 / 视频画面位置", "Crop Video & Live Photo"),
                     image: poster,
-                    initialFraming: cropFraming
+                    initialFraming: isInnerTarget ? innerCropFraming : cropFraming,
+                    canvasSize: activeCanvasSize
                 ) { newFraming, _ in
-                    if newFraming != cropFraming {
+                    if isInnerTarget {
+                        if newFraming != innerCropFraming {
+                            innerCropFraming = newFraming
+                            if let url = sourceVideoURL {
+                                runExtraction(from: url)
+                            }
+                        }
+                    } else if newFraming != cropFraming {
                         cropFraming = newFraming
                         if let url = sourceVideoURL {
                             runExtraction(from: url, framing: newFraming)
@@ -553,9 +609,11 @@ struct VideoEditorView: View {
             sourceVideoURL = url
             sourcePosterImage = poster
             cropFraming = .identity
+            innerCropFraming = .identity
+            innerExtractedSequence = nil
             if titleText.isEmpty { titleText = suggestedTitle }
             runExtraction(from: url, framing: .identity)
-            if let poster, poster.needsInteractiveCropSuggestion {
+            if let poster, poster.needsInteractiveCropSuggestion(targetAspect: activeCanvasSize.width / max(activeCanvasSize.height, 1)) {
                 showCropSheet = true
             }
         }
@@ -568,16 +626,62 @@ struct VideoEditorView: View {
         let fps = targetFPS
         let maxDur = maxDuration
         let hq = highQuality
-        let activeFraming = framing ?? cropFraming
+        let profile = canvasProfile
+        let outerFraming = framing ?? cropFraming
+        let innerFramingCopy = innerCropFraming
 
         extractionTask = Task {
             do {
+                if profile == .duoDualScreen {
+                    let seqOuter = try await VideoFrameExtractor.extractSequence(
+                        from: url,
+                        targetFPS: fps,
+                        maxDurationSeconds: maxDur,
+                        highQuality: hq,
+                        framing: outerFraming,
+                        targetCanvasSize: DuoScreenSurface.outerCover.videoPixelSize,
+                        overrideMaxFrames: 18
+                    ) { prog in
+                        Task { @MainActor in
+                            self.extractionProgress = prog * 0.5
+                        }
+                    }
+                    guard !Task.isCancelled else { return }
+                    let seqInner = try await VideoFrameExtractor.extractSequence(
+                        from: url,
+                        targetFPS: fps,
+                        maxDurationSeconds: maxDur,
+                        highQuality: hq,
+                        framing: innerFramingCopy,
+                        targetCanvasSize: DuoScreenSurface.innerUnfolded.videoPixelSize,
+                        overrideMaxFrames: 18
+                    ) { prog in
+                        Task { @MainActor in
+                            self.extractionProgress = 0.5 + prog * 0.5
+                        }
+                    }
+                    guard !Task.isCancelled else { return }
+                    let analyzedPalette = await Task.detached(priority: .userInitiated) {
+                        seqOuter.previewImages.first.map { PosterStyleGenerator.analyzePalette(of: $0) }
+                    }.value
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        guard !Task.isCancelled else { return }
+                        self.extractedSequence = seqOuter
+                        self.innerExtractedSequence = seqInner
+                        self.paletteMetrics = analyzedPalette
+                        self.isExtracting = false
+                        CamloHaptics.notify(.success)
+                    }
+                    return
+                }
+
                 let seq = try await VideoFrameExtractor.extractSequence(
                     from: url,
                     targetFPS: fps,
                     maxDurationSeconds: maxDur,
                     highQuality: hq,
-                    framing: activeFraming
+                    framing: outerFraming
                 ) { prog in
                     Task { @MainActor in
                         self.extractionProgress = prog
@@ -591,6 +695,7 @@ struct VideoEditorView: View {
                 await MainActor.run {
                     guard !Task.isCancelled else { return }
                     self.extractedSequence = seq
+                    self.innerExtractedSequence = nil
                     self.paletteMetrics = analyzedPalette
                     self.isExtracting = false
                     CamloHaptics.notify(.success)
@@ -694,7 +799,9 @@ struct VideoEditorView: View {
             particlePreset: particlePreset,
             enableGyroParallax: enableGyroParallax,
             gyroIntensity: gyroIntensity,
-            posterStyle: posterStyle
+            posterStyle: posterStyle,
+            canvasProfile: canvasProfile,
+            innerSequence: (canvasProfile == .duoDualScreen) ? innerExtractedSequence : nil
         )
     }
 

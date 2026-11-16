@@ -986,7 +986,9 @@ func scaffoldDescriptor(pack: PackMetadata, in workRoot: URL) throws -> URL {
     let ver1Dir = descrDir.appendingPathComponent("versions/1", isDirectory: true)
     let contentsDir = ver1Dir.appendingPathComponent("contents", isDirectory: true)
     let suppDir = ver1Dir.appendingPathComponent("supplements/0", isDirectory: true)
-    let wallpaperBundleName = "7400.WWDC_2022-390w-844h@3x~iphone.wallpaper"
+    let wallpaperBundleName = (pack.category == "duo")
+        ? "7920.Camlo_3D-390w-844h@3x~iphone.wallpaper"
+        : "7400.WWDC_2022-390w-844h@3x~iphone.wallpaper"
     let wallpaperBundleDir = contentsDir.appendingPathComponent(wallpaperBundleName, isDirectory: true)
 
     try fm.createDirectory(at: wallpaperBundleDir, withIntermediateDirectories: true)
@@ -1023,26 +1025,51 @@ func scaffoldDescriptor(pack: PackMetadata, in workRoot: URL) throws -> URL {
     let userInfoData = try PropertyListSerialization.data(fromPropertyList: userInfoDict, format: .binary, options: 0)
     try userInfoData.write(to: contentsDir.appendingPathComponent("com.apple.posterkit.provider.contents.userInfo"), options: .atomic)
 
-    let wallpaperPlist: [String: Any] = [
-        "appearanceAware": false,
-        "family": "WWDC22",
-        "identifier": pack.posterSeedId,
-        "logicalScreenClass": "390w-844h@3x~iphone",
-        "name": "WWDC 2022",
-        "version": 1,
-        "assets": [
-            "lockAndHome": [
-                "default": [
-                    "backgroundAnimationFileName": "7400.WWDC_2022_Background-390w-844h@3x~iphone.ca",
-                    "floatingAnimationFileNameKey": "7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca",
-                    "foregroundAnimationFileName": "7400.WWDC_2022_Foreground-390w-844h@3x~iphone.ca",
-                    "identifier": 7400,
-                    "name": "WWDC 2022",
-                    "type": "LayeredAnimation"
+    let wallpaperPlist: [String: Any]
+    if pack.category == "duo" {
+        wallpaperPlist = [
+            "appearanceAware": false,
+            "contentVersion": 1.11,
+            "family": "Marble",
+            "identifier": pack.posterSeedId,
+            "logicalScreenClass": "any",
+            "name": "Lavender",
+            "requiresLandscapeScaling": true,
+            "version": 7,
+            "wantsDeviceMotion": true,
+            "assets": [
+                "lockAndHome": [
+                    "default": [
+                        "assetFileName": "wallpaper.ca",
+                        "identifier": 7920,
+                        "name": "Lavender",
+                        "type": "ParameterizedCA"
+                    ]
                 ]
             ]
         ]
-    ]
+    } else {
+        wallpaperPlist = [
+            "appearanceAware": false,
+            "family": "WWDC22",
+            "identifier": pack.posterSeedId,
+            "logicalScreenClass": "390w-844h@3x~iphone",
+            "name": "WWDC 2022",
+            "version": 1,
+            "assets": [
+                "lockAndHome": [
+                    "default": [
+                        "backgroundAnimationFileName": "7400.WWDC_2022_Background-390w-844h@3x~iphone.ca",
+                        "floatingAnimationFileNameKey": "7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca",
+                        "foregroundAnimationFileName": "7400.WWDC_2022_Foreground-390w-844h@3x~iphone.ca",
+                        "identifier": 7400,
+                        "name": "WWDC 2022",
+                        "type": "LayeredAnimation"
+                    ]
+                ]
+            ]
+        ]
+    }
     let wpData = try PropertyListSerialization.data(fromPropertyList: wallpaperPlist, format: .binary, options: 0)
     try wpData.write(to: wallpaperBundleDir.appendingPathComponent("Wallpaper.plist"), options: .atomic)
 
@@ -1057,14 +1084,553 @@ func runDittoZip(sourceDir: URL, outputTendies: URL) throws {
     let proc = Process()
     proc.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
     proc.arguments = ["-c", "-k", "--norsrc", sourceDir.path, outputTendies.path]
+    proc.standardInput = FileHandle.nullDevice
     let pipe = Pipe()
     proc.standardError = pipe
     try proc.run()
+    let errData = pipe.fileHandleForReading.readDataToEndOfFile()
     proc.waitUntilExit()
     if proc.terminationStatus != 0 {
-        let errText = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? "ditto failed"
+        let errText = String(data: errData, encoding: .utf8) ?? "ditto failed"
         throw NSError(domain: "BuildWallpapers", code: Int(proc.terminationStatus), userInfo: [NSLocalizedDescriptionKey: errText])
     }
+}
+
+// MARK: - iPhone Duo Dual-Screen ParameterizedCA Builder
+
+private struct DuoOverride {
+    let targetId: String
+    let layerName: String
+    let keyPath: String
+    let sleepVal: Double
+    let lockedVal: Double
+    let unlockVal: Double
+    let isInteger: Bool
+}
+
+private struct DuoCanvasSpec {
+    let w: Int
+    let h: Int
+    let pixelW: Int
+    let pixelH: Int
+    let cutoutW: Int
+    let cutoutH: Int
+    let videoW: Int
+    let videoH: Int
+    let assetPrefix: String
+    let idPrefix: String
+    let namePrefix: String
+    let bgParallaxName: String
+    let bgOverscanName: String
+    let fgParallaxName: String
+    let fgOverscanName: String
+    let fxParallaxName: String
+
+    var cx: Int { w / 2 }
+    var cy: Int { h / 2 }
+    var sx: Double { Double(w) / 390.0 }
+    var sy: Double { Double(h) / 844.0 }
+
+    static let outer = DuoCanvasSpec(
+        w: 466, h: 678, pixelW: 1164, pixelH: 1696,
+        cutoutW: 776, cutoutH: 1130, videoW: 520, videoH: 758,
+        assetPrefix: "", idPrefix: "", namePrefix: "",
+        bgParallaxName: "Camlo_BG_Parallax", bgOverscanName: "Camlo_BG_Overscan",
+        fgParallaxName: "Camlo_FG_Parallax", fgOverscanName: "Camlo_FG_Overscan",
+        fxParallaxName: "Camlo_FX_Parallax"
+    )
+    static let inner = DuoCanvasSpec(
+        w: 951, h: 669, pixelW: 1902, pixelH: 1338,
+        cutoutW: 1268, cutoutH: 892, videoW: 860, videoH: 604,
+        assetPrefix: "inner_", idPrefix: "inner_", namePrefix: "Inner ",
+        bgParallaxName: "Camlo_Inner_BG_Parallax", bgOverscanName: "Camlo_Inner_BG_Overscan",
+        fgParallaxName: "Camlo_Inner_FG_Parallax", fgOverscanName: "Camlo_Inner_FG_Overscan",
+        fxParallaxName: "Camlo_Inner_FX_Parallax"
+    )
+}
+
+private func duoParallaxXML(
+    axis: String, keyPath: String, layerName: String,
+    minVal: Int, maxVal: Int, title: String, view: String
+) -> String {
+    """
+            <NSDictionary>
+              <axis type="string" value="\(axis)"/>
+              <image type="string" value="null"/>
+              <keyPath type="string" value="\(keyPath)"/>
+              <layerName type="string" value="\(layerName)"/>
+              <mapMaxTo type="integer" value="\(maxVal)"/>
+              <mapMinTo type="integer" value="\(minVal)"/>
+              <title type="string" value="\(title)"/>
+              <view type="string" value="\(view)"/>
+            </NSDictionary>
+    """
+}
+
+private func duoPropXML(
+    keyPath: String, layerName: String,
+    sleepVal: Double, lockVal: Double, homeVal: Double, view: String
+) -> String {
+    """
+            <NSDictionary>
+              <image type="null"/>
+              <keyPath type="string" value="\(keyPath)"/>
+              <layerName type="string" value="\(layerName)"/>
+              <v_home type="real" value="\(String(format: "%.4f", homeVal))"/>
+              <v_lock type="real" value="\(String(format: "%.4f", lockVal))"/>
+              <v_sleep type="real" value="\(String(format: "%.4f", sleepVal))"/>
+              <view type="string" value="\(view)"/>
+            </NSDictionary>
+    """
+}
+
+private func duoPropEntries(for ov: DuoOverride, view: String) -> [String] {
+    if ov.keyPath == "transform.scale.xy" {
+        let s = max(0.0, ov.sleepVal), l = max(0.0, ov.lockedVal), h = max(0.0, ov.unlockVal)
+        return [
+            duoPropXML(keyPath: "transform.scale.x", layerName: ov.layerName, sleepVal: s, lockVal: l, homeVal: h, view: view),
+            duoPropXML(keyPath: "transform.scale.y", layerName: ov.layerName, sleepVal: s, lockVal: l, homeVal: h, view: view)
+        ]
+    }
+    return [duoPropXML(keyPath: ov.keyPath, layerName: ov.layerName, sleepVal: ov.sleepVal, lockVal: ov.lockedVal, homeVal: ov.unlockVal, view: view)]
+}
+
+private func duoBuildMorphSurface(
+    canvas: DuoCanvasSpec,
+    lockRaw: CGImage,
+    unlockRaw: CGImage,
+    transitionPreset: String,
+    supportsCutout: Bool,
+    maskMode: String,
+    assetsDir: URL,
+    packId: String
+) throws -> (bgXML: String, bgOvs: [DuoOverride], fgXML: String, fgOvs: [DuoOverride]) {
+    let lockFit = try aspectFillCGImage(lockRaw, width: canvas.pixelW, height: canvas.pixelH)
+    let unlockFit = try aspectFillCGImage(unlockRaw, width: canvas.pixelW, height: canvas.pixelH)
+    let aP = canvas.assetPrefix
+    let idP = canvas.idPrefix
+    let nP = canvas.namePrefix
+
+    try writeJPEG(lockFit, to: assetsDir.appendingPathComponent("\(aP)locked.jpg"), quality: 0.84)
+    try writeJPEG(unlockFit, to: assetsDir.appendingPathComponent("\(aP)unlock.jpg"), quality: 0.84)
+
+    let uId = "\(idP)unlock_layer", uName = "\(nP)Unlock Layer"
+    let lId = "\(idP)locked_layer", lName = "\(nP)Locked Layer"
+    let dId = "\(idP)sleep_dimmer", dName = "\(nP)Sleep Dimmer"
+    let sleepAlpha = (transitionPreset == "aodGaze") ? 0.78 : 0.48
+
+    let bgXML = """
+                  <CALayer id="\(uId)" name="\(uName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                    <contents><CGImage src="assets/\(aP)unlock.jpg"/></contents>
+                  </CALayer>
+                  <CALayer id="\(lId)" name="\(lName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                    <contents><CGImage src="assets/\(aP)locked.jpg"/></contents>
+                  </CALayer>
+                  <CALayer id="\(dId)" name="\(dName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
+    """
+
+    let cy = Double(canvas.cy), cx = Double(canvas.cx)
+    let lockExitY = (Double(canvas.h) * 1.1137).rounded()
+    let uSleepY = (cy - 30.0 * canvas.sy).rounded()
+    let uLockY = (cy - 18.0 * canvas.sy).rounded()
+    var bgOvs: [DuoOverride] = [
+        DuoOverride(targetId: dId, layerName: dName, keyPath: "opacity", sleepVal: sleepAlpha, lockedVal: 0.0, unlockVal: 0.0, isInteger: false)
+    ]
+
+    switch transitionPreset {
+    case "curtainRise":
+        bgOvs.append(contentsOf: [
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: lockExitY, isInteger: true),
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 0.96, isInteger: false),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "position.y", sleepVal: uSleepY, lockedVal: uLockY, unlockVal: cy, isInteger: true),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "transform.scale.xy", sleepVal: 1.08, lockedVal: 1.06, unlockVal: 1.0, isInteger: false)
+        ])
+    case "burstZoom":
+        bgOvs.append(contentsOf: [
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "transform.scale.xy", sleepVal: 1.04, lockedVal: 1.0, unlockVal: 0.86, isInteger: false),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "transform.scale.xy", sleepVal: 1.24, lockedVal: 1.18, unlockVal: 1.0, isInteger: false)
+        ])
+    case "aodGaze":
+        bgOvs.append(contentsOf: [
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "transform.scale.xy", sleepVal: 0.96, lockedVal: 1.0, unlockVal: 1.04, isInteger: false),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "transform.scale.xy", sleepVal: 1.08, lockedVal: 1.06, unlockVal: 1.0, isInteger: false)
+        ])
+    case "crossfade":
+        bgOvs.append(contentsOf: [
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "transform.scale.xy", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 1.04, isInteger: false),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "transform.scale.xy", sleepVal: 1.06, lockedVal: 1.04, unlockVal: 1.0, isInteger: false)
+        ])
+    default: // flashAwaken
+        bgOvs.append(contentsOf: [
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 1.06, isInteger: false),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "transform.scale.xy", sleepVal: 1.08, lockedVal: 1.06, unlockVal: 1.0, isInteger: false)
+        ])
+    }
+    _ = cx
+
+    var fgXML = ""
+    var fgOvs: [DuoOverride] = []
+    if supportsCutout && maskMode != "none" {
+        let cutPair: (CGImage, CGImage, Double, Double, String)? = {
+            if maskMode == "skyline" {
+                if let (cl, covL) = try? extractSkylineCutout(from: lockFit, outWidth: canvas.cutoutW, outHeight: canvas.cutoutH),
+                   let (cu, covU) = try? extractSkylineCutout(from: unlockFit, outWidth: canvas.cutoutW, outHeight: canvas.cutoutH),
+                   covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
+                    return (cl, cu, covL, covU, "Skyline")
+                }
+            } else {
+                if let (cl, covL) = try? extractForegroundCutout(from: lockFit, outWidth: canvas.cutoutW, outHeight: canvas.cutoutH),
+                   let (cu, covU) = try? extractForegroundCutout(from: unlockFit, outWidth: canvas.cutoutW, outHeight: canvas.cutoutH),
+                   covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
+                    return (cl, cu, covL, covU, "Vision")
+                }
+            }
+            return nil
+        }()
+        if let (cutL, cutU, covL, covU, tag) = cutPair {
+            try writePNG(cutL, to: assetsDir.appendingPathComponent("\(aP)cutout_lock.png"))
+            try writePNG(cutU, to: assetsDir.appendingPathComponent("\(aP)cutout_unlock.png"))
+            let fuId = "\(idP)float_unlock", fuName = "\(nP)Floating Unlock Subject"
+            let flId = "\(idP)float_lock", flName = "\(nP)Floating Lock Subject"
+            let flExitY: Double = (transitionPreset == "curtainRise") ? (Double(canvas.h) * 1.137).rounded() : cy
+            let flEndScale: Double = (transitionPreset == "burstZoom") ? 0.84 : 1.06
+            fgXML = """
+                  <CALayer id="\(fuId)" name="\(fuName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="1" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                    <contents><CGImage src="assets/\(aP)cutout_unlock.png"/></contents>
+                  </CALayer>
+                  <CALayer id="\(flId)" name="\(flName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="2" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                    <contents><CGImage src="assets/\(aP)cutout_lock.png"/></contents>
+                  </CALayer>
+            """
+            fgOvs = [
+                DuoOverride(targetId: fuId, layerName: fuName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 1.0, isInteger: false),
+                DuoOverride(targetId: fuId, layerName: fuName, keyPath: "transform.scale.xy", sleepVal: 1.16, lockedVal: 1.14, unlockVal: 1.0, isInteger: false),
+                DuoOverride(targetId: flId, layerName: flName, keyPath: "opacity", sleepVal: 0.72, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
+                DuoOverride(targetId: flId, layerName: flName, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: flExitY, isInteger: true),
+                DuoOverride(targetId: flId, layerName: flName, keyPath: "transform.scale.xy", sleepVal: 0.98, lockedVal: 1.0, unlockVal: flEndScale, isInteger: false)
+            ]
+            print(String(format: "    [Duo-%@-%@] %@ cutout cov=%.1f%%/%.1f%%", tag, canvas.idPrefix.isEmpty ? "outer" : "inner", packId, covL * 100.0, covU * 100.0))
+        }
+    }
+
+    return (bgXML, bgOvs, fgXML, fgOvs)
+}
+
+private func duoBuildMotionSurface(
+    canvas: DuoCanvasSpec,
+    rawA: CGImage,
+    rawB: CGImage,
+    frameCount: Int,
+    duration: Double,
+    assetsDir: URL,
+    packId: String
+) throws -> (bgXML: String, bgOvs: [DuoOverride]) {
+    let fittedA = try aspectFillCGImage(rawA, width: canvas.videoW, height: canvas.videoH)
+    let fittedB = try aspectFillCGImage(rawB, width: canvas.videoW, height: canvas.videoH)
+    let ciA = CIImage(cgImage: fittedA)
+    let ciB = CIImage(cgImage: fittedB)
+    let extent = CGRect(x: 0, y: 0, width: canvas.videoW, height: canvas.videoH)
+    let ciCtx = CIContext(options: nil)
+    let aP = canvas.assetPrefix
+    let idP = canvas.idPrefix
+    let nP = canvas.namePrefix
+
+    var tags: [String] = []
+    for i in 0..<frameCount {
+        let phase = Double(i) / Double(max(1, frameCount - 1))
+        let weightB = CGFloat(0.5 - 0.5 * cos(phase * .pi))
+        let scaleAmt = 1.0 + 0.016 * sin(phase * .pi)
+        let panY = CGFloat(4.0 * sin(phase * .pi))
+        let cx = CGFloat(canvas.videoW) * 0.5
+        let cy = CGFloat(canvas.videoH) * 0.5
+        let tr = CGAffineTransform(translationX: cx, y: cy)
+            .scaledBy(x: scaleAmt, y: scaleAmt)
+            .translatedBy(x: -cx, y: -cy + panY)
+        let sA = ciA.clampedToExtent().transformed(by: tr).cropped(to: extent)
+        let sB = ciB.clampedToExtent().transformed(by: tr).cropped(to: extent)
+        let wMask = CIImage(color: CIColor(red: weightB, green: weightB, blue: weightB, alpha: 1.0)).cropped(to: extent)
+        let blended = sB.applyingFilter("CIBlendWithMask", parameters: [kCIInputBackgroundImageKey: sA, kCIInputMaskImageKey: wMask]).cropped(to: extent)
+        guard let cg = ciCtx.createCGImage(blended, from: extent) else {
+            throw NSError(domain: "BuildWallpapers", code: 22, userInfo: [NSLocalizedDescriptionKey: "Failed Duo motion frame \(i) for \(packId)"])
+        }
+        let fname = "\(aP)frame_\(i).jpg"
+        try writeJPEG(cg, to: assetsDir.appendingPathComponent(fname), quality: 0.80)
+        tags.append("                    <CGImage src=\"assets/\(fname)\"/>")
+    }
+
+    let vidId = "\(idP)video_seq_layer", vidName = "\(nP)Video Sequence Layer"
+    let dimId = "\(idP)video_sleep_dim", dimName = "\(nP)Sleep Dimmer"
+    let bgXML = """
+                  <CALayer id="\(vidId)" name="\(vidName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                    <contents><CGImage src="assets/\(aP)frame_0.jpg"/></contents>
+                    <animations>
+                      <animation type="CAKeyframeAnimation" calculationMode="discrete" fillMode="both" keyPath="contents" beginTime="1e-100" duration="\(String(format: "%.3f", max(0.5, duration)))" removedOnCompletion="0" repeatCount="inf" repeatDuration="0" speed="1" timeOffset="0" autoreverses="1">
+                        <values>
+    \(tags.joined(separator: "\n"))
+                        </values>
+                      </animation>
+                    </animations>
+                  </CALayer>
+                  <CALayer id="\(dimId)" name="\(dimName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
+    """
+    let bgOvs = [
+        DuoOverride(targetId: vidId, layerName: vidName, keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 1.04, isInteger: false),
+        DuoOverride(targetId: dimId, layerName: dimName, keyPath: "opacity", sleepVal: 0.65, lockedVal: 0.0, unlockVal: 0.0, isInteger: false)
+    ]
+    return (bgXML, bgOvs)
+}
+
+private func duoFXLayers(preset: String, spriteName: String?, canvas: DuoCanvasSpec) -> (xml: String, ovs: [DuoOverride]) {
+    guard preset != "none", let spriteName, !spriteName.isEmpty else { return ("", []) }
+    let idP = canvas.idPrefix
+    let nP = canvas.namePrefix
+    let eId = "\(idP)camlo_emitter", eName = "\(nP)Camlo Emitter"
+    let ePosX = Int((195.0 * canvas.sx).rounded())
+    let eW = Int((390.0 * canvas.sx).rounded())
+    let eH = Int((260.0 * canvas.sy).rounded())
+    let ePosY: Int
+    let birthRate: Double, velocity: Double, yAccel: Double, scale: Double, emLong: Double, emRange: Double, spin: Double
+    switch preset {
+    case "sakura":
+        birthRate = 4.5; velocity = 42; yAccel = -12; scale = 0.32; ePosY = Int((820.0 * canvas.sy).rounded()); emLong = -1.57; emRange = 0.90; spin = 1.8
+    case "fireflies":
+        birthRate = 4.5; velocity = 14; yAccel = 5; scale = 0.22; ePosY = Int((420.0 * canvas.sy).rounded()); emLong = 1.57; emRange = 3.14; spin = 0.6
+    case "sunbeamRays":
+        let bId = "\(idP)camlo_volumetric_beam", bName = "\(nP)Camlo Volumetric Beam"
+        let bw = Int((520.0 * canvas.sx).rounded()), bh = Int((960.0 * canvas.sy).rounded())
+        let bx = Int((175.0 * canvas.sx).rounded()), by = Int((460.0 * canvas.sy).rounded())
+        let xml = """
+                  <CALayer id="\(bId)" name="\(bName)" bounds="0 0 \(bw) \(bh)" position="\(bx) \(by)" zPosition="3" opacity="0.46" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                    <contents><CGImage src="assets/\(spriteName)"/></contents>
+                    <compositingFilter type="CAFilter" filter="plusL" name="plusL"/>
+                  </CALayer>
+        """
+        return (xml, [
+            DuoOverride(targetId: bId, layerName: bName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.46, unlockVal: 0.38, isInteger: false)
+        ])
+    default: // starlight
+        birthRate = 5.0; velocity = 12; yAccel = 3; scale = 0.21; ePosY = Int((460.0 * canvas.sy).rounded()); emLong = 1.57; emRange = 3.14; spin = 0.8
+    }
+    let xml = """
+              <CAEmitterLayer id="\(eId)" name="\(eName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="4" emitterPosition="\(ePosX) \(ePosY)" emitterSize="\(eW) \(eH)" emitterShape="rectangle" emitterMode="volume" renderMode="additive" birthRate="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                <emitterCells>
+                  <CAEmitterCell id="\(idP)camlo_cell_main" name="\(idP)camlo_cell_main" contentsScale="2" birthRate="\(birthRate)" lifetime="6.2" velocity="\(velocity)" velocityRange="24" emissionRange="\(emRange)" emissionLongitude="\(emLong)" emissionLatitude="0" scale="\(scale)" scaleRange="0.14" scaleSpeed="-0.01" alphaRange="0.25" alphaSpeed="-0.12" spin="\(spin)" spinRange="1.2" yAcceleration="\(yAccel)">
+                    <color value="1 1 1" opacity="0.94"/>
+                    <contents><CGImage src="assets/\(spriteName)"/></contents>
+                  </CAEmitterCell>
+                </emitterCells>
+              </CAEmitterLayer>
+    """
+    return (xml, [
+        DuoOverride(targetId: eId, layerName: eName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 0.88, isInteger: false),
+        DuoOverride(targetId: eId, layerName: eName, keyPath: "birthRate", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false)
+    ])
+}
+
+func buildDuoDualPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) throws {
+    let fm = FileManager.default
+    let caURL = wpDir.appendingPathComponent("wallpaper.ca", isDirectory: true)
+    let assetsDir = caURL.appendingPathComponent("assets", isDirectory: true)
+    try fm.createDirectory(at: assetsDir, withIntermediateDirectories: true)
+    let outer = DuoCanvasSpec.outer
+    let inner = DuoCanvasSpec.inner
+    try standardIndexXML(width: outer.w, height: outer.h).write(to: caURL.appendingPathComponent("index.xml"), atomically: true, encoding: .utf8)
+    try standardAssetManifestXML().write(to: caURL.appendingPathComponent("assetManifest.caml"), atomically: true, encoding: .utf8)
+
+    let outerLockRaw = try loadCGImage(at: sourcesDir.appendingPathComponent("\(pack.id)_lock.jpg"))
+    let outerUnlockRaw = try loadCGImage(at: sourcesDir.appendingPathComponent("\(pack.id)_unlock.jpg"))
+    let innerLockRaw = try loadCGImage(at: sourcesDir.appendingPathComponent("\(pack.id)_inner_lock.jpg"))
+    let innerUnlockRaw = try loadCGImage(at: sourcesDir.appendingPathComponent("\(pack.id)_inner_unlock.jpg"))
+
+    let thumbCG = try aspectFillCGImage(outerUnlockRaw, width: 540, height: 1170)
+    try writeJPEG(thumbCG, to: thumbOutURL, quality: 0.88)
+
+    let fgSprites = try renderParticleSprite(pack.particlePreset, outDir: assetsDir)
+    let spriteName = fgSprites.first?.filename
+    let outerFX = duoFXLayers(preset: pack.particlePreset, spriteName: spriteName, canvas: outer)
+    let innerFX = duoFXLayers(preset: pack.particlePreset, spriteName: spriteName, canvas: inner)
+
+    let oBgXML: String, iBgXML: String, oFgXML: String, iFgXML: String
+    let oBgOvs: [DuoOverride], iBgOvs: [DuoOverride]
+    let oFgOvs: [DuoOverride], iFgOvs: [DuoOverride]
+
+    if pack.kind == "duoMotion" {
+        let count = max(12, pack.motion?.frameCount ?? 16)
+        let dur = max(1.0, pack.motion?.duration ?? 2.667)
+        let oMot = try duoBuildMotionSurface(canvas: outer, rawA: outerLockRaw, rawB: outerUnlockRaw, frameCount: count, duration: dur, assetsDir: assetsDir, packId: pack.id)
+        let iMot = try duoBuildMotionSurface(canvas: inner, rawA: innerLockRaw, rawB: innerUnlockRaw, frameCount: count, duration: dur, assetsDir: assetsDir, packId: pack.id)
+        oBgXML = oMot.bgXML; oBgOvs = oMot.bgOvs; oFgXML = ""; oFgOvs = []
+        iBgXML = iMot.bgXML; iBgOvs = iMot.bgOvs; iFgXML = ""; iFgOvs = []
+    } else {
+        let mode = (pack.depthMaskMode ?? (pack.supportsClockDepth ? "vision" : "none")).lowercased()
+        let oM = try duoBuildMorphSurface(canvas: outer, lockRaw: outerLockRaw, unlockRaw: outerUnlockRaw, transitionPreset: pack.transitionPreset, supportsCutout: pack.supportsClockDepth, maskMode: mode, assetsDir: assetsDir, packId: pack.id)
+        let iM = try duoBuildMorphSurface(canvas: inner, lockRaw: innerLockRaw, unlockRaw: innerUnlockRaw, transitionPreset: pack.transitionPreset, supportsCutout: pack.supportsClockDepth, maskMode: mode, assetsDir: assetsDir, packId: pack.id)
+        oBgXML = oM.bgXML; oBgOvs = oM.bgOvs; oFgXML = oM.fgXML; oFgOvs = oM.fgOvs
+        iBgXML = iM.bgXML; iBgOvs = iM.bgOvs; iFgXML = iM.fgXML; iFgOvs = iM.fgOvs
+    }
+
+    func parallaxFor(_ c: DuoCanvasSpec) -> (bg: [String], fg: [String]) {
+        let bx = Int((16.0 * c.sx).rounded()), by = Int((22.0 * c.sy).rounded())
+        let fx = Int((22.0 * c.sx).rounded()), fy = Int((28.0 * c.sy).rounded())
+        let xx = Int((30.0 * c.sx).rounded()), xy = Int((36.0 * c.sy).rounded())
+        return (
+            [
+                duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.bgParallaxName, minVal: -bx, maxVal: bx, title: "\(c.namePrefix)Camlo BG X", view: "Background"),
+                duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.bgParallaxName, minVal: -by, maxVal: by, title: "\(c.namePrefix)Camlo BG Y", view: "Background")
+            ],
+            [
+                duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.fgParallaxName, minVal: fx, maxVal: -fx, title: "\(c.namePrefix)Camlo FG X", view: "Floating"),
+                duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.fgParallaxName, minVal: fy, maxVal: -fy, title: "\(c.namePrefix)Camlo FG Y", view: "Floating"),
+                duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.fxParallaxName, minVal: xx, maxVal: -xx, title: "\(c.namePrefix)Camlo FX X", view: "Floating"),
+                duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.fxParallaxName, minVal: xy, maxVal: -xy, title: "\(c.namePrefix)Camlo FX Y", view: "Floating")
+            ]
+        )
+    }
+
+    let oPx = parallaxFor(outer)
+    let iPx = parallaxFor(inner)
+    let oBgProps = oBgOvs.flatMap { duoPropEntries(for: $0, view: "Background") }
+    let oFgProps = (oFgOvs + outerFX.ovs).flatMap { duoPropEntries(for: $0, view: "Floating") }
+    let iBgProps = iBgOvs.flatMap { duoPropEntries(for: $0, view: "Background") }
+    let iFgProps = (iFgOvs + innerFX.ovs).flatMap { duoPropEntries(for: $0, view: "Floating") }
+
+    func variantDict(screen: String, bgName: String, flName: String, c: DuoCanvasSpec, px: (bg: [String], fg: [String]), bp: [String], fp: [String]) -> String {
+        let bpXML = bp.isEmpty ? "          <backgroundPropertyGroups type=\"NSArray\"/>" : "          <backgroundPropertyGroups type=\"NSArray\">\n\(bp.joined(separator: "\n"))\n          </backgroundPropertyGroups>"
+        let fpXML = fp.isEmpty ? "          <floatingPropertyGroups type=\"NSArray\"/>" : "          <floatingPropertyGroups type=\"NSArray\">\n\(fp.joined(separator: "\n"))\n          </floatingPropertyGroups>"
+        return """
+                <NSDictionary>
+                  <screenName type="string" value="\(screen)"/>
+                  <backgroundLayerName type="string" value="\(bgName)"/>
+                  <floatingLayerName type="string" value="\(flName)"/>
+                  <idealWidth type="integer" value="\(c.w)"/>
+                  <idealHeight type="integer" value="\(c.h)"/>
+                  <retinaMultiplier type="integer" value="3"/>
+                  <backgroundParallaxGroups type="NSArray">
+        \(px.bg.joined(separator: "\n"))
+                  </backgroundParallaxGroups>
+                  <floatingParallaxGroups type="NSArray">
+        \(px.fg.joined(separator: "\n"))
+                  </floatingParallaxGroups>
+        \(bpXML)
+        \(fpXML)
+                </NSDictionary>
+        """
+    }
+
+    func planePair(c: DuoCanvasSpec, bgId: String, bgN: String, flId: String, flN: String, bgZ: Int, flZ: Int, bgXML: String, flXML: String, fxXML: String) -> String {
+        let bIn = bgXML.isEmpty ? "" : "\n                <sublayers>\n\(bgXML)\n                </sublayers>"
+        let fIn = flXML.isEmpty ? "" : "\n                <sublayers>\n\(flXML)\n                </sublayers>"
+        let xIn = fxXML.isEmpty ? "" : "\n              <sublayers>\n\(fxXML)\n              </sublayers>"
+        return """
+              <CALayer id="\(bgId)" name="\(bgN)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="\(bgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                <sublayers>
+                  <CALayer id="\(c.idPrefix)camlo_bg_parallax" name="\(c.bgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                    <sublayers>
+                      <CALayer id="\(c.idPrefix)camlo_bg_overscan" name="\(c.bgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" transform="scale(1.1040, 1.1040, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bIn)
+                      </CALayer>
+                    </sublayers>
+                  </CALayer>
+                </sublayers>
+              </CALayer>
+              <CALayer id="\(flId)" name="\(flN)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="\(flZ)" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                <sublayers>
+                  <CALayer id="\(c.idPrefix)camlo_fg_parallax" name="\(c.fgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                    <sublayers>
+                      <CALayer id="\(c.idPrefix)camlo_fg_overscan" name="\(c.fgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" transform="scale(1.0400, 1.0400, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fIn)
+                      </CALayer>
+                    </sublayers>
+                  </CALayer>
+                  <CALayer id="\(c.idPrefix)camlo_fx_parallax" name="\(c.fxParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(xIn)
+                  </CALayer>
+                </sublayers>
+              </CALayer>
+        """
+    }
+
+    let allOvs = oBgOvs + oFgOvs + outerFX.ovs + iBgOvs + iFgOvs + innerFX.ovs
+    func stElements(_ stage: String) -> String {
+        guard !allOvs.isEmpty else { return "        <elements/>" }
+        var lns = ["        <elements>"]
+        for ov in allOvs {
+            let v = (stage == "Unlock") ? ov.unlockVal : (stage == "Sleep" ? ov.sleepVal : ov.lockedVal)
+            let tStr = ov.isInteger ? "integer" : "real"
+            let vStr = ov.isInteger ? String(Int(v.rounded())) : String(format: "%.4f", v)
+            lns.append("          <LKStateSetValue targetId=\"\(ov.targetId)\" keyPath=\"\(ov.keyPath)\"><value type=\"\(tStr)\" value=\"\(vStr)\"/></LKStateSetValue>")
+        }
+        lns.append("        </elements>")
+        return lns.joined(separator: "\n")
+    }
+    var trLines = ["        <elements>"]
+    for ov in allOvs {
+        trLines.append("          <LKStateTransitionElement targetId=\"\(ov.targetId)\" key=\"\(ov.keyPath)\"><animation type=\"CASpringAnimation\" damping=\"28\" mass=\"1\" stiffness=\"306\" velocity=\"0\" duration=\"0.85\" fillMode=\"backwards\" keyPath=\"\(ov.keyPath)\" mica_autorecalculatesDuration=\"1\"/></LKStateTransitionElement>")
+    }
+    trLines.append("        </elements>")
+    let trEls = trLines.joined(separator: "\n")
+
+    let wallpapersXML = [
+        variantDict(screen: "Outer", bgName: "BACKGROUND", flName: "FLOATING", c: outer, px: oPx, bp: oBgProps, fp: oFgProps),
+        variantDict(screen: "Inner", bgName: "BACKGROUND_INNER", flName: "FLOATING_INNER", c: inner, px: iPx, bp: iBgProps, fp: iFgProps)
+    ].joined(separator: "\n")
+
+    let allTopProps = oBgProps + oFgProps
+    let topPropsXML = allTopProps.isEmpty ? "      <wallpaperPropertyGroups type=\"NSArray\"/>" : "      <wallpaperPropertyGroups type=\"NSArray\">\n\(allTopProps.joined(separator: "\n"))\n      </wallpaperPropertyGroups>"
+
+    let caml = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!-- Generated by Camlo Cloud Builder (iPhone Duo Dual-Screen) -->
+    <caml xmlns="http://www.apple.com/CoreAnimation/1.0">
+      <CALayer id="__capRootLayer__" name="Root Layer" bounds="0 0 \(outer.w) \(outer.h)" position="\(outer.cx) \(outer.cy)" zPosition="0" geometryFlipped="0" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+        <style>
+          <wallpaperBackgroundAssetNames type="NSArray"/>
+          <wallpaperFloatingAssetNames type="NSArray"/>
+          <wallpaperParallaxGroups type="NSArray">
+    \((oPx.bg + oPx.fg).joined(separator: "\n"))
+          </wallpaperParallaxGroups>
+    \(topPropsXML)
+          <wallpapers type="NSArray">
+    \(wallpapersXML)
+          </wallpapers>
+        </style>
+        <sublayers>
+    \(planePair(c: inner, bgId: "background_inner", bgN: "BACKGROUND_INNER", flId: "floating_inner", flN: "FLOATING_INNER", bgZ: -10, flZ: -9, bgXML: iBgXML, flXML: iFgXML, fxXML: innerFX.xml))
+    \(planePair(c: outer, bgId: "background", bgN: "BACKGROUND", flId: "floating", flN: "FLOATING", bgZ: 0, flZ: 10, bgXML: oBgXML, flXML: oFgXML, fxXML: outerFX.xml))
+        </sublayers>
+        <modules/>
+        <states>
+          <LKState name="Locked">
+    \(stElements("Locked"))
+          </LKState>
+          <LKState name="Unlock">
+    \(stElements("Unlock"))
+          </LKState>
+          <LKState name="Sleep">
+    \(stElements("Sleep"))
+          </LKState>
+        </states>
+        <stateTransitions>
+          <LKStateTransition fromState="*" toState="Unlock">\(trEls)</LKStateTransition>
+          <LKStateTransition fromState="Unlock" toState="*">\(trEls)</LKStateTransition>
+          <LKStateTransition fromState="*" toState="Locked">\(trEls)</LKStateTransition>
+          <LKStateTransition fromState="Locked" toState="*">\(trEls)</LKStateTransition>
+          <LKStateTransition fromState="*" toState="Sleep">\(trEls)</LKStateTransition>
+          <LKStateTransition fromState="Sleep" toState="*">\(trEls)</LKStateTransition>
+        </stateTransitions>
+      </CALayer>
+    </caml>
+    """
+
+    try caml.write(to: caURL.appendingPathComponent("main.caml"), atomically: true, encoding: .utf8)
+    try verifyCAPackage(at: caURL)
 }
 
 // MARK: - Build Pipeline
@@ -1091,6 +1657,14 @@ func buildAll() throws {
         defer { try? fm.removeItem(at: workRoot) }
 
         let wpDir = try scaffoldDescriptor(pack: pack, in: workRoot)
+        if pack.category == "duo" {
+            try buildDuoDualPack(pack: pack, wpDir: wpDir, thumbOutURL: thumbOutURL)
+            try runDittoZip(sourceDir: workRoot, outputTendies: tendiesOutURL)
+            let pkgSize = (try? fm.attributesOfItem(atPath: tendiesOutURL.path)[.size] as? Int) ?? 0
+            print(String(format: "[+] Built Duo %@.tendies (%d KB) · ParameterizedCA CAPackage verified", pack.id, pkgSize / 1024))
+            continue
+        }
+
         let bgCA = wpDir.appendingPathComponent("7400.WWDC_2022_Background-390w-844h@3x~iphone.ca", isDirectory: true)
         let flCA = wpDir.appendingPathComponent("7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca", isDirectory: true)
         let fgCA = wpDir.appendingPathComponent("7400.WWDC_2022_Foreground-390w-844h@3x~iphone.ca", isDirectory: true)

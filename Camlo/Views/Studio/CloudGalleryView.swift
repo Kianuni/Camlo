@@ -44,6 +44,8 @@ struct CloudGalleryView: View {
             base = manager.packs.filter { $0.category == "motion" }
         case .morph:
             base = manager.packs.filter { $0.category == "morph" }
+        case .duo:
+            base = manager.packs.filter { $0.category == "duo" }
         }
 
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -456,7 +458,7 @@ struct CloudGalleryView: View {
             } label: {
                 ZStack(alignment: .topLeading) {
                     Color.clear
-                        .aspectRatio(9.0 / 16.0, contentMode: .fit)
+                        .aspectRatio(selectedCategory == .duo ? (951.0 / 669.0) : (9.0 / 16.0), contentMode: .fit)
                         .overlay {
                             CamloRemotePreview(
                                 cacheKey: "official_card_\(pack.id)",
@@ -478,7 +480,13 @@ struct CloudGalleryView: View {
                             .background(.ultraThinMaterial, in: Capsule())
                             .foregroundStyle(.white)
 
-                        if pack.supportsClockDepth == true {
+                        if pack.category == "duo" {
+                            Image(systemName: "book.pages.fill")
+                                .font(.system(size: 10, weight: .bold))
+                                .padding(5)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .foregroundStyle(.white)
+                        } else if pack.supportsClockDepth == true {
                             Image(systemName: "clock.badge.checkmark.fill")
                                 .font(.system(size: 10, weight: .bold))
                                 .padding(5)
@@ -512,7 +520,11 @@ struct CloudGalleryView: View {
                     Text(pack.formattedSize)
                         .font(.system(size: 10, weight: .semibold, design: .monospaced))
                         .foregroundStyle(.secondary)
-                    if let fps = pack.fps {
+                    if pack.category == "duo" {
+                        Text("· Duo Dual")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(pack.accentColor)
+                    } else if let fps = pack.fps {
                         Text("· \(fps) FPS")
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundStyle(pack.accentColor)
@@ -796,19 +808,20 @@ struct CloudGalleryView: View {
         return NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    let isDuoPack = (pack.category == "duo")
                     Color.clear
-                        .aspectRatio(9.0 / 16.0, contentMode: .fit)
-                        .frame(maxWidth: 240)
+                        .aspectRatio(isDuoPack ? (951.0 / 669.0) : (9.0 / 16.0), contentMode: .fit)
+                        .frame(maxWidth: isDuoPack ? 360 : 240)
                         .overlay {
                             CamloRemotePreview(
                                 cacheKey: "official_sheet_\(pack.id)",
                                 candidateURLs: pack.previewCandidateURLs,
-                                mode: .motion(maxPixel: 720, maxKeyframes: 32),
+                                mode: .motion(maxPixel: isDuoPack ? 840 : 720, maxKeyframes: 32),
                                 contentMode: .scaleAspectFill,
                                 placeholderColors: [pack.accentColor.opacity(0.36), Color.black.opacity(0.88)]
                             )
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: isDuoPack ? 16 : 24, style: .continuous))
                         .clipped()
                         .shadow(color: pack.accentColor.opacity(0.28), radius: 16, y: 8)
                         .frame(maxWidth: .infinity)

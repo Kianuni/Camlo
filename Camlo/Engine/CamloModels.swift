@@ -225,6 +225,79 @@ struct TendiesVaultItem: Identifiable, Codable, Equatable {
     }
 }
 
+enum CanvasDisplayProfile: String, CaseIterable, Identifiable, Hashable {
+    case standardPhone
+    case duoDualScreen
+
+    var id: String { rawValue }
+
+    var localizedTitle: String {
+        switch self {
+        case .standardPhone:
+            return Bi("常规 iPhone", "Standard iPhone")
+        case .duoDualScreen:
+            return Bi("iPhone Duo 双屏", "iPhone Duo Dual")
+        }
+    }
+
+    var shortBadgeTitle: String {
+        switch self {
+        case .standardPhone:
+            return Bi("常规 9:19", "Standard")
+        case .duoDualScreen:
+            return Bi("Duo 内外双屏", "Duo Inner+Outer")
+        }
+    }
+}
+
+enum DuoScreenSurface: String, CaseIterable, Identifiable, Hashable {
+    case outerCover
+    case innerUnfolded
+
+    var id: String { rawValue }
+
+    var localizedTitle: String {
+        switch self {
+        case .outerCover:
+            return Bi("外屏 · 6.7\"", "Outer Cover")
+        case .innerUnfolded:
+            return Bi("内展开 · 书本横屏", "Inner Unfolded")
+        }
+    }
+
+    /// Logical point dimensions verified against Xcode 27.2 iPhone19,4 (V68) profile.
+    var logicalSize: CGSize {
+        switch self {
+        case .outerCover:
+            return CGSize(width: 466, height: 678)
+        case .innerUnfolded:
+            return CGSize(width: 951, height: 669)
+        }
+    }
+
+    var aspectRatio: CGFloat {
+        logicalSize.width / max(logicalSize.height, 1)
+    }
+
+    var morphPixelSize: CGSize {
+        switch self {
+        case .outerCover:
+            return CGSize(width: 1164, height: 1696)
+        case .innerUnfolded:
+            return CGSize(width: 1902, height: 1338)
+        }
+    }
+
+    var videoPixelSize: CGSize {
+        switch self {
+        case .outerCover:
+            return CGSize(width: 520, height: 758)
+        case .innerUnfolded:
+            return CGSize(width: 860, height: 604)
+        }
+    }
+}
+
 struct TendiesInspectionReport: Identifiable {
     let id = UUID()
     let item: TendiesVaultItem
@@ -242,6 +315,7 @@ struct TendiesInspectionReport: Identifiable {
     let isAppearanceAware: Bool
     let clockFontIdentifier: String?
     let hasHomeLegibilityBlur: Bool
+    let hasDuoDualCanvas: Bool
     let assetImages: [(name: String, image: UIImage)]
     let packageSizeBytes: Int64
 }
@@ -300,8 +374,12 @@ struct CropFraming: Equatable, Codable, Sendable {
 extension UIImage {
     /// True when image aspect ratio differs noticeably from iPhone Lock Screen (~390:844), such as 3:4, 4:3, 1:1, or 16:9 camera photos.
     var needsInteractiveCropSuggestion: Bool {
+        needsInteractiveCropSuggestion(targetAspect: 390.0 / 844.0)
+    }
+
+    func needsInteractiveCropSuggestion(targetAspect: CGFloat) -> Bool {
         let ratio = size.width / max(size.height, 1)
-        return abs(ratio - (390.0 / 844.0)) > 0.045
+        return abs(ratio - targetAspect) > 0.045
     }
 
     /// Normalizes EXIF orientation to `.up` and aspect-fills target pixel dimensions cleanly with optional pan/zoom framing.

@@ -3,14 +3,15 @@
 <p>
   <a href="../README_EN.md">← Back to Overview</a> ·
   <a href="./FEATURES.md">中文详细介绍</a> ·
-  <a href="../wallpapers/README.md">🎨 50 Official Cloud Wallpapers</a>
+  <a href="../wallpapers/README.md">🎨 60 Official Cloud Wallpapers</a>
 </p>
 
 ---
 
 ## Core Rendering & Engine Architecture
 
-- **120Hz Native `.ca` Live Preview (`LiveCAPreviewView`)**: Clean-room Objective-C `CamloCAStageController` (`CAPackage` + `CAStateController`) paired with a 120Hz ProMotion `CADisplayLink` & `CoreMotion` tilt engine lets you inspect and interact with `.tendies` packs (`LayeredAnimation`, `ParameterizedCA`, and `Still`) directly inside Vault X-Ray and Cloud Gallery — complete with live `Sleep`/`Locked`/`Unlock` transitions, finger tilt scrubbing, Day/Night toggling, and Home Screen mockups;
+- **Native iPhone Duo Dual-Screen Engine (`Inner` + `Outer` `<wallpapers>`)**: Compiles unified `WallpaperKit` `ParameterizedCA` (`Marble` / `requiresLandscapeScaling = true`) packages embedding both the `466×678` pt `Outer` cover planes (`BACKGROUND`/`FLOATING`) and `951×669` pt `Inner` unfolded landscape planes (`BACKGROUND_INNER`/`FLOATING_INNER`), with separate gyro parallax, clock-depth cutouts, custom media pickers, and live Outer/Inner preview switching across Morph Studio, Video Studio, and Vault X-Ray;
+- **120Hz Native `.ca` Live Preview (`LiveCAPreviewView`)**: Clean-room Objective-C `CamloCAStageController` (`CAPackage` + `CAStateController`) paired with a 120Hz ProMotion `CADisplayLink` & `CoreMotion` tilt engine lets you inspect and interact with `.tendies` packs (`LayeredAnimation`, `ParameterizedCA`, and `Still`) directly inside Vault X-Ray and Cloud Gallery — complete with live `Sleep`/`Locked`/`Unlock` transitions, iPhone Duo Outer/Inner display switching, finger tilt scrubbing, Day/Night toggling, and Home Screen mockups;
 - **3D Gyroscope Spatial Parallax (`ParameterizedCA`)**: Toggle 120Hz gyroscope depth and depth scale (`25%–100%`) or trigger a 1-tap Auto 3D Orbit Demo in both Studios; compiles `wantsDeviceMotion = true` `wallpaper.ca` bundles with 6 `<wallpaperParallaxGroups>` entries (overscanned background + inverse floating/foreground planes) and full `<wallpaperPropertyGroups>` (`v_sleep`/`v_lock`/`v_home` KVC interpolation for Lock-to-Unlock & Depth Cutout transitions);
 - **Day/Night Dual Appearance (`appearanceAware`)**: Enable dual Day/Night mode in Slide-to-Morph Studio with 1-tap `CoreImage` Moonlight grading or custom night frames, night cutouts, and night particles — writing both `default` and `dark` variants into `Wallpaper.plist`;
 - **Smart Clock Typography, Contrast Color & Home Screen Pairing (`PosterStyleGenerator`)**: Samples clock-sky luminance and dominant hues to drive 6 `PosterKit` time fonts (`PRTimeFontIdentifier*`), 8 color strategies, and 4 Home Screen companion styles (`Soft-Focus Blur`, `Clear Match`, `Matched Gradient`, `Matched Solid`) encoded directly into binary `titleStyleConfiguration.plist`, `homescreenConfiguration.plist`, and `RuntimeSnapshotMetadata`;
@@ -24,8 +25,8 @@
 
 - Pick 2–3 images (`Locked`, `Unlock`, and optional custom `Sleep` AOD art) to compile spec-compliant `LayerKit` 3-state CAML packages automatically.
 - **6 Curated Transition Curves**: *Curtain Rise*, *Burst Awaken*, *Silk Crossfade*, *Flash Morph*, *Holo Flip*, and *AOD Gaze* with customizable duration (`0.35s–1.40s`) and spring bounce (`0%–100%`).
-- **6 Built-in Award-Winning Landscape Presets (`PresetGallery.bundle`)**: Curated pixel-aligned Lock <-> Unlock landscapes (*Dolomites Alpenglow*, *Namib Dune Geometry*, *Iceland Basalt Coast*, *Yosemite Firefall*, *Mount Fuji Sea of Clouds*, *Alpine Starry Aurora*) with pre-extracted 8-bit Clock-Depth masks ready in 1 tap — keeping the IPA ultra-slim (~9 MB) while all 50 museum-pantheon official packs live cleanly in the repository.
-- **Multi-Source Cloud `.tendies` Gallery (375+ Packs · [`wallpapers/`](../wallpapers/README.md) Zero-Bloat OTA)**: Browse **50 zero-bloat museum-pantheon official packs across Old Master Oils, Impressionism, Song Dynasty Scrolls, Cosmos & Nature in `wallpapers/` (animated WebP grid & sheet previews, 1-tap `120Hz Interactive .ca Try-On`, and SHA-256 verification)** plus live catalogs from **CAPlayground (183+)**, **Nugget Custom (111+)**, and **Apple Collections (32+)** — featuring clean-room `CamloRemotePreview` Core Animation keyframe playback, `CamloEndpointRanker` (5-min host EWMA latency cache + `Range: bytes=0-1` probe), iOS `/var -> /private/var` canonical archive extraction, and full iOS 26/27 cross-device package normalization (`versions/0`, `.wallpaperCollection` ID sync & `productTypes` stripping).
+- **6 Built-in Award-Winning Landscape Presets (`PresetGallery.bundle`)**: Curated pixel-aligned Lock <-> Unlock landscapes (*Dolomites Alpenglow*, *Namib Dune Geometry*, *Iceland Basalt Coast*, *Yosemite Firefall*, *Mount Fuji Sea of Clouds*, *Alpine Starry Aurora*) with pre-extracted 8-bit Clock-Depth masks ready in 1 tap — keeping the IPA ultra-slim (~9 MB) while all 60 museum-pantheon official packs live cleanly in the repository.
+- **Multi-Source Cloud `.tendies` Gallery (385+ Packs · [`wallpapers/`](../wallpapers/README.md) Zero-Bloat OTA)**: Browse **60 zero-bloat museum-pantheon official packs across Old Master Oils, Impressionism, Song Dynasty Scrolls, Cosmos & 10 iPhone Duo Dual-Screen exclusives in `wallpapers/` (animated WebP grid & sheet previews, 1-tap `120Hz Interactive .ca Try-On`, and SHA-256 verification)** plus live catalogs from **CAPlayground (183+)**, **Nugget Custom (111+)**, and **Apple Collections (32+)** — featuring clean-room `CamloRemotePreview` Core Animation keyframe playback, `CamloEndpointRanker` (5-min host EWMA latency cache + `Range: bytes=0-1` probe), iOS `/var -> /private/var` canonical archive extraction, and full iOS 26/27 cross-device package normalization (`versions/0`, `.wallpaperCollection` ID sync & `productTypes` stripping).
 - **Visual Installed Lock Screen Manager & Universal `.tendies` Engine**: Powered by 100% Camlo-native `SystemPosterStore` with ImageIO 520px disk-cached thumbnails, batch `PBRoleIndexFile` pruning, single-pass streaming Zip-Slip-hardened unpacking, `*CollectionsPoster*`/`*MercuryPoster*` mirroring, and pure POSIX C `worse_query` App Group `Library/Caches` guarding.
 - **Hybrid Live Photo × Morph & Interactive Lock Screen Crop Studio**: Pick static photos, **Live Photos**, or short video clips directly into `Locked` / `Unlock` slots for continuous motion + morph transitions under a Jetsam-safe memory budget, plus non-destructive pan/pinch framing with live `09:41` clock & control guides and blurred edge-extend fill.
 
@@ -63,7 +64,7 @@ chmod +x ./ipabuild.sh
 ./ipabuild.sh
 ```
 
-Produces `Camlo_v1.2.9_Bilingual.ipa` and refreshes [`apps.json`](../apps.json), [`repo.json`](../repo.json), [`esign.json`](../esign.json), [`repo_cn.json`](../repo_cn.json), and [`esign_cn.json`](../esign_cn.json).
+Produces `Camlo_v1.3.0_Bilingual.ipa` and refreshes [`apps.json`](../apps.json), [`repo.json`](../repo.json), [`esign.json`](../esign.json), [`repo_cn.json`](../repo_cn.json), and [`esign_cn.json`](../esign_cn.json).
 
 ---
 

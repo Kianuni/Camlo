@@ -121,17 +121,30 @@ enum VideoFrameExtractor {
         maxDurationSeconds: Double = 5.0,
         highQuality: Bool = true,
         framing: CropFraming = .identity,
+        targetCanvasSize: CGSize? = nil,
+        overrideMaxFrames: Int? = nil,
         onProgress: (@Sendable (Double) -> Void)? = nil
     ) async throws -> ExtractedVideoSequence {
         let (asset, rawDuration) = try await loadValidatedVideoAsset(from: videoURL)
 
         let clippedDuration = min(rawDuration, maxDurationSeconds)
         let clampedFPS = max(10, min(targetFPS, 30))
-        // Cap total frames at 40 and adapt 9:16 pixel dimensions to stay under ~52 MB RGBA8 inside PosterBoard's Jetsam limit.
-        let desiredFrames = max(6, min(40, Int((clippedDuration * Double(clampedFPS)).rounded())))
+        // Cap total frames at 40 (or custom budget for dual-screen) and adapt pixel dimensions for PosterBoard Jetsam safety.
+        let maxFramesBudget = max(6, overrideMaxFrames ?? 40)
+        let desiredFrames = max(6, min(maxFramesBudget, Int((clippedDuration * Double(clampedFPS)).rounded())))
 
         let targetSize: CGSize
-        if !highQuality {
+        if let customSize = targetCanvasSize {
+            if !highQuality {
+                let scale: CGFloat = 0.76
+                targetSize = CGSize(
+                    width: CGFloat((Int((customSize.width * scale).rounded()) / 2) * 2),
+                    height: CGFloat((Int((customSize.height * scale).rounded()) / 2) * 2)
+                )
+            } else {
+                targetSize = customSize
+            }
+        } else if !highQuality {
             targetSize = CGSize(width: 360, height: 780)
         } else if desiredFrames <= 18 {
             targetSize = CGSize(width: 540, height: 1170)
@@ -157,11 +170,12 @@ enum VideoFrameExtractor {
         )
     }
 
-    /// Extracts a Jetsam-budgeted 9:16 Live Photo / video sequence for Hybrid Live + Slide-to-Morph slots.
+    /// Extracts a Jetsam-budgeted Live Photo / video sequence for Hybrid Live + Slide-to-Morph slots.
     static func extractMorphLiveSequence(
         from videoURL: URL,
         framing: CropFraming = .identity,
-        compactResolution: Bool = false
+        compactResolution: Bool = false,
+        targetCanvasSize: CGSize? = nil
     ) async throws -> ExtractedVideoSequence {
         let (asset, rawDuration) = try await loadValidatedVideoAsset(from: videoURL)
 
@@ -170,7 +184,21 @@ enum VideoFrameExtractor {
         let desiredFrames: Int
         let targetSize: CGSize
 
-        if compactResolution {
+        if let customSize = targetCanvasSize {
+            if compactResolution {
+                clippedDuration = min(rawDuration, 2.4)
+                desiredFrames = max(6, min(14, Int((clippedDuration * Double(clampedFPS)).rounded())))
+                let scale: CGFloat = 0.80
+                targetSize = CGSize(
+                    width: CGFloat((Int((customSize.width * scale).rounded()) / 2) * 2),
+                    height: CGFloat((Int((customSize.height * scale).rounded()) / 2) * 2)
+                )
+            } else {
+                clippedDuration = min(rawDuration, 2.8)
+                desiredFrames = max(6, min(18, Int((clippedDuration * Double(clampedFPS)).rounded())))
+                targetSize = customSize
+            }
+        } else if compactResolution {
             clippedDuration = min(rawDuration, 2.6)
             desiredFrames = max(6, min(18, Int((clippedDuration * Double(clampedFPS)).rounded())))
             targetSize = CGSize(width: 390, height: 844)

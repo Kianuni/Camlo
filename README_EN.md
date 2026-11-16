@@ -9,10 +9,10 @@
     <a href="./README.md">简体中文</a> ·
     <strong>English</strong> ·
     <a href="./docs/FEATURES_EN.md">📖 Full Feature & Tech Guide</a> ·
-    <a href="./wallpapers/README.md">🎨 50 Masterpiece Cloud Packs</a>
+    <a href="./wallpapers/README.md">🎨 60 Masterpiece Cloud Packs</a>
   </p>
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.2.9-6A4DF5?style=flat-square">
-  <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.3.0-6A4DF5?style=flat-square">
+  <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS%20%2F%20iPhone%20Duo-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
   <img alt="IPA Size" src="https://img.shields.io/badge/IPA-~9%20MB-10B981?style=flat-square">
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square"></a>
 </div>
@@ -27,17 +27,18 @@
     <img src="./wallpapers/previews/lofoten_arctic_silence.webp" width="108" alt="Lofoten · Arctic Silence"/>
   </a>
   <br>
-  <sub>▲ Live animated previews from the zero-bloat Cloud Gallery (interactive 120Hz try-on inside Camlo — tap to browse all 50 official packs)</sub>
+  <sub>▲ Live animated previews from the zero-bloat Cloud Gallery (interactive 120Hz try-on inside Camlo — tap to browse all 60 official packs)</sub>
 </div>
 
 ---
 
 ## ✨ What Can Camlo Turn Your Lock Screen Into?
 
+- **📱 Native iPhone Duo Dual-Screen Canvas (`Inner` + `Outer`)**: Compiles unified `WallpaperKit` `<wallpapers>` `ParameterizedCA` packages driving both the outer cover (`466×678` pt) and unfolded landscape inner canvas (`951×669` pt) seamlessly, plus live interactive dual-screen switching & cropping inside Studio.
 - **🎬 Smooth Slide-to-Unlock Transformations**: Pick any 2 photos (e.g. *dusk mountain → alpenglow sunrise*, *monochrome → full color*) and watch your Lock Screen morph like opening a curtain with 6 expressive motion presets.
 - **🎞️ Live Photos & Video Loops on Your Lock Screen**: Turn Live Photos or short clips into seamless background-safe motion wallpapers that animate smoothly when awake and pause automatically in Always-On Display.
 - **🪄 Glasses-Free 3D · Clock Depth · Day/Night · Particle FX**: Tilt your iPhone for 120Hz gyroscope parallax, layer subjects in front of the `09:41` clock with 1 tap, switch Day/Night appearances automatically, and add meteors, sakura, aurora, or snowfall.
-- **🏛️ Ultra-Slim ~9 MB App + 375+ Cloud Wallpapers**: Ships with 6 built-in landscape presets plus free OTA access to **50 museum-grade Fine Art cloud packs** (Rembrandt, Monet, Van Gogh, Song Scrolls & Cosmos) and 300+ community themes — preview at 120Hz before downloading.
+- **🏛️ Ultra-Slim ~9 MB App + 385+ Cloud Wallpapers**: Ships with 6 built-in landscape presets plus free OTA access to **60 museum-grade Fine Art cloud packs** (including **10 exclusive iPhone Duo Inner+Outer packs**, Rembrandt, Monet, Van Gogh, Song Scrolls & Cosmos) and 300+ community themes — preview at 120Hz before downloading.
 
 ---
 
@@ -60,7 +61,7 @@ https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json
 
 ### Option B: Sideload the IPA Manually
 
-Download `Camlo_v1.2.9_Bilingual.ipa` from **[Latest Releases](https://github.com/Kianuni/Camlo/releases/latest)** and install with SideStore, AltStore, Feather, ESign, or Sideloadly.
+Download `Camlo_v1.3.0_Bilingual.ipa` from **[Latest Releases](https://github.com/Kianuni/Camlo/releases/latest)** and install with SideStore, AltStore, Feather, ESign, or Sideloadly.
 
 > [!TIP]
 > Signing tools that preserve at least one `App Group` entitlement (such as SideStore, AltStore, or Feather) unlock **1-tap direct apply to iOS Lock Screen**; without it, creation, preview, and `.tendies` export still work 100%.
@@ -78,6 +79,6 @@ Download `Camlo_v1.2.9_Bilingual.ipa` from **[Latest Releases](https://github.co
 ## 📚 Learn More
 
 - **[📖 Full Features, Rendering Architecture & Build Guide →](./docs/FEATURES_EN.md)**
-- **[🎨 Browse All 50 Official Cloud Wallpapers (Live Previews & Direct Downloads) →](./wallpapers/README.md)**
+- **[🎨 Browse All 60 Official Cloud Wallpapers (incl. 10 iPhone Duo Dual-Screen Exclusives) →](./wallpapers/README.md)**
 - **🛠️ Related Open-Source Tools**: [Erosion-CN](https://github.com/Kianuni/Erosion-CN) · [AppleFlow](https://github.com/Kianuni/AppleFlow) · [WQGuard](https://github.com/Kianuni/WQGuard)
 - **⚖️ License**: Released under **[GPLv3](./LICENSE)** · [Credits & Acknowledgements](./docs/FEATURES_EN.md#license--credits)

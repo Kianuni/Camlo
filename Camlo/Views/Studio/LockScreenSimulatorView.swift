@@ -48,6 +48,7 @@ struct LockScreenSimulatorView: View {
     let particlePreset: ParticlePreset
     @Binding var stage: LockScreenStage
     var phoneWidth: CGFloat = 246
+    var canvasSize: CGSize = CGSize(width: 390, height: 844)
     var gyroEnabled: Bool = false
     var gyroIntensity: Double = 0.65
     var posterStyle: PosterStyleSpec = PosterStyleSpec()
@@ -63,8 +64,28 @@ struct LockScreenSimulatorView: View {
     @State private var flashPulseOpacity: Double = 0
     @State private var sessionToken = UUID()
 
+    private var canvasAspect: CGFloat {
+        canvasSize.width / max(canvasSize.height, 1)
+    }
+
+    private var isLandscapeCanvas: Bool {
+        canvasAspect > 1.05
+    }
+
     private var phoneHeight: CGFloat {
-        (phoneWidth * (844.0 / 390.0)).rounded()
+        (phoneWidth / max(canvasAspect, 0.25)).rounded()
+    }
+
+    private var uiScaleRef: CGFloat {
+        min(phoneWidth, phoneHeight)
+    }
+
+    private var bezelCornerRadius: CGFloat {
+        uiScaleRef * (isLandscapeCanvas ? 0.088 : 0.165)
+    }
+
+    private var screenCornerRadius: CGFloat {
+        uiScaleRef * (isLandscapeCanvas ? 0.068 : 0.145)
     }
 
     private var isHomePreviewActive: Bool {
@@ -94,8 +115,8 @@ struct LockScreenSimulatorView: View {
         let intensity = max(0.20, min(gyroIntensity, 1.0))
         let bgScale = CGFloat(1.0 + 0.14 * intensity)
         let fgScale = CGFloat(1.0 + 0.06 * intensity)
-        let gx = motion.tiltX * CGFloat(17.0 * intensity) * (phoneWidth / 390.0)
-        let gy = motion.tiltY * CGFloat(22.0 * intensity) * (phoneHeight / 844.0)
+        let gx = motion.tiltX * CGFloat(17.0 * intensity) * (phoneWidth / max(canvasSize.width, 1))
+        let gy = motion.tiltY * CGFloat(22.0 * intensity) * (phoneHeight / max(canvasSize.height, 1))
         return (bgScale, fgScale, gx, gy)
     }
 
@@ -104,11 +125,11 @@ struct LockScreenSimulatorView: View {
         VStack(spacing: 10) {
             ZStack {
                 // Outer Titanium Bezel
-                RoundedRectangle(cornerRadius: phoneWidth * 0.165, style: .continuous)
+                RoundedRectangle(cornerRadius: bezelCornerRadius, style: .continuous)
                     .fill(Color(white: 0.08))
                     .frame(width: phoneWidth + 12, height: phoneHeight + 12)
                     .overlay(
-                        RoundedRectangle(cornerRadius: phoneWidth * 0.165, style: .continuous)
+                        RoundedRectangle(cornerRadius: bezelCornerRadius, style: .continuous)
                             .strokeBorder(
                                 LinearGradient(
                                     colors: [Color.white.opacity(0.35), Color.white.opacity(0.08), Color.white.opacity(0.22)],
@@ -120,7 +141,7 @@ struct LockScreenSimulatorView: View {
                     )
                     .shadow(color: .black.opacity(0.32), radius: 18, x: 0, y: 10)
 
-                // Screen Viewport (390:844)
+                // Screen Viewport
                 ZStack {
                     Color.black
 
@@ -168,11 +189,25 @@ struct LockScreenSimulatorView: View {
                     // 7. Lock Screen Chrome (Dynamic Island, Bottom Controls, Swipe Hint)
                     chromeOverlay
                         .allowsHitTesting(false)
+
+                    // Subtle book-hinge reflection when previewing iPhone Duo unfolded inner screen
+                    if isLandscapeCanvas {
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.clear, .black.opacity(0.22), .white.opacity(0.10), .clear],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: 5)
+                            .allowsHitTesting(false)
+                    }
                 }
                 .frame(width: phoneWidth, height: phoneHeight)
-                .clipShape(RoundedRectangle(cornerRadius: phoneWidth * 0.145, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous))
                 .clipped()
-                .contentShape(RoundedRectangle(cornerRadius: phoneWidth * 0.145, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous))
                 .gesture(swipeGesture)
             }
             .onAppear {
@@ -380,7 +415,7 @@ struct LockScreenSimulatorView: View {
 
         inner()
             .scaleEffect(metrics.scale)
-            .offset(x: metrics.offsetX * (phoneWidth / 390.0), y: metrics.offsetY * (phoneHeight / 844.0))
+            .offset(x: metrics.offsetX * (phoneWidth / max(canvasSize.width, 1)), y: metrics.offsetY * (phoneHeight / max(canvasSize.height, 1)))
             .rotation3DEffect(
                 .degrees(metrics.rotYDeg),
                 axis: (x: 0, y: 1, z: 0),
@@ -519,7 +554,7 @@ struct LockScreenSimulatorView: View {
     }
 
     private var clockLayer: some View {
-        let topPad = phoneHeight * 0.115
+        let topPad = phoneHeight * (isLandscapeCanvas ? 0.088 : 0.115)
         let clockOpacity: Double = isSleepStage ? 0.52 : (1.0 - 0.35 * morphProgress)
         let clockOffsetY: CGFloat = CGFloat(-14.0 * morphProgress)
         let clockRGB = PosterStyleGenerator.previewClockColor(mode: posterStyle.clockColorMode, metrics: effectiveMetrics)
@@ -528,12 +563,12 @@ struct LockScreenSimulatorView: View {
 
         return VStack(spacing: 2) {
             Text(CamloDevice.formattedLockScreenDate())
-                .font(.system(size: phoneWidth * 0.052, weight: .semibold, design: .rounded))
+                .font(.system(size: uiScaleRef * (isLandscapeCanvas ? 0.044 : 0.052), weight: .semibold, design: .rounded))
                 .foregroundStyle(clockRGB.swiftUIColor.opacity(0.92))
                 .shadow(color: shadowColor.opacity(0.24), radius: 4, x: 0, y: 1)
 
             Text("09:41")
-                .font(posterStyle.clockFont.swiftUIFont(size: phoneWidth * 0.255))
+                .font(posterStyle.clockFont.swiftUIFont(size: uiScaleRef * (isLandscapeCanvas ? 0.195 : 0.255)))
                 .fontWidth(posterStyle.clockFont.fontWidth)
                 .tracking(posterStyle.clockFont.letterSpacing)
                 .foregroundStyle(
@@ -575,8 +610,11 @@ struct LockScreenSimulatorView: View {
             ("message.fill", .green),
             ("music.note", .pink)
         ]
-        let iconSize = phoneWidth * 0.145
+        let iconSize = uiScaleRef * 0.145
         let iconRadius = iconSize * 0.24
+        let gridCols = isLandscapeCanvas ? 6 : 4
+        let gridTopSpace = phoneHeight * (isLandscapeCanvas ? 0.08 : 0.105)
+        let gridSpacing = uiScaleRef * (isLandscapeCanvas ? 0.04 : 0.05)
 
         ZStack {
             switch posterStyle.homePairing {
@@ -600,11 +638,11 @@ struct LockScreenSimulatorView: View {
             }
 
             VStack(spacing: 0) {
-                Spacer().frame(height: phoneHeight * 0.105)
+                Spacer().frame(height: gridTopSpace)
 
                 LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: phoneWidth * 0.045), count: 4),
-                    spacing: phoneHeight * 0.026
+                    columns: Array(repeating: GridItem(.flexible(), spacing: uiScaleRef * 0.045), count: gridCols),
+                    spacing: gridSpacing
                 ) {
                     ForEach(Array(gridIcons.enumerated()), id: \.offset) { _, entry in
                         VStack(spacing: 4) {
@@ -648,7 +686,7 @@ struct LockScreenSimulatorView: View {
                 .overlay(Capsule().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5))
                 .padding(.bottom, phoneHeight * 0.022)
 
-                HStack(spacing: phoneWidth * 0.045) {
+                HStack(spacing: uiScaleRef * 0.045) {
                     ForEach(Array(dockIcons.enumerated()), id: \.offset) { _, entry in
                         RoundedRectangle(cornerRadius: iconRadius, style: .continuous)
                             .fill(.ultraThinMaterial)
@@ -668,11 +706,11 @@ struct LockScreenSimulatorView: View {
                             .frame(width: iconSize, height: iconSize)
                     }
                 }
-                .padding(.horizontal, phoneWidth * 0.05)
-                .padding(.vertical, phoneHeight * 0.014)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: phoneWidth * 0.095, style: .continuous))
+                .padding(.horizontal, uiScaleRef * 0.05)
+                .padding(.vertical, uiScaleRef * 0.03)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: uiScaleRef * 0.095, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: phoneWidth * 0.095, style: .continuous)
+                    RoundedRectangle(cornerRadius: uiScaleRef * 0.095, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.7)
                 )
                 .padding(.bottom, phoneHeight * 0.040)
@@ -695,7 +733,7 @@ struct LockScreenSimulatorView: View {
             // Dynamic Island
             Capsule(style: .continuous)
                 .fill(Color.black)
-                .frame(width: phoneWidth * 0.30, height: phoneWidth * 0.085)
+                .frame(width: uiScaleRef * (isLandscapeCanvas ? 0.22 : 0.30), height: uiScaleRef * (isLandscapeCanvas ? 0.065 : 0.085))
                 .overlay(
                     Capsule(style: .continuous)
                         .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.6)
@@ -713,7 +751,7 @@ struct LockScreenSimulatorView: View {
                         Text(morphProgress > 0.65
                              ? Bi("下滑返回锁屏", "Swipe down to lock")
                              : Bi("手指上滑体验变身", "Swipe up to morph"))
-                            .font(.system(size: max(10, phoneWidth * 0.043), weight: .medium))
+                            .font(.system(size: max(10, uiScaleRef * 0.043), weight: .medium))
                             .foregroundStyle(.white.opacity(0.88))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
@@ -721,12 +759,12 @@ struct LockScreenSimulatorView: View {
                         Spacer()
                         chromeCircleIcon("camera.fill")
                     }
-                    .padding(.horizontal, phoneWidth * 0.09)
+                    .padding(.horizontal, phoneWidth * (isLandscapeCanvas ? 0.06 : 0.09))
                 }
 
                 Capsule(style: .continuous)
                     .fill(Color.white.opacity(isSleepStage ? 0.25 : 0.85))
-                    .frame(width: phoneWidth * 0.36, height: 4)
+                    .frame(width: uiScaleRef * 0.36, height: 4)
                     .padding(.bottom, 7)
             }
         }
@@ -735,10 +773,10 @@ struct LockScreenSimulatorView: View {
     private func chromeCircleIcon(_ name: String) -> some View {
         Circle()
             .fill(.ultraThinMaterial.opacity(0.75))
-            .frame(width: phoneWidth * 0.125, height: phoneWidth * 0.125)
+            .frame(width: uiScaleRef * 0.125, height: uiScaleRef * 0.125)
             .overlay(
                 Image(systemName: name)
-                    .font(.system(size: phoneWidth * 0.052, weight: .semibold))
+                    .font(.system(size: uiScaleRef * 0.052, weight: .semibold))
                     .foregroundStyle(.white)
             )
     }
@@ -847,7 +885,7 @@ private struct SimulatorParticleCanvas: View {
                 guard !assets.isEmpty else { return }
                 let resolved = assets.map { context.resolve(Image(uiImage: $0.image)) }
                 let t = timeline.date.timeIntervalSinceReferenceDate
-                let uiScale = size.width / 390.0
+                let uiScale = min(size.width, size.height) / 390.0
 
                 switch preset {
                 case .none:
