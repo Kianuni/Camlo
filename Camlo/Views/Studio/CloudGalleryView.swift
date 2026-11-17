@@ -40,6 +40,8 @@ struct CloudGalleryView: View {
         switch selectedCategory {
         case .all:
             base = manager.packs
+        case .anime:
+            base = manager.packs.filter { $0.category == "anime" }
         case .motion:
             base = manager.packs.filter { $0.category == "motion" }
         case .morph:
@@ -354,8 +356,8 @@ struct CloudGalleryView: View {
         switch channel {
         case .camloOfficial:
             return Bi(
-                "\(manager.packs.count) 套馆藏殿堂级古典油画、外光印象派、宋画绢本与宇宙极境壁纸全量托管于仓库 wallpapers/，不占安装包体积，支持 WebP 动态预览与 SHA-256 校验。",
-                "\(manager.packs.count) museum-pantheon Old Master oils, plein-air Impressionism, Song silk scrolls & cosmic packs hosted in repo wallpapers/ with zero IPA footprint, animated WebP previews, and SHA-256 verification."
+                "\(manager.packs.count) 套官方精选（含 10 套原创次元 3D、10 套 iPhone Duo 双屏与 50 套馆藏大师杰作）全量托管于仓库 wallpapers/，零安装包体积占用。",
+                "\(manager.packs.count) official cloud packs (10 Original 3D Anime, 10 iPhone Duo Dual-Screen & 50 Fine Art masterpieces) hosted in repo wallpapers/ with zero IPA footprint."
             )
         case .caPlayground:
             return Bi(
@@ -424,13 +426,56 @@ struct CloudGalleryView: View {
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             if manager.selectedChannel == .camloOfficial {
-                Picker("", selection: $selectedCategory) {
-                    ForEach(CloudWallpaperCategory.allCases) { cat in
-                        Text(cat.localizedTitle).tag(cat)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(CloudWallpaperCategory.allCases) { cat in
+                            let isSelected = selectedCategory == cat
+                            let count = officialCategoryCount(cat)
+                            Button {
+                                CamloHaptics.selection()
+                                selectedCategory = cat
+                            } label: {
+                                HStack(spacing: 5) {
+                                    Text(cat.localizedTitle)
+                                        .font(.caption.weight(.semibold))
+                                    Text("\(count)")
+                                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 1.5)
+                                        .background(
+                                            isSelected ? Color.white.opacity(0.24) : Color(.tertiarySystemFill),
+                                            in: Capsule()
+                                        )
+                                }
+                                .padding(.horizontal, 11)
+                                .padding(.vertical, 7)
+                                .background(
+                                    isSelected ? Color.accentColor : Color(.secondarySystemGroupedBackground),
+                                    in: Capsule()
+                                )
+                                .foregroundStyle(isSelected ? .white : .primary)
+                            }
+                            .buttonStyle(CamloTapButtonStyle(scaleAmount: 0.96))
+                        }
                     }
+                    .padding(.vertical, 1)
                 }
-                .pickerStyle(.segmented)
             }
+        }
+    }
+
+    private func officialCategoryCount(_ cat: CloudWallpaperCategory) -> Int {
+        switch cat {
+        case .all:
+            return manager.packs.count
+        case .anime:
+            return manager.packs.filter { $0.category == "anime" }.count
+        case .morph:
+            return manager.packs.filter { $0.category == "morph" }.count
+        case .duo:
+            return manager.packs.filter { $0.category == "duo" }.count
+        case .motion:
+            return manager.packs.filter { $0.category == "motion" }.count
         }
     }
 

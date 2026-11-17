@@ -504,14 +504,17 @@ func findDirectory(named suffix: String, under root: URL) -> URL? {
 }
 
 func findFirstParticleSprite(under root: URL) -> CGImage? {
-    guard let fgDir = findDirectory(named: "_Foreground-390w-844h@3x~iphone.ca", under: root) else {
+    let candidateDir = findDirectory(named: "_Foreground-390w-844h@3x~iphone.ca", under: root)
+        ?? findDirectory(named: "wallpaper.ca", under: root)
+    guard let dir = candidateDir else {
         return nil
     }
-    let assetsDir = fgDir.appendingPathComponent("assets", isDirectory: true)
+    let assetsDir = dir.appendingPathComponent("assets", isDirectory: true)
     guard let files = try? FileManager.default.contentsOfDirectory(at: assetsDir, includingPropertiesForKeys: nil) else {
         return nil
     }
-    if let png = files.first(where: { $0.pathExtension.lowercased() == "png" }) {
+    if let png = files.first(where: { $0.lastPathComponent.hasPrefix("particle_") && $0.pathExtension.lowercased() == "png" })
+        ?? files.first(where: { $0.pathExtension.lowercased() == "png" && !$0.lastPathComponent.hasPrefix("cutout_") }) {
         return loadCGImage(at: png)
     }
     return nil
@@ -573,7 +576,8 @@ func generateMorphPairPreview(
     workDir: URL,
     img2webp: URL
 ) throws {
-    guard let bgDir = findDirectory(named: "_Background-390w-844h@3x~iphone.ca", under: extractedDir) else {
+    let paramCADir = findDirectory(named: "wallpaper.ca", under: extractedDir)
+    guard let bgDir = findDirectory(named: "_Background-390w-844h@3x~iphone.ca", under: extractedDir) ?? paramCADir else {
         throw NSError(domain: "GenPreviews", code: 9, userInfo: [NSLocalizedDescriptionKey: "Missing Background.ca for \(pack.id)"])
     }
     let bgAssets = bgDir.appendingPathComponent("assets", isDirectory: true)
@@ -582,7 +586,7 @@ func generateMorphPairPreview(
         throw NSError(domain: "GenPreviews", code: 10, userInfo: [NSLocalizedDescriptionKey: "Missing locked.jpg or unlock.jpg for \(pack.id)"])
     }
 
-    let floatDir = findDirectory(named: "_Floating-390w-844h@3x~iphone.ca", under: extractedDir)
+    let floatDir = findDirectory(named: "_Floating-390w-844h@3x~iphone.ca", under: extractedDir) ?? paramCADir
     let cutoutLock = floatDir.flatMap { loadCGImage(at: $0.appendingPathComponent("assets/cutout_lock.png")) }
     let cutoutUnlock = floatDir.flatMap { loadCGImage(at: $0.appendingPathComponent("assets/cutout_unlock.png")) }
     let particle = findFirstParticleSprite(under: extractedDir)
@@ -674,10 +678,17 @@ func generateMorphPairPreview(
             cutoutLockAlpha = backT
         }
 
+        let gyroX: CGFloat = (pack.category == "anime") ? sin(phase * .pi * 2.0) : 0.0
+        let gyroScale: CGFloat = (pack.category == "anime") ? 1.04 : 1.0
+        let bgShiftL = lockShiftX + gyroX * 4.5
+        let bgShiftU = unlockShiftX + gyroX * 4.5
+        let fgShiftL = lockShiftX - gyroX * 6.5
+        let fgShiftU = unlockShiftX - gyroX * 6.5
+
         // Base Locked layer
-        drawAspectFill(lockedImg, in: ctx, rect: targetRect, alpha: lockAlpha, scale: lockScale, offsetX: lockShiftX, offsetY: lockShiftY)
+        drawAspectFill(lockedImg, in: ctx, rect: targetRect, alpha: lockAlpha, scale: lockScale * gyroScale, offsetX: bgShiftL, offsetY: lockShiftY)
         // Target Unlocked layer
-        drawAspectFill(unlockImg, in: ctx, rect: targetRect, alpha: unlockAlpha, scale: unlockScale, offsetX: unlockShiftX, offsetY: unlockShiftY)
+        drawAspectFill(unlockImg, in: ctx, rect: targetRect, alpha: unlockAlpha, scale: unlockScale * gyroScale, offsetX: bgShiftU, offsetY: unlockShiftY)
 
         // Preset energy glow / flash
         if flashOverlayAlpha > 0.005 {
@@ -692,10 +703,10 @@ func generateMorphPairPreview(
 
         // Foreground Clock Depth cutouts
         if let cutoutLock {
-            drawAspectFill(cutoutLock, in: ctx, rect: targetRect, alpha: cutoutLockAlpha, scale: lockScale, offsetX: lockShiftX, offsetY: lockShiftY)
+            drawAspectFill(cutoutLock, in: ctx, rect: targetRect, alpha: cutoutLockAlpha, scale: lockScale * gyroScale, offsetX: fgShiftL, offsetY: lockShiftY)
         }
         if let cutoutUnlock, cutoutUnlockAlpha > 0.01 {
-            drawAspectFill(cutoutUnlock, in: ctx, rect: targetRect, alpha: cutoutUnlockAlpha, scale: unlockScale, offsetX: unlockShiftX, offsetY: unlockShiftY)
+            drawAspectFill(cutoutUnlock, in: ctx, rect: targetRect, alpha: cutoutUnlockAlpha, scale: unlockScale * gyroScale, offsetX: fgShiftU, offsetY: unlockShiftY)
         }
 
         // Foreground drifting particles + Lock Chrome hint

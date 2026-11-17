@@ -236,6 +236,8 @@ def main() -> None:
         thumb_width = "92" if is_duo else "54"
         if is_duo:
             feat = "Duo Inner+Outer · Live 12 FPS" if p.get("kind") == "duoMotion" else "Duo Inner+Outer · 3D CAML"
+        elif p.get("category") == "anime":
+            feat = "3D Gyro · Clock Depth · CAML"
         elif p["supportsClockDepth"]:
             feat = "Clock Depth · CAML"
         elif p.get("kind") == "morphPair" or p.get("category") == "morph":

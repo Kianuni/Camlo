@@ -986,7 +986,7 @@ func scaffoldDescriptor(pack: PackMetadata, in workRoot: URL) throws -> URL {
     let ver1Dir = descrDir.appendingPathComponent("versions/1", isDirectory: true)
     let contentsDir = ver1Dir.appendingPathComponent("contents", isDirectory: true)
     let suppDir = ver1Dir.appendingPathComponent("supplements/0", isDirectory: true)
-    let wallpaperBundleName = (pack.category == "duo")
+    let wallpaperBundleName = (pack.category == "duo" || pack.category == "anime")
         ? "7920.Camlo_3D-390w-844h@3x~iphone.wallpaper"
         : "7400.WWDC_2022-390w-844h@3x~iphone.wallpaper"
     let wallpaperBundleDir = contentsDir.appendingPathComponent(wallpaperBundleName, isDirectory: true)
@@ -1026,7 +1026,7 @@ func scaffoldDescriptor(pack: PackMetadata, in workRoot: URL) throws -> URL {
     try userInfoData.write(to: contentsDir.appendingPathComponent("com.apple.posterkit.provider.contents.userInfo"), options: .atomic)
 
     let wallpaperPlist: [String: Any]
-    if pack.category == "duo" {
+    if pack.category == "duo" || pack.category == "anime" {
         wallpaperPlist = [
             "appearanceAware": false,
             "contentVersion": 1.11,
@@ -1034,8 +1034,8 @@ func scaffoldDescriptor(pack: PackMetadata, in workRoot: URL) throws -> URL {
             "identifier": pack.posterSeedId,
             "logicalScreenClass": "any",
             "name": "Lavender",
-            "requiresLandscapeScaling": true,
-            "version": 7,
+            "requiresLandscapeScaling": pack.category == "duo",
+            "version": pack.category == "duo" ? 7 : 6,
             "wantsDeviceMotion": true,
             "assets": [
                 "lockAndHome": [
@@ -1131,6 +1131,14 @@ private struct DuoCanvasSpec {
     var sx: Double { Double(w) / 390.0 }
     var sy: Double { Double(h) / 844.0 }
 
+    static let phone = DuoCanvasSpec(
+        w: 390, h: 844, pixelW: 1170, pixelH: 2532,
+        cutoutW: 780, cutoutH: 1688, videoW: 600, videoH: 1300,
+        assetPrefix: "", idPrefix: "", namePrefix: "",
+        bgParallaxName: "Camlo_BG_Parallax", bgOverscanName: "Camlo_BG_Overscan",
+        fgParallaxName: "Camlo_FG_Parallax", fgOverscanName: "Camlo_FG_Overscan",
+        fxParallaxName: "Camlo_FX_Parallax"
+    )
     static let outer = DuoCanvasSpec(
         w: 466, h: 678, pixelW: 1164, pixelH: 1696,
         cutoutW: 776, cutoutH: 1130, videoW: 520, videoH: 758,
@@ -1195,6 +1203,39 @@ private func duoPropEntries(for ov: DuoOverride, view: String) -> [String] {
     return [duoPropXML(keyPath: ov.keyPath, layerName: ov.layerName, sleepVal: ov.sleepVal, lockVal: ov.lockedVal, homeVal: ov.unlockVal, view: view)]
 }
 
+private func extractMorphCutoutPair(
+    lockFit: CGImage,
+    unlockFit: CGImage,
+    cutoutW: Int,
+    cutoutH: Int,
+    maskMode: String
+) -> (CGImage, CGImage, Double, Double, String)? {
+    if maskMode == "skyline" {
+        if let (cl, covL) = try? extractSkylineCutout(from: lockFit, outWidth: cutoutW, outHeight: cutoutH),
+           let (cu, covU) = try? extractSkylineCutout(from: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
+           covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
+            return (cl, cu, covL, covU, "Skyline")
+        }
+        if let (cl, covL) = try? extractForegroundCutout(from: lockFit, outWidth: cutoutW, outHeight: cutoutH),
+           let (cu, covU) = try? extractForegroundCutout(from: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
+           covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
+            return (cl, cu, covL, covU, "Vision-Fallback")
+        }
+    } else {
+        if let (cl, covL) = try? extractForegroundCutout(from: lockFit, outWidth: cutoutW, outHeight: cutoutH),
+           let (cu, covU) = try? extractForegroundCutout(from: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
+           covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
+            return (cl, cu, covL, covU, "Vision")
+        }
+        if let (cl, covL) = try? extractSkylineCutout(from: lockFit, outWidth: cutoutW, outHeight: cutoutH),
+           let (cu, covU) = try? extractSkylineCutout(from: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
+           covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
+            return (cl, cu, covL, covU, "Skyline-Fallback")
+        }
+    }
+    return nil
+}
+
 private func duoBuildMorphSurface(
     canvas: DuoCanvasSpec,
     lockRaw: CGImage,
@@ -1203,7 +1244,9 @@ private func duoBuildMorphSurface(
     supportsCutout: Bool,
     maskMode: String,
     assetsDir: URL,
-    packId: String
+    packId: String,
+    jpegQuality: CGFloat = 0.84,
+    requireCutout: Bool = false
 ) throws -> (bgXML: String, bgOvs: [DuoOverride], fgXML: String, fgOvs: [DuoOverride]) {
     let lockFit = try aspectFillCGImage(lockRaw, width: canvas.pixelW, height: canvas.pixelH)
     let unlockFit = try aspectFillCGImage(unlockRaw, width: canvas.pixelW, height: canvas.pixelH)
@@ -1211,8 +1254,8 @@ private func duoBuildMorphSurface(
     let idP = canvas.idPrefix
     let nP = canvas.namePrefix
 
-    try writeJPEG(lockFit, to: assetsDir.appendingPathComponent("\(aP)locked.jpg"), quality: 0.84)
-    try writeJPEG(unlockFit, to: assetsDir.appendingPathComponent("\(aP)unlock.jpg"), quality: 0.84)
+    try writeJPEG(lockFit, to: assetsDir.appendingPathComponent("\(aP)locked.jpg"), quality: jpegQuality)
+    try writeJPEG(unlockFit, to: assetsDir.appendingPathComponent("\(aP)unlock.jpg"), quality: jpegQuality)
 
     let uId = "\(idP)unlock_layer", uName = "\(nP)Unlock Layer"
     let lId = "\(idP)locked_layer", lName = "\(nP)Locked Layer"
@@ -1281,22 +1324,13 @@ private func duoBuildMorphSurface(
     var fgXML = ""
     var fgOvs: [DuoOverride] = []
     if supportsCutout && maskMode != "none" {
-        let cutPair: (CGImage, CGImage, Double, Double, String)? = {
-            if maskMode == "skyline" {
-                if let (cl, covL) = try? extractSkylineCutout(from: lockFit, outWidth: canvas.cutoutW, outHeight: canvas.cutoutH),
-                   let (cu, covU) = try? extractSkylineCutout(from: unlockFit, outWidth: canvas.cutoutW, outHeight: canvas.cutoutH),
-                   covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
-                    return (cl, cu, covL, covU, "Skyline")
-                }
-            } else {
-                if let (cl, covL) = try? extractForegroundCutout(from: lockFit, outWidth: canvas.cutoutW, outHeight: canvas.cutoutH),
-                   let (cu, covU) = try? extractForegroundCutout(from: unlockFit, outWidth: canvas.cutoutW, outHeight: canvas.cutoutH),
-                   covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
-                    return (cl, cu, covL, covU, "Vision")
-                }
-            }
-            return nil
-        }()
+        let cutPair = extractMorphCutoutPair(
+            lockFit: lockFit,
+            unlockFit: unlockFit,
+            cutoutW: canvas.cutoutW,
+            cutoutH: canvas.cutoutH,
+            maskMode: maskMode
+        )
         if let (cutL, cutU, covL, covU, tag) = cutPair {
             try writePNG(cutL, to: assetsDir.appendingPathComponent("\(aP)cutout_lock.png"))
             try writePNG(cutU, to: assetsDir.appendingPathComponent("\(aP)cutout_unlock.png"))
@@ -1319,8 +1353,12 @@ private func duoBuildMorphSurface(
                 DuoOverride(targetId: flId, layerName: flName, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: flExitY, isInteger: true),
                 DuoOverride(targetId: flId, layerName: flName, keyPath: "transform.scale.xy", sleepVal: 0.98, lockedVal: 1.0, unlockVal: flEndScale, isInteger: false)
             ]
-            print(String(format: "    [Duo-%@-%@] %@ cutout cov=%.1f%%/%.1f%%", tag, canvas.idPrefix.isEmpty ? "outer" : "inner", packId, covL * 100.0, covU * 100.0))
+            print(String(format: "    [%@-%@] %@ cutout cov=%.1f%%/%.1f%%", tag, canvas.idPrefix.isEmpty ? (canvas.w == 390 ? "phone" : "outer") : "inner", packId, covL * 100.0, covU * 100.0))
+        } else if requireCutout {
+            throw NSError(domain: "BuildWallpapers", code: 44, userInfo: [NSLocalizedDescriptionKey: "Failed required Clock-Depth foreground cutout extraction for \(packId)"])
         }
+    } else if requireCutout {
+        throw NSError(domain: "BuildWallpapers", code: 45, userInfo: [NSLocalizedDescriptionKey: "Anime pack \(packId) requires supportsClockDepth=true and maskMode != none"])
     }
 
     return (bgXML, bgOvs, fgXML, fgOvs)
@@ -1403,6 +1441,12 @@ private func duoFXLayers(preset: String, spriteName: String?, canvas: DuoCanvasS
     switch preset {
     case "sakura":
         birthRate = 4.5; velocity = 42; yAccel = -12; scale = 0.32; ePosY = Int((820.0 * canvas.sy).rounded()); emLong = -1.57; emRange = 0.90; spin = 1.8
+    case "embers":
+        birthRate = 7.5; velocity = 38; yAccel = 16; scale = 0.25; ePosY = Int((120.0 * canvas.sy).rounded()); emLong = 1.57; emRange = 1.20; spin = 1.2
+    case "snowfall":
+        birthRate = 4.2; velocity = 26; yAccel = -8; scale = 0.24; ePosY = Int((820.0 * canvas.sy).rounded()); emLong = -1.57; emRange = 0.70; spin = 0.4
+    case "meteorShower":
+        birthRate = 2.2; velocity = 260; yAccel = -36; scale = 0.38; ePosY = Int((740.0 * canvas.sy).rounded()); emLong = -2.25; emRange = 0.22; spin = 0.0
     case "fireflies":
         birthRate = 4.5; velocity = 14; yAccel = 5; scale = 0.22; ePosY = Int((420.0 * canvas.sy).rounded()); emLong = 1.57; emRange = 3.14; spin = 0.6
     case "sunbeamRays":
@@ -1633,6 +1677,141 @@ func buildDuoDualPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) throws {
     try verifyCAPackage(at: caURL)
 }
 
+func buildAnime3DMorphPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) throws {
+    let fm = FileManager.default
+    let c = DuoCanvasSpec.phone
+    let caURL = wpDir.appendingPathComponent("wallpaper.ca", isDirectory: true)
+    let assetsDir = caURL.appendingPathComponent("assets", isDirectory: true)
+    try fm.createDirectory(at: assetsDir, withIntermediateDirectories: true)
+    try standardIndexXML(width: c.w, height: c.h).write(to: caURL.appendingPathComponent("index.xml"), atomically: true, encoding: .utf8)
+    try standardAssetManifestXML().write(to: caURL.appendingPathComponent("assetManifest.caml"), atomically: true, encoding: .utf8)
+
+    let lockRaw = try loadCGImage(at: sourcesDir.appendingPathComponent("\(pack.id)_lock.jpg"))
+    let unlockRaw = try loadCGImage(at: sourcesDir.appendingPathComponent("\(pack.id)_unlock.jpg"))
+    let thumbCG = try aspectFillCGImage(unlockRaw, width: 540, height: 1170)
+    try writeJPEG(thumbCG, to: thumbOutURL, quality: 0.88)
+
+    let fgSprites = try renderParticleSprite(pack.particlePreset, outDir: assetsDir)
+    let spriteName = fgSprites.first?.filename
+    let fxBuilt = duoFXLayers(preset: pack.particlePreset, spriteName: spriteName, canvas: c)
+    let maskMode = (pack.depthMaskMode ?? "vision").lowercased()
+    let morph = try duoBuildMorphSurface(
+        canvas: c,
+        lockRaw: lockRaw,
+        unlockRaw: unlockRaw,
+        transitionPreset: pack.transitionPreset,
+        supportsCutout: pack.supportsClockDepth,
+        maskMode: maskMode,
+        assetsDir: assetsDir,
+        packId: pack.id,
+        jpegQuality: 0.86,
+        requireCutout: true
+    )
+
+    let parallaxXML = [
+        duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.bgParallaxName, minVal: -17, maxVal: 17, title: "Camlo BG X", view: "Background"),
+        duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.bgParallaxName, minVal: -22, maxVal: 22, title: "Camlo BG Y", view: "Background"),
+        duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.fgParallaxName, minVal: 22, maxVal: -22, title: "Camlo FG X", view: "Floating"),
+        duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.fgParallaxName, minVal: 29, maxVal: -29, title: "Camlo FG Y", view: "Floating"),
+        duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.fxParallaxName, minVal: 30, maxVal: -30, title: "Camlo FX X", view: "Floating"),
+        duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.fxParallaxName, minVal: 38, maxVal: -38, title: "Camlo FX Y", view: "Floating")
+    ].joined(separator: "\n")
+
+    let propEntries = morph.bgOvs.flatMap { duoPropEntries(for: $0, view: "Background") }
+        + (morph.fgOvs + fxBuilt.ovs).flatMap { duoPropEntries(for: $0, view: "Floating") }
+    let propGroupsXML = propEntries.isEmpty
+        ? "      <wallpaperPropertyGroups type=\"NSArray\"/>"
+        : "      <wallpaperPropertyGroups type=\"NSArray\">\n\(propEntries.joined(separator: "\n"))\n      </wallpaperPropertyGroups>"
+
+    let allOvs = morph.bgOvs + morph.fgOvs + fxBuilt.ovs
+    func stElements(_ stage: String) -> String {
+        guard !allOvs.isEmpty else { return "        <elements/>" }
+        var lns = ["        <elements>"]
+        for ov in allOvs {
+            let v = (stage == "Unlock") ? ov.unlockVal : (stage == "Sleep" ? ov.sleepVal : ov.lockedVal)
+            let tStr = ov.isInteger ? "integer" : "real"
+            let vStr = ov.isInteger ? String(Int(v.rounded())) : String(format: "%.4f", v)
+            lns.append("          <LKStateSetValue targetId=\"\(ov.targetId)\" keyPath=\"\(ov.keyPath)\"><value type=\"\(tStr)\" value=\"\(vStr)\"/></LKStateSetValue>")
+        }
+        lns.append("        </elements>")
+        return lns.joined(separator: "\n")
+    }
+    var trLines = ["        <elements>"]
+    for ov in allOvs {
+        trLines.append("          <LKStateTransitionElement targetId=\"\(ov.targetId)\" key=\"\(ov.keyPath)\"><animation type=\"CASpringAnimation\" damping=\"28\" mass=\"1\" stiffness=\"306\" velocity=\"0\" duration=\"0.85\" fillMode=\"backwards\" keyPath=\"\(ov.keyPath)\" mica_autorecalculatesDuration=\"1\"/></LKStateTransitionElement>")
+    }
+    trLines.append("        </elements>")
+    let trEls = trLines.joined(separator: "\n")
+
+    let bgIn = morph.bgXML.isEmpty ? "" : "\n                <sublayers>\n\(morph.bgXML)\n                </sublayers>"
+    let fgIn = morph.fgXML.isEmpty ? "" : "\n                <sublayers>\n\(morph.fgXML)\n                </sublayers>"
+    let fxIn = fxBuilt.xml.isEmpty ? "" : "\n              <sublayers>\n\(fxBuilt.xml)\n              </sublayers>"
+
+    let caml = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!-- Generated by Camlo Cloud Builder (ParameterizedCA 3D Anime Engine) -->
+    <caml xmlns="http://www.apple.com/CoreAnimation/1.0">
+      <CALayer id="__capRootLayer__" name="Root Layer" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" geometryFlipped="0" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+        <style>
+          <wallpaperBackgroundAssetNames type="NSArray"/>
+          <wallpaperFloatingAssetNames type="NSArray"/>
+          <wallpaperParallaxGroups type="NSArray">
+    \(parallaxXML)
+          </wallpaperParallaxGroups>
+    \(propGroupsXML)
+        </style>
+        <sublayers>
+          <CALayer id="background" name="BACKGROUND" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+            <sublayers>
+              <CALayer id="camlo_bg_parallax" name="\(c.bgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                <sublayers>
+                  <CALayer id="camlo_bg_overscan" name="\(c.bgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" transform="scale(1.1040, 1.1040, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bgIn)
+                  </CALayer>
+                </sublayers>
+              </CALayer>
+            </sublayers>
+          </CALayer>
+          <CALayer id="floating" name="FLOATING" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="10" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+            <sublayers>
+              <CALayer id="camlo_fg_parallax" name="\(c.fgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                <sublayers>
+                  <CALayer id="camlo_fg_overscan" name="\(c.fgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" transform="scale(1.0520, 1.0520, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fgIn)
+                  </CALayer>
+                </sublayers>
+              </CALayer>
+              <CALayer id="camlo_fx_parallax" name="\(c.fxParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fxIn)
+              </CALayer>
+            </sublayers>
+          </CALayer>
+        </sublayers>
+        <modules/>
+        <states>
+          <LKState name="Locked">
+    \(stElements("Locked"))
+          </LKState>
+          <LKState name="Unlock">
+    \(stElements("Unlock"))
+          </LKState>
+          <LKState name="Sleep">
+    \(stElements("Sleep"))
+          </LKState>
+        </states>
+        <stateTransitions>
+          <LKStateTransition fromState="*" toState="Unlock">\(trEls)</LKStateTransition>
+          <LKStateTransition fromState="Unlock" toState="*">\(trEls)</LKStateTransition>
+          <LKStateTransition fromState="*" toState="Locked">\(trEls)</LKStateTransition>
+          <LKStateTransition fromState="Locked" toState="*">\(trEls)</LKStateTransition>
+          <LKStateTransition fromState="*" toState="Sleep">\(trEls)</LKStateTransition>
+          <LKStateTransition fromState="Sleep" toState="*">\(trEls)</LKStateTransition>
+        </stateTransitions>
+      </CALayer>
+    </caml>
+    """
+
+    try caml.write(to: caURL.appendingPathComponent("main.caml"), atomically: true, encoding: .utf8)
+    try verifyCAPackage(at: caURL)
+}
+
 // MARK: - Build Pipeline
 
 func buildAll() throws {
@@ -1662,6 +1841,13 @@ func buildAll() throws {
             try runDittoZip(sourceDir: workRoot, outputTendies: tendiesOutURL)
             let pkgSize = (try? fm.attributesOfItem(atPath: tendiesOutURL.path)[.size] as? Int) ?? 0
             print(String(format: "[+] Built Duo %@.tendies (%d KB) · ParameterizedCA CAPackage verified", pack.id, pkgSize / 1024))
+            continue
+        }
+        if pack.category == "anime" {
+            try buildAnime3DMorphPack(pack: pack, wpDir: wpDir, thumbOutURL: thumbOutURL)
+            try runDittoZip(sourceDir: workRoot, outputTendies: tendiesOutURL)
+            let pkgSize = (try? fm.attributesOfItem(atPath: tendiesOutURL.path)[.size] as? Int) ?? 0
+            print(String(format: "[+] Built Anime3D %@.tendies (%d KB) · ParameterizedCA CAPackage verified", pack.id, pkgSize / 1024))
             continue
         }
 

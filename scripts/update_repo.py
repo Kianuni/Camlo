@@ -32,6 +32,13 @@ ALT_TINT_COLOR = "#6B4EFF"
 ESIGN_TINT_COLOR = "6B4EFF"
 
 DEFAULT_CHANGELOG_BY_VER: dict[str, str] = {
+    "1.3.1": (
+        "v1.3.1 Build 24 — 新增 10 套原创「次元 3D」二次元交互官方云端壁纸（真机 3D 陀螺仪 + AI 景深挡时间 + 粒子流光）& 云端分类筛栏升级 | 10 Original 3D Gyro + Clock-Depth Anime Cloud Packs:\n"
+        "1. 官方云端壁纸广场扩容至 70 套（全网总库 395+ 款 · 零安装包体积占用）：新增 10 套 100% 原创「次元 3D」二次元精品壁纸（墨线樱绘、赛博瞳孔唤醒、雨岸平交道霞光、狐面鸟居千灯、猩红爵士切入、天台流星雨、Lo-Fi 窗猫、星穹魔女星盘、轨道机甲出击、松崖青莲仙剑），全部原生编译为 single-screen ParameterizedCA（3D 硬件陀螺仪视差 + 实景人物/武器/狐耳/伞檐遮挡 09:41 时间 + 粒子特效），一次解决三方搬运包无真机陀螺仪或缺少前景遮挡的问题；\n"
+        "   (10 Original 3D Anime Cloud Packs in `wallpapers/` — 70 Official / 395+ Total, Zero IPA Bloat: introduces 10 100%-original Anime packs compiled natively as `ParameterizedCA` with true on-device 120Hz 3D Gyro Parallax, Vision foreground cutouts over the `09:41` clock, and hardware particle FX.)\n"
+        "2. 「云端 .tendies 壁纸广场」新增 `次元 3D (Anime 3D)` 专区并升级为横向胶囊计数筛选栏，零截断浏览全部 70 套官方作品。\n"
+        "   (Adds the `Anime 3D` category filter and a scrollable pill selector bar inside Cloud Gallery.)"
+    ),
     "1.2.9": (
         "1. 优化首页右上角「直写就绪 / 导出模式」状态指示器与 iOS 26 / iOS 27 原生液态玻璃（Liquid Glass）导航栏的视觉融合：移除多余的内层胶囊底色与双层描边，使状态指示灯与文字直接承载于单层原生液态玻璃外框中，深浅色模式更通透协调；\n"
         "2. 同步首页「云端壁纸广场」卡片精选徽章数量至 `375+`。\n"

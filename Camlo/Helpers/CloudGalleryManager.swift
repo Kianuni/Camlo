@@ -6,6 +6,7 @@ import Combine
 
 enum CloudWallpaperCategory: String, CaseIterable, Identifiable {
     case all
+    case anime
     case morph
     case duo
     case motion
@@ -15,7 +16,9 @@ enum CloudWallpaperCategory: String, CaseIterable, Identifiable {
     var localizedTitle: String {
         switch self {
         case .all:
-            return Bi("全部云端包", "All Packs")
+            return Bi("全部云端", "All Packs")
+        case .anime:
+            return Bi("次元 3D", "Anime 3D")
         case .morph:
             return Bi("景深变身", "Depth Morph")
         case .duo:
@@ -1345,7 +1348,7 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
         )
     ]
 
-    static let seedFallbackPacks: [CloudWallpaperPack] = seedPacksA + seedPacksB + seedPacksC
+    static let seedFallbackPacks: [CloudWallpaperPack] = seedPacksA + seedPacksB + seedPacksC + seedPacksD
 
     private static let seedPacksC: [CloudWallpaperPack] = [
         CloudWallpaperPack(
@@ -1597,6 +1600,259 @@ struct CloudWallpaperPack: Identifiable, Codable, Equatable {
             fps: 12,
             frameCount: 16,
             accentHex: "#22C55E"
+        )
+    ]
+
+    private static let seedPacksD: [CloudWallpaperPack] = [
+        CloudWallpaperPack(
+            id: "anime_ink_sketch_bloom",
+            posterSeedId: 18961,
+            category: "anime",
+            kind: "anime3DMorph",
+            titleZh: "墨线初醒 · 樱绘少女",
+            titleEn: "Ink Sketch Bloom · Sakura",
+            subtitleZh: "黑底银白钢笔线稿 → 上滑水彩厚涂觉醒，绿眸暮空与落樱破屏而出（真机 3D 陀螺仪 + 景深挡时间）",
+            subtitleEn: "Obsidian silver dip-pen sketch blooming into cel-and-gouache color, emerald eyes & drifting sakura (3D Gyro + Clock Depth)",
+            badgeZh: "次元 3D",
+            badgeEn: "Anime 3D",
+            tagsZh: ["原创二次元", "3D 陀螺仪", "景深挡时间", "线稿觉醒"],
+            tagsEn: ["Original Anime", "3D Gyro", "Clock Depth", "Ink to Color"],
+            transitionPreset: "crossfade",
+            particlePreset: "sakura",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/anime_ink_sketch_bloom.tendies",
+            thumbPath: "wallpapers/thumbs/anime_ink_sketch_bloom.jpg",
+            previewPath: "wallpapers/previews/anime_ink_sketch_bloom.webp",
+            sizeBytes: 3616699,
+            sha256: "cf8274c861d9b304231c63be5c05c1bb6d4db5f967598eb82934646b93e1f33f",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#EC4899"
+        ),
+        CloudWallpaperPack(
+            id: "anime_cyber_visor_protocol",
+            posterSeedId: 18962,
+            category: "anime",
+            kind: "anime3DMorph",
+            titleZh: "赛博视界 · 瞳孔开机",
+            titleEn: "Cyber Visor · Wake Protocol",
+            subtitleZh: "雨夜暗调闭目休眠面罩 → 上滑青紫全息环与荧光星眸瞬间开机（真机 3D 陀螺仪 + 景深挡时间）",
+            subtitleEn: "OLED rain-night standby visor awakening into cyan-magenta holographic rings & glowing optics (3D Gyro + Clock Depth)",
+            badgeZh: "次元 3D",
+            badgeEn: "Anime 3D",
+            tagsZh: ["原创二次元", "3D 陀螺仪", "景深挡时间", "赛博机能"],
+            tagsEn: ["Original Anime", "3D Gyro", "Clock Depth", "Cyberpunk"],
+            transitionPreset: "aodGaze",
+            particlePreset: "starlight",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/anime_cyber_visor_protocol.tendies",
+            thumbPath: "wallpapers/thumbs/anime_cyber_visor_protocol.jpg",
+            previewPath: "wallpapers/previews/anime_cyber_visor_protocol.webp",
+            sizeBytes: 4074056,
+            sha256: "d1a6e86bc7fa2fdb37a6b752ece9a070266f05817a2bbf9ba2f6cb5dbb05cbc3",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#06B6D4"
+        ),
+        CloudWallpaperPack(
+            id: "anime_rainy_crossing_sunbreak",
+            posterSeedId: 18963,
+            category: "anime",
+            kind: "anime3DMorph",
+            titleZh: "雨岸平交道 · 破云霞光",
+            titleEn: "Rainy Crossing · Sunbreak",
+            subtitleZh: "海岸电车细雨透明伞 → 上滑积雨云裂开万丈琥珀丁达尔日光（真机 3D 陀螺仪 + 景深挡时间）",
+            subtitleEn: "Rain-speckled clear umbrella by a coastal railway clearing into amber cumulonimbus sunbeams (3D Gyro + Clock Depth)",
+            badgeZh: "次元 3D",
+            badgeEn: "Anime 3D",
+            tagsZh: ["原创二次元", "3D 陀螺仪", "景深挡时间", "新海光影"],
+            tagsEn: ["Original Anime", "3D Gyro", "Clock Depth", "Sunbreak"],
+            transitionPreset: "curtainRise",
+            particlePreset: "sunbeamRays",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/anime_rainy_crossing_sunbreak.tendies",
+            thumbPath: "wallpapers/thumbs/anime_rainy_crossing_sunbreak.jpg",
+            previewPath: "wallpapers/previews/anime_rainy_crossing_sunbreak.webp",
+            sizeBytes: 2651447,
+            sha256: "70a46a61200491c3340b0e418ca0dd7963eada3a7541a9d513333c74f68a5d65",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#F59E0B"
+        ),
+        CloudWallpaperPack(
+            id: "anime_kitsune_torii_lanterns",
+            posterSeedId: 18964,
+            category: "anime",
+            kind: "anime3DMorph",
+            titleZh: "狐面鸟居 · 千灯夜祭",
+            titleEn: "Kitsune Torii · Lantern Festival",
+            subtitleZh: "幽蓝夜雾未燃纸灯巫女 → 上滑千灯通明金枫描金振袖灵火四起（真机 3D 陀螺仪 + 景深挡时间）",
+            subtitleEn: "Misty midnight shrine maiden awakening a vermilion-gold lantern festival with maple filigree & sparks (3D Gyro + Clock Depth)",
+            badgeZh: "次元 3D",
+            badgeEn: "Anime 3D",
+            tagsZh: ["原创二次元", "3D 陀螺仪", "景深挡时间", "和风怪谈"],
+            tagsEn: ["Original Anime", "3D Gyro", "Clock Depth", "Shrine"],
+            transitionPreset: "aodGaze",
+            particlePreset: "embers",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/anime_kitsune_torii_lanterns.tendies",
+            thumbPath: "wallpapers/thumbs/anime_kitsune_torii_lanterns.jpg",
+            previewPath: "wallpapers/previews/anime_kitsune_torii_lanterns.webp",
+            sizeBytes: 2527833,
+            sha256: "1a54ed3306a1ff5ba87edbca00c674977ea66ff53928653c827d135ba73e9b34",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#EF4444"
+        ),
+        CloudWallpaperPack(
+            id: "anime_crimson_velvet_cutin",
+            posterSeedId: 18965,
+            category: "anime",
+            kind: "anime3DMorph",
+            titleZh: "猩红爵士 · 破屏切入",
+            titleEn: "Crimson Velvet · Cut-In",
+            subtitleZh: "纯黑高对比黑白礼帽乐手 → 上滑猩红金箔波普切入与琥珀双眸觉醒（真机 3D 陀螺仪 + 景深挡时间）",
+            subtitleEn: "High-contrast monochrome phantom musician erupting into crimson, ivory & gold-leaf shards (3D Gyro + Clock Depth)",
+            badgeZh: "次元 3D",
+            badgeEn: "Anime 3D",
+            tagsZh: ["原创二次元", "3D 陀螺仪", "景深挡时间", "潮酷撞色"],
+            tagsEn: ["Original Anime", "3D Gyro", "Clock Depth", "Acid Jazz"],
+            transitionPreset: "burstZoom",
+            particlePreset: "starlight",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/anime_crimson_velvet_cutin.tendies",
+            thumbPath: "wallpapers/thumbs/anime_crimson_velvet_cutin.jpg",
+            previewPath: "wallpapers/previews/anime_crimson_velvet_cutin.webp",
+            sizeBytes: 3583140,
+            sha256: "c3c265c512d886c49175c540c84221c3313d236f4acd8e5a358e2ae483bc6699",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#DC2626"
+        ),
+        CloudWallpaperPack(
+            id: "anime_rooftop_meteor_observatory",
+            posterSeedId: 18966,
+            category: "anime",
+            kind: "anime3DMorph",
+            titleZh: "天台星镜 · 流星夜话",
+            titleEn: "Rooftop Observatory · Meteors",
+            subtitleZh: "静谧暮色黄铜望远镜少女 → 上滑银河星瀑与青紫双色流星雨降临（真机 3D 陀螺仪 + 景深挡时间）",
+            subtitleEn: "Twilight rooftop refractor telescope awakening beneath a luminous Milky Way & turquoise meteor shower (3D Gyro + Clock Depth)",
+            badgeZh: "次元 3D",
+            badgeEn: "Anime 3D",
+            tagsZh: ["原创二次元", "3D 陀螺仪", "景深挡时间", "星空流星"],
+            tagsEn: ["Original Anime", "3D Gyro", "Clock Depth", "Meteors"],
+            transitionPreset: "crossfade",
+            particlePreset: "meteorShower",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/anime_rooftop_meteor_observatory.tendies",
+            thumbPath: "wallpapers/thumbs/anime_rooftop_meteor_observatory.jpg",
+            previewPath: "wallpapers/previews/anime_rooftop_meteor_observatory.webp",
+            sizeBytes: 2419178,
+            sha256: "13420d63c5c68ccab8656e02313061deee190ce9d686519adeb55245165e7407",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#6366F1"
+        ),
+        CloudWallpaperPack(
+            id: "anime_lofi_window_cat_study",
+            posterSeedId: 18967,
+            category: "anime",
+            kind: "anime3DMorph",
+            titleZh: "深夜窗猫 · 暖灯可可",
+            titleEn: "Midnight Desk · Cat & Cocoa",
+            subtitleZh: "熄灯雨夜阁楼耳机少女与黑猫 → 上滑绿罩银行台灯点亮琥珀暖夜（真机 3D 陀螺仪 + 景深挡时间）",
+            subtitleEn: "Cool moonlit rainy-night Lo-Fi desk switching on a honey-amber green banker lamp beside a black cat (3D Gyro + Clock Depth)",
+            badgeZh: "次元 3D",
+            badgeEn: "Anime 3D",
+            tagsZh: ["原创二次元", "3D 陀螺仪", "景深挡时间", "Lo-Fi 治愈"],
+            tagsEn: ["Original Anime", "3D Gyro", "Clock Depth", "Lo-Fi Cozy"],
+            transitionPreset: "crossfade",
+            particlePreset: "snowfall",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/anime_lofi_window_cat_study.tendies",
+            thumbPath: "wallpapers/thumbs/anime_lofi_window_cat_study.jpg",
+            previewPath: "wallpapers/previews/anime_lofi_window_cat_study.webp",
+            sizeBytes: 2307648,
+            sha256: "50533cf91fa7601758d3e54a054624ec53acef4d9adab5df32062cb4396f61f0",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#D97706"
+        ),
+        CloudWallpaperPack(
+            id: "anime_celestial_witch_astrolabe",
+            posterSeedId: 18968,
+            category: "anime",
+            kind: "anime3DMorph",
+            titleZh: "星穹魔女 · 古铜星盘",
+            titleEn: "Astral Witch · Celestial Astrolabe",
+            subtitleZh: "苍白月色沉睡古铜浑天仪 → 上滑熔金星环、水晶蓝蝶与紫瞳齐醒（真机 3D 陀螺仪 + 景深挡时间）",
+            subtitleEn: "Silver-braided witch awakening her antique bronze astrolabe with molten-gold rings & crystal butterflies (3D Gyro + Clock Depth)",
+            badgeZh: "次元 3D",
+            badgeEn: "Anime 3D",
+            tagsZh: ["原创二次元", "3D 陀螺仪", "景深挡时间", "西幻魔法"],
+            tagsEn: ["Original Anime", "3D Gyro", "Clock Depth", "Fantasy"],
+            transitionPreset: "burstZoom",
+            particlePreset: "starlight",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/anime_celestial_witch_astrolabe.tendies",
+            thumbPath: "wallpapers/thumbs/anime_celestial_witch_astrolabe.jpg",
+            previewPath: "wallpapers/previews/anime_celestial_witch_astrolabe.webp",
+            sizeBytes: 4204542,
+            sha256: "ad570ad2fb3f7d70053371af1368888d94c29b54dfa6491be5c6a1e86c6ad464",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#8B5CF6"
+        ),
+        CloudWallpaperPack(
+            id: "anime_mecha_hangar_launch",
+            posterSeedId: 18969,
+            category: "anime",
+            kind: "anime3DMorph",
+            titleZh: "格纳库整备 · 光翼出击",
+            titleEn: "Orbital Hangar · Wing Ignition",
+            subtitleZh: "冷冽暗调钛白机甲待机态 → 上滑碧眼启动、天蓝等离子光翼与探照金光出击（真机 3D 陀螺仪 + 景深挡时间）",
+            subtitleEn: "Cold titanium mecha in dark hangar standby igniting emerald optics, plasma wings & launch floodlights (3D Gyro + Clock Depth)",
+            badgeZh: "次元 3D",
+            badgeEn: "Anime 3D",
+            tagsZh: ["原创二次元", "3D 陀螺仪", "景深挡时间", "机甲科幻"],
+            tagsEn: ["Original Anime", "3D Gyro", "Clock Depth", "Mecha"],
+            transitionPreset: "burstZoom",
+            particlePreset: "embers",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/anime_mecha_hangar_launch.tendies",
+            thumbPath: "wallpapers/thumbs/anime_mecha_hangar_launch.jpg",
+            previewPath: "wallpapers/previews/anime_mecha_hangar_launch.webp",
+            sizeBytes: 3744473,
+            sha256: "695f578cd0d8a9d3f42741f10acd192575bcb27134c91c760e5e36dd9432cc89",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#0EA5E9"
+        ),
+        CloudWallpaperPack(
+            id: "anime_jade_pavilion_sword_lotus",
+            posterSeedId: 18970,
+            category: "anime",
+            kind: "anime3DMorph",
+            titleZh: "松崖剑意 · 破晓青莲",
+            titleEn: "Cliff Pine Swordswoman · Lotus Dawn",
+            subtitleZh: "墨夜松巅持鞘待发女剑修 → 上滑破晓金云、灵力青莲与玉剑流光绽放（真机 3D 陀螺仪 + 景深挡时间）",
+            subtitleEn: "Moonlit cliff-pine swordswoman awakening golden sunrise clouds, luminous lotus & jade sword aura (3D Gyro + Clock Depth)",
+            badgeZh: "次元 3D",
+            badgeEn: "Anime 3D",
+            tagsZh: ["原创二次元", "3D 陀螺仪", "景深挡时间", "国风仙侠"],
+            tagsEn: ["Original Anime", "3D Gyro", "Clock Depth", "Xianxia"],
+            transitionPreset: "curtainRise",
+            particlePreset: "fireflies",
+            supportsClockDepth: true,
+            packagePath: "wallpapers/packages/anime_jade_pavilion_sword_lotus.tendies",
+            thumbPath: "wallpapers/thumbs/anime_jade_pavilion_sword_lotus.jpg",
+            previewPath: "wallpapers/previews/anime_jade_pavilion_sword_lotus.webp",
+            sizeBytes: 3069073,
+            sha256: "f3c5b1cb45285e7f37b595a0deaa1fffa6c33bfc469617247e30fec837ad0298",
+            fps: nil,
+            frameCount: nil,
+            accentHex: "#10B981"
         )
     ]
 }

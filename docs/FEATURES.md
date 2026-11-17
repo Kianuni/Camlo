@@ -3,7 +3,7 @@
 <p>
   <a href="../README.md">← 返回首页简介</a> ·
   <a href="./FEATURES_EN.md">English Detailed Guide</a> ·
-  <a href="../wallpapers/README.md">🎨 官方 60 套云端壁纸目录</a>
+  <a href="../wallpapers/README.md">🎨 官方 70 套云端壁纸目录</a>
 </p>
 
 ---
@@ -33,8 +33,8 @@
   - **光栅幻卡 (`Holo Flip`)**：仿立体光栅闪卡 3D 微倾与横向视差翻转；
   - **暗夜睁眼 (`AOD Gaze`)**：熄屏常显微光剪影 → 亮屏完全展开 → 上滑二次进化。
 - **无级物理调参**：自由调节 `0.35s – 1.40s` 过渡时长与 `0% – 100%` 弹簧回弹张力，并支持单独指定「熄屏常显 (AOD)」专属画面。
-- **内置 6 套获奖风光像素级对齐高清预设 (`PresetGallery.bundle`)**：精选 **6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光），附带预提取 8-bit 天际线/山峰破框蒙版，零选图直接上锁屏（保持极限 ~9 MB 超轻量安装包，60 套馆藏殿堂级云端官方壁纸全量托管于云端仓库）。
-- **云端 `.tendies` 壁纸广场（4 大频道 385+ 套 · [`wallpapers/`](../wallpapers/README.md) 零体积 OTA）**：支持 **Camlo 官方（60 套馆藏殿堂级古典油画、外光印象派、东方宋画敦煌、宇宙极境与 10 套 iPhone Duo 内外双屏专享大师壁纸全量托管于仓库 `wallpapers/`，零安装包体积占用，支持动画 WebP 实时预览、`120Hz 原生交互试穿` 与 SHA-256 校验）** + **CAPlayground（183+ 动画库）** + **Nugget 创意（111+ 社区作品）** + **Apple 原厂机型库（32+ 原生包）**，采用 Camlo 原生 `CamloEndpointRanker`（5 分钟 host EWMA 延迟缓存 + `Range: bytes=0-1` 轻量探测）、`CamloRemotePreview` Core Animation 离散关键帧动画预览，并彻底修复 iOS `/var -> /private/var` 解压路径规范化及外源壁纸跨 `versions/0` / `.wallpaperCollection` 打包兼容。
+- **内置 6 套获奖风光像素级对齐高清预设 (`PresetGallery.bundle`)**：精选 **6 套获奖摄影级自然风光**（多洛米蒂日照金山、纳米布光影沙丘、冰岛黑沙玄光、优胜美地熔岩火瀑、富士山破晓云海、凛冬雪峰极光），附带预提取 8-bit 天际线/山峰破框蒙版，零选图直接上锁屏（保持极限 ~9 MB 超轻量安装包，70 套官方云端壁纸全量托管于云端仓库）。
+- **云端 `.tendies` 壁纸广场（4 大频道 395+ 套 · [`wallpapers/`](../wallpapers/README.md) 零体积 OTA）**：支持 **Camlo 官方（70 套官方精选：含 10 套真机 `ParameterizedCA` 3D 陀螺仪 + 景深挡时间原创「次元 3D」二次元壁纸、10 套 iPhone Duo 内外双屏专享壁纸与 50 套馆藏殿堂级古典油画、外光印象派、东方宋画敦煌、宇宙极境，全量托管于仓库 `wallpapers/`，零安装包体积占用，支持动画 WebP 实时预览、`120Hz 原生交互试穿` 与 SHA-256 校验）** + **CAPlayground（183+ 动画库）** + **Nugget 创意（111+ 社区作品）** + **Apple 原厂机型库（32+ 原生包）**，采用 Camlo 原生 `CamloEndpointRanker`（5 分钟 host EWMA 延迟缓存 + `Range: bytes=0-1` 轻量探测）、`CamloRemotePreview` Core Animation 离散关键帧动画预览，并彻底修复 iOS `/var -> /private/var` 解压路径规范化及外源壁纸跨 `versions/0` / `.wallpaperCollection` 打包兼容。
 - **系统已装锁屏视觉管理与通用 `.tendies` 引擎**：基于 100% Camlo 原生 `SystemPosterStore` 与 ImageIO 磁盘缩略图缓存预览已安装的锁屏模板与配置、按 `RoleIndex` 批量安全清理并自动追踪中文名称；兼容单遍流式解压、多扩展（含 `*CollectionsPoster*` / `*MercuryPoster*`）镜像注入，以及纯 POSIX C `worse_query` App Group `Library/Caches` 原生守卫。
 - **实况动态 × 滑动变身融合 & 交互式锁屏取景裁剪**：支持在「锁屏常态 / 解锁变身」槽位直接导入 **Live Photo 实况照片** 或短视频实现边动边变身（自适应 Jetsam 安全内存预算）；内置真实 `09:41` 时钟与底栏避让预览的交互式拖拽/双指缩放裁剪工作台（支持「超界自由挪动」柔焦延展填充与双槽位一键同步裁剪）。
 
