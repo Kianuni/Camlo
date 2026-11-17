@@ -1126,8 +1126,18 @@ private struct DuoCanvasSpec {
     let fgOverscanName: String
     let fxParallaxName: String
 
+    static func fmtCoord(_ v: Double) -> String {
+        if abs(v - v.rounded()) < 0.0001 {
+            return String(Int(v.rounded()))
+        }
+        return String(format: "%.1f", v)
+    }
+
     var cx: Int { w / 2 }
     var cy: Int { h / 2 }
+    var cxDouble: Double { Double(w) * 0.5 }
+    var cyDouble: Double { Double(h) * 0.5 }
+    var centerPos: String { "\(Self.fmtCoord(cxDouble)) \(Self.fmtCoord(cyDouble))" }
     var sx: Double { Double(w) / 390.0 }
     var sy: Double { Double(h) / 844.0 }
 
@@ -1140,7 +1150,7 @@ private struct DuoCanvasSpec {
         fxParallaxName: "Camlo_FX_Parallax"
     )
     static let outer = DuoCanvasSpec(
-        w: 466, h: 678, pixelW: 1164, pixelH: 1696,
+        w: 466, h: 678, pixelW: 1398, pixelH: 2034,
         cutoutW: 776, cutoutH: 1130, videoW: 520, videoH: 758,
         assetPrefix: "", idPrefix: "", namePrefix: "",
         bgParallaxName: "Camlo_BG_Parallax", bgOverscanName: "Camlo_BG_Overscan",
@@ -1148,7 +1158,7 @@ private struct DuoCanvasSpec {
         fxParallaxName: "Camlo_FX_Parallax"
     )
     static let inner = DuoCanvasSpec(
-        w: 951, h: 669, pixelW: 1902, pixelH: 1338,
+        w: 951, h: 669, pixelW: 2282, pixelH: 1606,
         cutoutW: 1268, cutoutH: 892, videoW: 860, videoH: 604,
         assetPrefix: "inner_", idPrefix: "inner_", namePrefix: "Inner ",
         bgParallaxName: "Camlo_Inner_BG_Parallax", bgOverscanName: "Camlo_Inner_BG_Overscan",
@@ -1263,16 +1273,17 @@ private func duoBuildMorphSurface(
     let sleepAlpha = (transitionPreset == "aodGaze") ? 0.78 : 0.48
 
     let bgXML = """
-                  <CALayer id="\(uId)" name="\(uName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(uId)" name="\(uName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.centerPos)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents><CGImage src="assets/\(aP)unlock.jpg"/></contents>
                   </CALayer>
-                  <CALayer id="\(lId)" name="\(lName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(lId)" name="\(lName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.centerPos)" zPosition="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents><CGImage src="assets/\(aP)locked.jpg"/></contents>
                   </CALayer>
-                  <CALayer id="\(dId)" name="\(dName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
+                  <CALayer id="\(dId)" name="\(dName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.centerPos)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
     """
 
-    let cy = Double(canvas.cy), cx = Double(canvas.cx)
+    let cy = canvas.cyDouble, cx = canvas.cxDouble
+    let cyIsInt = abs(cy - cy.rounded()) < 0.001
     let lockExitY = (Double(canvas.h) * 1.1137).rounded()
     let uSleepY = (cy - 30.0 * canvas.sy).rounded()
     let uLockY = (cy - 18.0 * canvas.sy).rounded()
@@ -1284,10 +1295,10 @@ private func duoBuildMorphSurface(
     case "curtainRise":
         bgOvs.append(contentsOf: [
             DuoOverride(targetId: lId, layerName: lName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-            DuoOverride(targetId: lId, layerName: lName, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: lockExitY, isInteger: true),
+            DuoOverride(targetId: lId, layerName: lName, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: lockExitY, isInteger: cyIsInt),
             DuoOverride(targetId: lId, layerName: lName, keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 0.96, isInteger: false),
             DuoOverride(targetId: uId, layerName: uName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
-            DuoOverride(targetId: uId, layerName: uName, keyPath: "position.y", sleepVal: uSleepY, lockedVal: uLockY, unlockVal: cy, isInteger: true),
+            DuoOverride(targetId: uId, layerName: uName, keyPath: "position.y", sleepVal: uSleepY, lockedVal: uLockY, unlockVal: cy, isInteger: cyIsInt),
             DuoOverride(targetId: uId, layerName: uName, keyPath: "transform.scale.xy", sleepVal: 1.08, lockedVal: 1.06, unlockVal: 1.0, isInteger: false)
         ])
     case "burstZoom":
@@ -1339,10 +1350,10 @@ private func duoBuildMorphSurface(
             let flExitY: Double = (transitionPreset == "curtainRise") ? (Double(canvas.h) * 1.137).rounded() : cy
             let flEndScale: Double = (transitionPreset == "burstZoom") ? 0.84 : 1.06
             fgXML = """
-                  <CALayer id="\(fuId)" name="\(fuName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="1" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(fuId)" name="\(fuName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.centerPos)" zPosition="1" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents><CGImage src="assets/\(aP)cutout_unlock.png"/></contents>
                   </CALayer>
-                  <CALayer id="\(flId)" name="\(flName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="2" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(flId)" name="\(flName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.centerPos)" zPosition="2" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents><CGImage src="assets/\(aP)cutout_lock.png"/></contents>
                   </CALayer>
             """
@@ -1350,7 +1361,7 @@ private func duoBuildMorphSurface(
                 DuoOverride(targetId: fuId, layerName: fuName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 1.0, isInteger: false),
                 DuoOverride(targetId: fuId, layerName: fuName, keyPath: "transform.scale.xy", sleepVal: 1.16, lockedVal: 1.14, unlockVal: 1.0, isInteger: false),
                 DuoOverride(targetId: flId, layerName: flName, keyPath: "opacity", sleepVal: 0.72, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-                DuoOverride(targetId: flId, layerName: flName, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: flExitY, isInteger: true),
+                DuoOverride(targetId: flId, layerName: flName, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: flExitY, isInteger: cyIsInt),
                 DuoOverride(targetId: flId, layerName: flName, keyPath: "transform.scale.xy", sleepVal: 0.98, lockedVal: 1.0, unlockVal: flEndScale, isInteger: false)
             ]
             print(String(format: "    [%@-%@] %@ cutout cov=%.1f%%/%.1f%%", tag, canvas.idPrefix.isEmpty ? (canvas.w == 390 ? "phone" : "outer") : "inner", packId, covL * 100.0, covU * 100.0))
@@ -1409,7 +1420,7 @@ private func duoBuildMotionSurface(
     let vidId = "\(idP)video_seq_layer", vidName = "\(nP)Video Sequence Layer"
     let dimId = "\(idP)video_sleep_dim", dimName = "\(nP)Sleep Dimmer"
     let bgXML = """
-                  <CALayer id="\(vidId)" name="\(vidName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(vidId)" name="\(vidName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.centerPos)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents><CGImage src="assets/\(aP)frame_0.jpg"/></contents>
                     <animations>
                       <animation type="CAKeyframeAnimation" calculationMode="discrete" fillMode="both" keyPath="contents" beginTime="1e-100" duration="\(String(format: "%.3f", max(0.5, duration)))" removedOnCompletion="0" repeatCount="inf" repeatDuration="0" speed="1" timeOffset="0" autoreverses="1">
@@ -1419,7 +1430,7 @@ private func duoBuildMotionSurface(
                       </animation>
                     </animations>
                   </CALayer>
-                  <CALayer id="\(dimId)" name="\(dimName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
+                  <CALayer id="\(dimId)" name="\(dimName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.centerPos)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
     """
     let bgOvs = [
         DuoOverride(targetId: vidId, layerName: vidName, keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 1.04, isInteger: false),
@@ -1466,7 +1477,7 @@ private func duoFXLayers(preset: String, spriteName: String?, canvas: DuoCanvasS
         birthRate = 5.0; velocity = 12; yAccel = 3; scale = 0.21; ePosY = Int((460.0 * canvas.sy).rounded()); emLong = 1.57; emRange = 3.14; spin = 0.8
     }
     let xml = """
-              <CAEmitterLayer id="\(eId)" name="\(eName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.cx) \(canvas.cy)" zPosition="4" emitterPosition="\(ePosX) \(ePosY)" emitterSize="\(eW) \(eH)" emitterShape="rectangle" emitterMode="volume" renderMode="additive" birthRate="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CAEmitterLayer id="\(eId)" name="\(eName)" bounds="0 0 \(canvas.w) \(canvas.h)" position="\(canvas.centerPos)" zPosition="4" emitterPosition="\(ePosX) \(ePosY)" emitterSize="\(eW) \(eH)" emitterShape="rectangle" emitterMode="volume" renderMode="additive" birthRate="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <emitterCells>
                   <CAEmitterCell id="\(idP)camlo_cell_main" name="\(idP)camlo_cell_main" contentsScale="2" birthRate="\(birthRate)" lifetime="6.2" velocity="\(velocity)" velocityRange="24" emissionRange="\(emRange)" emissionLongitude="\(emLong)" emissionLatitude="0" scale="\(scale)" scaleRange="0.14" scaleSpeed="-0.01" alphaRange="0.25" alphaSpeed="-0.12" spin="\(spin)" spinRange="1.2" yAcceleration="\(yAccel)">
                     <color value="1 1 1" opacity="0.94"/>
@@ -1558,7 +1569,7 @@ func buildDuoDualPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) throws {
                   <floatingLayerName type="string" value="\(flName)"/>
                   <idealWidth type="integer" value="\(c.w)"/>
                   <idealHeight type="integer" value="\(c.h)"/>
-                  <retinaMultiplier type="integer" value="3"/>
+                  <retinaMultiplier type="integer" value="1"/>
                   <backgroundParallaxGroups type="NSArray">
         \(px.bg.joined(separator: "\n"))
                   </backgroundParallaxGroups>
@@ -1571,30 +1582,30 @@ func buildDuoDualPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) throws {
         """
     }
 
-    func planePair(c: DuoCanvasSpec, bgId: String, bgN: String, flId: String, flN: String, bgZ: Int, flZ: Int, bgXML: String, flXML: String, fxXML: String) -> String {
+    func planePair(c: DuoCanvasSpec, rootCenterPos: String, bgId: String, bgN: String, flId: String, flN: String, bgZ: Int, flZ: Int, bgXML: String, flXML: String, fxXML: String) -> String {
         let bIn = bgXML.isEmpty ? "" : "\n                <sublayers>\n\(bgXML)\n                </sublayers>"
         let fIn = flXML.isEmpty ? "" : "\n                <sublayers>\n\(flXML)\n                </sublayers>"
         let xIn = fxXML.isEmpty ? "" : "\n              <sublayers>\n\(fxXML)\n              </sublayers>"
         return """
-              <CALayer id="\(bgId)" name="\(bgN)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="\(bgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(bgId)" name="\(bgN)" bounds="0 0 \(c.w) \(c.h)" position="\(rootCenterPos)" zPosition="\(bgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
-                  <CALayer id="\(c.idPrefix)camlo_bg_parallax" name="\(c.bgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(c.idPrefix)camlo_bg_parallax" name="\(c.bgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <sublayers>
-                      <CALayer id="\(c.idPrefix)camlo_bg_overscan" name="\(c.bgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" transform="scale(1.1040, 1.1040, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bIn)
+                      <CALayer id="\(c.idPrefix)camlo_bg_overscan" name="\(c.bgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="0" opacity="1" transform="scale(1.1040, 1.1040, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bIn)
                       </CALayer>
                     </sublayers>
                   </CALayer>
                 </sublayers>
               </CALayer>
-              <CALayer id="\(flId)" name="\(flN)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="\(flZ)" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(flId)" name="\(flN)" bounds="0 0 \(c.w) \(c.h)" position="\(rootCenterPos)" zPosition="\(flZ)" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
-                  <CALayer id="\(c.idPrefix)camlo_fg_parallax" name="\(c.fgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(c.idPrefix)camlo_fg_parallax" name="\(c.fgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <sublayers>
-                      <CALayer id="\(c.idPrefix)camlo_fg_overscan" name="\(c.fgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" transform="scale(1.0400, 1.0400, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fIn)
+                      <CALayer id="\(c.idPrefix)camlo_fg_overscan" name="\(c.fgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="0" opacity="1" transform="scale(1.0400, 1.0400, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fIn)
                       </CALayer>
                     </sublayers>
                   </CALayer>
-                  <CALayer id="\(c.idPrefix)camlo_fx_parallax" name="\(c.fxParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(xIn)
+                  <CALayer id="\(c.idPrefix)camlo_fx_parallax" name="\(c.fxParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(xIn)
                   </CALayer>
                 </sublayers>
               </CALayer>
@@ -1633,7 +1644,7 @@ func buildDuoDualPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) throws {
     <?xml version="1.0" encoding="UTF-8"?>
     <!-- Generated by Camlo Cloud Builder (iPhone Duo Dual-Screen) -->
     <caml xmlns="http://www.apple.com/CoreAnimation/1.0">
-      <CALayer id="__capRootLayer__" name="Root Layer" bounds="0 0 \(outer.w) \(outer.h)" position="\(outer.cx) \(outer.cy)" zPosition="0" geometryFlipped="0" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+      <CALayer id="__capRootLayer__" name="Root Layer" bounds="0 0 \(outer.w) \(outer.h)" position="\(outer.centerPos)" zPosition="0" geometryFlipped="0" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
         <style>
           <wallpaperBackgroundAssetNames type="NSArray"/>
           <wallpaperFloatingAssetNames type="NSArray"/>
@@ -1646,8 +1657,8 @@ func buildDuoDualPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) throws {
           </wallpapers>
         </style>
         <sublayers>
-    \(planePair(c: inner, bgId: "background_inner", bgN: "BACKGROUND_INNER", flId: "floating_inner", flN: "FLOATING_INNER", bgZ: -10, flZ: -9, bgXML: iBgXML, flXML: iFgXML, fxXML: innerFX.xml))
-    \(planePair(c: outer, bgId: "background", bgN: "BACKGROUND", flId: "floating", flN: "FLOATING", bgZ: 0, flZ: 10, bgXML: oBgXML, flXML: oFgXML, fxXML: outerFX.xml))
+    \(planePair(c: inner, rootCenterPos: outer.centerPos, bgId: "background_inner", bgN: "BACKGROUND_INNER", flId: "floating_inner", flN: "FLOATING_INNER", bgZ: -10, flZ: -9, bgXML: iBgXML, flXML: iFgXML, fxXML: innerFX.xml))
+    \(planePair(c: outer, rootCenterPos: outer.centerPos, bgId: "background", bgN: "BACKGROUND", flId: "floating", flN: "FLOATING", bgZ: 0, flZ: 10, bgXML: oBgXML, flXML: oFgXML, fxXML: outerFX.xml))
         </sublayers>
         <modules/>
         <states>

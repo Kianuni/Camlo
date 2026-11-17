@@ -32,6 +32,13 @@ ALT_TINT_COLOR = "#6B4EFF"
 ESIGN_TINT_COLOR = "6B4EFF"
 
 DEFAULT_CHANGELOG_BY_VER: dict[str, str] = {
+    "1.3.2": (
+        "v1.3.2 Build 25 — 修复 iPhone Duo（折叠屏）所有壁纸缩小为 1/3 与展开内屏偏移问题 & 金库旧包自动自愈 | Fix iPhone Duo 1/3 Shrunk Scaling & Off-Center Inner Screen Layout:\n"
+        "1. 彻底修复 iPhone Duo（#4）：修正 `WallpaperKit` `<wallpapers>` `retinaMultiplier` 由 `3` 改为 `1`（解决以逻辑点坐标 `466×678` / `951×669` 编译时被按 `@3x` 缩小为 `1/3` 尺寸的问题），并将 `BACKGROUND_INNER` / `FLOATING_INNER` 图层 `position` 对齐 `__capRootLayer__` 中心（`233 339`），消除展开内屏右下方偏移；同时升级外屏素材采样至全 `@3x`（`1398×2034`）与内屏至高清（`2282×1606`）；\n"
+        "   (Fix iPhone Duo 1/3 Shrink & Inner-Screen Offset (#4): updates `retinaMultiplier` from `3` to `1` for logical-point `466×678` / `951×669` `<wallpapers>` variants, aligns `BACKGROUND_INNER` / `FLOATING_INNER` positions with `__capRootLayer__` center (`233 339`) so `WallpaperKit`'s `hostingLayer` fills the unfolded canvas seamlessly, and upgrades Duo export assets to crisp `1398×2034` Outer and `2282×1606` Inner resolution.)\n"
+        "2. 10 套官方云端 iPhone Duo 双屏壁纸全量重新编译并校验；已下载或自制保存在金库的旧版 Duo 壁纸升级 `v1.3.2` 后会自动原地自愈（重新点击一次「一键应用到锁屏」并注销即可满屏生效，无需重新创作）。\n"
+        "   (Recompiled All 10 Official Cloud Duo Packs + Automatic Vault Self-Healing: existing downloaded or Studio-created Duo wallpapers in your Vault heal automatically in-place upon updating to `v1.3.2` — just tap 1-Tap Apply again and respring.)"
+    ),
     "1.3.1": (
         "v1.3.1 Build 24 — 新增 10 套原创「次元 3D」二次元交互官方云端壁纸（真机 3D 陀螺仪 + AI 景深挡时间 + 粒子流光）& 云端分类筛栏升级 | 10 Original 3D Gyro + Clock-Depth Anime Cloud Packs:\n"
         "1. 官方云端壁纸广场扩容至 70 套（全网总库 395+ 款 · 零安装包体积占用）：新增 10 套 100% 原创「次元 3D」二次元精品壁纸（墨线樱绘、赛博瞳孔唤醒、雨岸平交道霞光、狐面鸟居千灯、猩红爵士切入、天台流星雨、Lo-Fi 窗猫、星穹魔女星盘、轨道机甲出击、松崖青莲仙剑），全部原生编译为 single-screen ParameterizedCA（3D 硬件陀螺仪视差 + 实景人物/武器/狐耳/伞檐遮挡 09:41 时间 + 粒子特效），一次解决三方搬运包无真机陀螺仪或缺少前景遮挡的问题；\n"

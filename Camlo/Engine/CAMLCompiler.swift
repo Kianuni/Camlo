@@ -76,8 +76,18 @@ enum CAMLCompiler {
         let fgOverscanName: String
         let fxParallaxName: String
 
+        static func fmtCoord(_ v: Double) -> String {
+            if abs(v - v.rounded()) < 0.0001 {
+                return String(Int(v.rounded()))
+            }
+            return String(format: "%.1f", v)
+        }
+
         var centerX: Int { width / 2 }
         var centerY: Int { height / 2 }
+        var centerXDouble: Double { Double(width) * 0.5 }
+        var centerYDouble: Double { Double(height) * 0.5 }
+        var centerPosString: String { "\(Self.fmtCoord(centerXDouble)) \(Self.fmtCoord(centerYDouble))" }
         var scaleX: Double { Double(width) / 390.0 }
         var scaleY: Double { Double(height) / 844.0 }
 
@@ -98,7 +108,7 @@ enum CAMLCompiler {
         static let duoOuterCover = CanvasMetrics(
             width: 466,
             height: 678,
-            pixelSize: CGSize(width: 1164, height: 1696),
+            pixelSize: CGSize(width: 1398, height: 2034),
             assetPrefix: "",
             idPrefix: "",
             namePrefix: "",
@@ -112,7 +122,7 @@ enum CAMLCompiler {
         static let duoInnerUnfolded = CanvasMetrics(
             width: 951,
             height: 669,
-            pixelSize: CGSize(width: 1902, height: 1338),
+            pixelSize: CGSize(width: 2282, height: 1606),
             assetPrefix: "inner_",
             idPrefix: "inner_",
             namePrefix: "Inner ",
@@ -748,7 +758,7 @@ enum CAMLCompiler {
 
         if hasCustomSleep {
             sublayers.append("""
-                  <CALayer id="\(sleepId)" name="\(sleepName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="2" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(sleepId)" name="\(sleepName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerPosString)" zPosition="2" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents>
                       <CGImage src="assets/\(aPrefix)sleep.jpg"/>
                     </contents>
@@ -758,13 +768,15 @@ enum CAMLCompiler {
         } else {
             let sleepDimAlpha = (preset == .aodGaze) ? 0.78 : 0.48
             sublayers.append("""
-                  <CALayer id="\(sleepDimId)" name="\(sleepDimName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
+                  <CALayer id="\(sleepDimId)" name="\(sleepDimName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerPosString)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
             """)
             overrides.append(StateOverride(targetId: sleepDimId, layerName: sleepDimName, keyPath: "opacity", sleepVal: sleepDimAlpha, lockedVal: 0.0, unlockVal: 0.0, isInteger: false))
         }
 
-        let cy = Double(canvas.centerY)
-        let cx = Double(canvas.centerX)
+        let cy = canvas.centerYDouble
+        let cx = canvas.centerXDouble
+        let cxIsInt = abs(cx - cx.rounded()) < 0.001
+        let cyIsInt = abs(cy - cy.rounded()) < 0.001
         let lockExitY = (Double(canvas.height) * 1.1137).rounded()
         let unlockSleepY = (cy - 30.0 * canvas.scaleY).rounded()
         let unlockLockedY = (cy - 18.0 * canvas.scaleY).rounded()
@@ -776,10 +788,10 @@ enum CAMLCompiler {
         case .curtainRise:
             overrides.append(contentsOf: [
                 StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: lockExitY, isInteger: true),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: lockExitY, isInteger: cyIsInt),
                 StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "transform.scale.xy", sleepVal: 1.02, lockedVal: 1.0, unlockVal: 0.96, isInteger: false),
                 StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
-                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "position.y", sleepVal: unlockSleepY, lockedVal: unlockLockedY, unlockVal: cy, isInteger: true),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "position.y", sleepVal: unlockSleepY, lockedVal: unlockLockedY, unlockVal: cy, isInteger: cyIsInt),
                 StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "transform.scale.xy", sleepVal: 1.08, lockedVal: 1.06, unlockVal: 1.0, isInteger: false),
             ])
 
@@ -811,10 +823,10 @@ enum CAMLCompiler {
             overrides.append(contentsOf: [
                 StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "opacity", sleepVal: 1.0, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
                 StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "transform.rotation.y", sleepVal: -0.06, lockedVal: 0.0, unlockVal: 0.24, isInteger: false),
-                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "position.x", sleepVal: cx, lockedVal: cx, unlockVal: holoLockUnlockX, isInteger: true),
+                StateOverride(targetId: lockedId, layerName: lockedName, keyPath: "position.x", sleepVal: cx, lockedVal: cx, unlockVal: holoLockUnlockX, isInteger: cxIsInt),
                 StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "opacity", sleepVal: 0.0, lockedVal: 1.0, unlockVal: 1.0, isInteger: false),
                 StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "transform.rotation.y", sleepVal: -0.24, lockedVal: -0.22, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "position.x", sleepVal: holoUnlockSleepX, lockedVal: holoUnlockLockedX, unlockVal: cx, isInteger: true),
+                StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "position.x", sleepVal: holoUnlockSleepX, lockedVal: holoUnlockLockedX, unlockVal: cx, isInteger: cxIsInt),
                 StateOverride(targetId: unlockId, layerName: unlockName, keyPath: "transform.scale.xy", sleepVal: 1.06, lockedVal: 1.05, unlockVal: 1.0, isInteger: false),
             ])
 
@@ -873,7 +885,7 @@ enum CAMLCompiler {
             let fid = "\(idPrefix)float_unlock"
             let fname = "\(namePrefix)Floating Unlock Subject"
             sublayers.append("""
-                  <CALayer id="\(fid)" name="\(fname)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="1" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(fid)" name="\(fname)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerPosString)" zPosition="1" opacity="0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents>
                       <CGImage src="assets/\(aPrefix)cutout_unlock.png"/>
                     </contents>
@@ -888,9 +900,10 @@ enum CAMLCompiler {
         if hasLockCutout {
             let fid = "\(idPrefix)float_lock"
             let fname = "\(namePrefix)Floating Lock Subject"
-            let cy = Double(canvas.centerY)
+            let cy = canvas.centerYDouble
+            let cyIsInt = abs(cy - cy.rounded()) < 0.001
             sublayers.append("""
-                  <CALayer id="\(fid)" name="\(fname)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="2" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(fid)" name="\(fname)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerPosString)" zPosition="2" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <contents>
                       <CGImage src="assets/\(aPrefix)cutout_lock.png"/>
                     </contents>
@@ -900,7 +913,7 @@ enum CAMLCompiler {
             let unlockScale: Double = (preset == .burstZoom) ? 0.84 : 1.06
             overrides.append(contentsOf: [
                 StateOverride(targetId: fid, layerName: fname, keyPath: "opacity", sleepVal: 0.72, lockedVal: 1.0, unlockVal: 0.0, isInteger: false),
-                StateOverride(targetId: fid, layerName: fname, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: unlockY, isInteger: true),
+                StateOverride(targetId: fid, layerName: fname, keyPath: "position.y", sleepVal: cy, lockedVal: cy, unlockVal: unlockY, isInteger: cyIsInt),
                 StateOverride(targetId: fid, layerName: fname, keyPath: "transform.scale.xy", sleepVal: 0.98, lockedVal: 1.0, unlockVal: unlockScale, isInteger: false),
             ])
         }
@@ -962,7 +975,7 @@ enum CAMLCompiler {
         }
 
         return """
-              <CALayer id="\(id)" name="\(name)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="\(zPosition)" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(id)" name="\(name)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerPosString)" zPosition="\(zPosition)" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
         \(bodyXML)
               </CALayer>
         """
@@ -994,7 +1007,7 @@ enum CAMLCompiler {
         let seqName = "\(namePrefix)Video Sequence Layer"
         var sublayers: [String] = []
         sublayers.append("""
-              <CALayer id="\(seqId)" name="\(seqName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(seqId)" name="\(seqName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerPosString)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
         \(animBody)
               </CALayer>
         """)
@@ -1007,7 +1020,7 @@ enum CAMLCompiler {
             let dimId = "\(idPrefix)video_sleep_dim"
             let dimName = "\(namePrefix)Sleep Dimmer"
             sublayers.append("""
-                  <CALayer id="\(dimId)" name="\(dimName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
+                  <CALayer id="\(dimId)" name="\(dimName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerPosString)" zPosition="2" opacity="0" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
             """)
             overrides.append(StateOverride(targetId: dimId, layerName: dimName, keyPath: "opacity", sleepVal: 0.65, lockedVal: 0.0, unlockVal: 0.0, isInteger: false))
         }
@@ -1042,7 +1055,7 @@ enum CAMLCompiler {
             let veilW = Int((510.0 * canvas.scaleX).rounded())
             let veilH = Int((964.0 * canvas.scaleY).rounded())
             sublayers.append("""
-                  <CALayer id="\(fid)" name="\(fname)" bounds="0 0 \(veilW) \(veilH)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="1" opacity="0" backgroundColor="1 0.98 0.94" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
+                  <CALayer id="\(fid)" name="\(fname)" bounds="0 0 \(veilW) \(veilH)" position="\(canvas.centerPosString)" zPosition="1" opacity="0" backgroundColor="1 0.98 0.94" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular"/>
             """)
             overrides.append(StateOverride(targetId: fid, layerName: fname, keyPath: "opacity", sleepVal: 0.0, lockedVal: 0.0, unlockVal: 0.06, isInteger: false))
         }
@@ -1827,7 +1840,7 @@ enum CAMLCompiler {
             }.joined(separator: "\n")
 
             xmls.append("""
-                  <CAEmitterLayer id="\(scaledID)" name="\(scaledName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerX) \(canvas.centerY)" zPosition="\(layer.zPos)" emitterPosition="\(ePosX) \(ePosY)" emitterSize="\(eW) \(eH)" emitterShape="rectangle" emitterMode="volume" renderMode="\(layer.renderMode)" birthRate="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CAEmitterLayer id="\(scaledID)" name="\(scaledName)" bounds="0 0 \(canvas.width) \(canvas.height)" position="\(canvas.centerPosString)" zPosition="\(layer.zPos)" emitterPosition="\(ePosX) \(ePosY)" emitterSize="\(eW) \(eH)" emitterShape="rectangle" emitterMode="volume" renderMode="\(layer.renderMode)" birthRate="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <emitterCells>
             \(cellsXML)
                     </emitterCells>
@@ -2160,7 +2173,7 @@ enum CAMLCompiler {
                   <floatingLayerName type="string" value="\(floatingLayerName)"/>
                   <idealWidth type="integer" value="\(canvas.width)"/>
                   <idealHeight type="integer" value="\(canvas.height)"/>
-                  <retinaMultiplier type="integer" value="3"/>
+                  <retinaMultiplier type="integer" value="1"/>
                   <backgroundParallaxGroups type="NSArray">
         \(bgParallaxEntries.joined(separator: "\n"))
                   </backgroundParallaxGroups>
@@ -2230,6 +2243,7 @@ enum CAMLCompiler {
 
         func planePairXML(
             canvas: CanvasMetrics,
+            rootPositionString: String,
             bgID: String,
             bgName: String,
             fgID: String,
@@ -2248,28 +2262,27 @@ enum CAMLCompiler {
             let xIn = fxSublayers.isEmpty ? "" : "\n              <sublayers>\n\(fxSublayers)\n              </sublayers>"
             let w = canvas.width
             let h = canvas.height
-            let cx = canvas.centerX
-            let cy = canvas.centerY
+            let cPos = canvas.centerPosString
             return """
-              <CALayer id="\(bgID)" name="\(bgName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="\(bgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(bgID)" name="\(bgName)" bounds="0 0 \(w) \(h)" position="\(rootPositionString)" zPosition="\(bgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
-                  <CALayer id="\(canvas.idPrefix)camlo_bg_parallax" name="\(canvas.bgParallaxName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(canvas.idPrefix)camlo_bg_parallax" name="\(canvas.bgParallaxName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <sublayers>
-                      <CALayer id="\(canvas.idPrefix)camlo_bg_overscan" name="\(canvas.bgOverscanName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="0" opacity="1" transform="scale(\(bgOverscan), \(bgOverscan), 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bIn)
+                      <CALayer id="\(canvas.idPrefix)camlo_bg_overscan" name="\(canvas.bgOverscanName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="0" opacity="1" transform="scale(\(bgOverscan), \(bgOverscan), 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bIn)
                       </CALayer>
                     </sublayers>
                   </CALayer>
                 </sublayers>
               </CALayer>
-              <CALayer id="\(fgID)" name="\(fgName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="\(fgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(fgID)" name="\(fgName)" bounds="0 0 \(w) \(h)" position="\(rootPositionString)" zPosition="\(fgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
-                  <CALayer id="\(canvas.idPrefix)camlo_fg_parallax" name="\(canvas.fgParallaxName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(canvas.idPrefix)camlo_fg_parallax" name="\(canvas.fgParallaxName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <sublayers>
-                      <CALayer id="\(canvas.idPrefix)camlo_fg_overscan" name="\(canvas.fgOverscanName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="0" opacity="1" transform="scale(\(fgScaleStr), \(fgScaleStr), 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fIn)
+                      <CALayer id="\(canvas.idPrefix)camlo_fg_overscan" name="\(canvas.fgOverscanName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="0" opacity="1" transform="scale(\(fgScaleStr), \(fgScaleStr), 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fIn)
                       </CALayer>
                     </sublayers>
                   </CALayer>
-                  <CALayer id="\(canvas.idPrefix)camlo_fx_parallax" name="\(canvas.fxParallaxName)" bounds="0 0 \(w) \(h)" position="\(cx) \(cy)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(xIn)
+                  <CALayer id="\(canvas.idPrefix)camlo_fx_parallax" name="\(canvas.fxParallaxName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(xIn)
                   </CALayer>
                 </sublayers>
               </CALayer>
@@ -2278,6 +2291,7 @@ enum CAMLCompiler {
 
         let innerPlanes = planePairXML(
             canvas: inner,
+            rootPositionString: outer.centerPosString,
             bgID: "background_inner",
             bgName: "BACKGROUND_INNER",
             fgID: "floating_inner",
@@ -2292,6 +2306,7 @@ enum CAMLCompiler {
         )
         let outerPlanes = planePairXML(
             canvas: outer,
+            rootPositionString: outer.centerPosString,
             bgID: "background",
             bgName: "BACKGROUND",
             fgID: "floating",
@@ -2315,7 +2330,7 @@ enum CAMLCompiler {
         <?xml version="1.0" encoding="UTF-8"?>
         <!-- Generated by Camlo · 开幕 (iPhone Duo Dual-Canvas ParameterizedCA Engine) -->
         <caml xmlns="http://www.apple.com/CoreAnimation/1.0">
-          <CALayer id="__capRootLayer__" name="Root Layer" bounds="0 0 \(outer.width) \(outer.height)" position="\(outer.centerX) \(outer.centerY)" zPosition="0" geometryFlipped="0" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+          <CALayer id="__capRootLayer__" name="Root Layer" bounds="0 0 \(outer.width) \(outer.height)" position="\(outer.centerPosString)" zPosition="0" geometryFlipped="0" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
             <style>
               <wallpaperBackgroundAssetNames type="NSArray"/>
               <wallpaperFloatingAssetNames type="NSArray"/>

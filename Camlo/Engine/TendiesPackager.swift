@@ -34,6 +34,22 @@ final class TendiesVaultStore: ObservableObject {
             let dir = CamloPaths.packagesDir.appendingPathComponent(item.storageFolderName)
             return fm.fileExists(atPath: dir.path)
         }
+        let packagesRoot = CamloPaths.packagesDir
+        Task.detached(priority: .utility) {
+            Self.healAllPackagesCAML(under: packagesRoot)
+        }
+    }
+
+    nonisolated private static func healAllPackagesCAML(under root: URL) {
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(
+            at: root,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: []
+        ) else { return }
+        for case let fileURL as URL in enumerator where fileURL.lastPathComponent == "main.caml" {
+            PosterBoardBridge.healParameterizedCAMLIfNeeded(at: fileURL)
+        }
     }
 
     func saveCatalog() {

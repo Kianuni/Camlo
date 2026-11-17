@@ -491,8 +491,91 @@ final class PosterBoardBridge: ObservableObject {
     }
 
     nonisolated static func healParameterizedCAMLIfNeeded(at camlURL: URL) {
-        guard var xml = try? String(contentsOf: camlURL, encoding: .utf8),
-              xml.contains("id=\"camlo_bg_parallax\""),
+        guard var xml = try? String(contentsOf: camlURL, encoding: .utf8) else {
+            return
+        }
+
+        if xml.contains("<wallpapers") && xml.contains("BACKGROUND_INNER") {
+            let rootTagPattern = "<CALayer\\b[^>]*\\bid=\"__capRootLayer__\"[^>]*>"
+            let boundsAttrPattern = "\\bbounds=\"0\\s+0\\s+([0-9]+(?:\\.[0-9]+)?)\\s+([0-9]+(?:\\.[0-9]+)?)\""
+            guard let rootTagRegex = try? NSRegularExpression(pattern: rootTagPattern),
+                  let rootTagMatch = rootTagRegex.firstMatch(in: xml, range: NSRange(xml.startIndex..., in: xml)),
+                  let tagRange = Range(rootTagMatch.range, in: xml),
+                  let boundsRegex = try? NSRegularExpression(pattern: boundsAttrPattern) else {
+                return
+            }
+            let rootTag = String(xml[tagRange])
+            guard let boundsMatch = boundsRegex.firstMatch(in: rootTag, range: NSRange(rootTag.startIndex..., in: rootTag)),
+                  boundsMatch.numberOfRanges >= 3,
+                  let wRange = Range(boundsMatch.range(at: 1), in: rootTag),
+                  let hRange = Range(boundsMatch.range(at: 2), in: rootTag),
+                  let rootW = Double(rootTag[wRange]),
+                  let rootH = Double(rootTag[hRange]),
+                  rootW > 0, rootW < 1000 else {
+                return
+            }
+
+            var duoMutated = false
+            if xml.contains("<CATransformLayer ") {
+                xml = xml
+                    .replacingOccurrences(of: "<CATransformLayer ", with: "<CALayer ")
+                    .replacingOccurrences(of: "</CATransformLayer>", with: "</CALayer>")
+                duoMutated = true
+            }
+
+            if let multRegex = try? NSRegularExpression(
+                pattern: "<retinaMultiplier\\s+type=\"(integer|real)\"\\s+value=\"(?:3|3\\.0+)\"\\s*/>"
+            ) {
+                let nsXML = xml as NSString
+                let replaced = multRegex.stringByReplacingMatches(
+                    in: xml,
+                    range: NSRange(location: 0, length: nsXML.length),
+                    withTemplate: "<retinaMultiplier type=\"integer\" value=\"1\"/>"
+                )
+                if replaced != xml {
+                    xml = replaced
+                    duoMutated = true
+                }
+            }
+
+            func formatCenterCoord(_ v: Double) -> String {
+                if abs(v - v.rounded()) < 0.0001 {
+                    return String(Int(v.rounded()))
+                }
+                return String(format: "%.1f", v)
+            }
+            let rootCenterStr = "\(formatCenterCoord(rootW * 0.5)) \(formatCenterCoord(rootH * 0.5))"
+
+            if let innerTagRegex = try? NSRegularExpression(
+                pattern: "<CALayer\\b[^>]*\\b(?:name=\"(?:BACKGROUND_INNER|FLOATING_INNER)\"|id=\"(?:background_inner|floating_inner)\")[^>]*>"
+            ),
+               let posAttrRegex = try? NSRegularExpression(pattern: "\\bposition=\"[^\"]+\"") {
+                let nsXML = xml as NSString
+                let tagMatches = innerTagRegex.matches(in: xml, range: NSRange(location: 0, length: nsXML.length))
+                let targetPosAttr = "position=\"\(rootCenterStr)\""
+                var mutableXML = xml as NSString
+                for match in tagMatches.reversed() {
+                    let tagStr = mutableXML.substring(with: match.range)
+                    let updatedTag = posAttrRegex.stringByReplacingMatches(
+                        in: tagStr,
+                        range: NSRange(location: 0, length: (tagStr as NSString).length),
+                        withTemplate: targetPosAttr
+                    )
+                    if updatedTag != tagStr {
+                        mutableXML = mutableXML.replacingCharacters(in: match.range, with: updatedTag) as NSString
+                        duoMutated = true
+                    }
+                }
+                xml = mutableXML as String
+            }
+
+            if duoMutated {
+                try? xml.data(using: .utf8)?.write(to: camlURL, options: .atomic)
+            }
+            return
+        }
+
+        guard xml.contains("id=\"camlo_bg_parallax\""),
               !xml.contains("<wallpapers") else {
             return
         }

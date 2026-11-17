@@ -11,7 +11,7 @@
     <a href="./docs/FEATURES.md">📖 详细介绍与技术原理</a> ·
     <a href="./wallpapers/README.md">🎨 70 套官方壁纸图鉴</a>
   </p>
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.3.1-6A4DF5?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.3.2-6A4DF5?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS%20%2F%20iPhone%20Duo-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
   <img alt="IPA Size" src="https://img.shields.io/badge/IPA-~9%20MB-10B981?style=flat-square">
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square"></a>
@@ -64,7 +64,7 @@
 
 ### 方式二：下载 IPA 安装包
 
-前往 **[Releases 最新版本页面](https://github.com/Kianuni/Camlo/releases/latest)** 下载 `Camlo_v1.3.1_Bilingual.ipa`，使用 SideStore / AltStore / Feather / 轻松签 ESign / Sideloadly 等工具签名安装。
+前往 **[Releases 最新版本页面](https://github.com/Kianuni/Camlo/releases/latest)** 下载 `Camlo_v1.3.2_Bilingual.ipa`，使用 SideStore / AltStore / Feather / 轻松签 ESign / Sideloadly 等工具签名安装。
 
 > [!TIP]
 > 推荐使用支持保留 `App Group` 权限的签名工具（如 SideStore / AltStore / Feather），即可解锁**手机端一键直写系统锁屏**；无此权限也依然可以完整创作、预览并导出 `.tendies` 壁纸包。

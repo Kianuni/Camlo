@@ -1160,11 +1160,21 @@ private final class CamloLiveStageUIView: UIView {
         stageContainerLayer.sublayerTransform = CATransform3DMakeScale(aspectScale, aspectScale, 1)
 
         let center = CGPoint(x: viewW * 0.5, y: viewH * 0.5)
+        let docCenter = CGPoint(x: docSize.width * 0.5, y: docSize.height * 0.5)
+        let duoPlaneNames: Set<String> = ["BACKGROUND", "FLOATING", "BACKGROUND_INNER", "FLOATING_INNER"]
         for controller in stageControllers {
             let root = controller.rootLayer
             root.bounds = CGRect(origin: .zero, size: docSize)
             root.anchorPoint = CGPoint(x: 0.5, y: 0.5)
             root.position = center
+            if let sublayers = root.sublayers {
+                for sub in sublayers where sub !== clockLayer {
+                    if let name = sub.name?.uppercased(), duoPlaneNames.contains(name) {
+                        sub.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+                        sub.position = docCenter
+                    }
+                }
+            }
         }
         if let stillImageLayer {
             stillImageLayer.bounds = CGRect(origin: .zero, size: docSize)
@@ -1320,6 +1330,12 @@ private final class CamloLiveStageUIView: UIView {
             } else {
                 docSize = sanitizedSize(fallbackSize)
             }
+        }
+
+        let targetCenter = CGPoint(x: docSize.width * 0.5, y: docSize.height * 0.5)
+        for plane in [bgOuter, flOuter, bgInner, flInner].compactMap({ $0 }) {
+            plane.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            plane.position = targetCenter
         }
         return selected
     }

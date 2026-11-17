@@ -282,9 +282,9 @@ enum DuoScreenSurface: String, CaseIterable, Identifiable, Hashable {
     var morphPixelSize: CGSize {
         switch self {
         case .outerCover:
-            return CGSize(width: 1164, height: 1696)
+            return CGSize(width: 1398, height: 2034)
         case .innerUnfolded:
-            return CGSize(width: 1902, height: 1338)
+            return CGSize(width: 2282, height: 1606)
         }
     }
 
