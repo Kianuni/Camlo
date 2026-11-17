@@ -30,6 +30,9 @@
   <sub>▲ Live animated previews from the zero-bloat Cloud Gallery (interactive 120Hz try-on inside Camlo — tap to browse all 60 official packs)</sub>
 </div>
 
+> [!WARNING]
+> **Important Version Notice (2026-11-17)**: Apple has **patched `worse_query` in `iOS / iPadOS 27.3 beta 2` (`24C5049d`)**. On-device **Computer-Free Direct Write is supported up to `27.3 beta 1` only** (`27.3 beta 2+` can still craft and export `.tendies` packs). Stay on `27.2.1 – 27.3 beta 1` and disable automatic updates if you rely on on-device direct write.
+
 ---
 
 ## ✨ What Can Camlo Turn Your Lock Screen Into?
