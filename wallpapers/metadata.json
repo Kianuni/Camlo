@@ -2001,6 +2001,64 @@
       "supportsClockDepth": true,
       "depthMaskMode": "vision",
       "accentHex": "#10B981"
+    },
+    {
+      "id": "coral_sunset_outlaw_duo",
+      "posterSeedId": 18971,
+      "category": "anime",
+      "kind": "anime3DMorph",
+      "titleZh": "珊瑚落日 · 棕榈狂飙",
+      "titleEn": "Coral Coast · Outlaw Duo",
+      "subtitleZh": "热带海岸厚涂海报风：海湾暮紫肌肉车双人待机 → 上滑粉紫金落日霞云与复古大灯觉醒（真机 3D 陀螺仪 + 景深挡时间）",
+      "subtitleEn": "Sun-drenched coastal key-art illustration: twilight muscle-car duo igniting into coral-pink & golden sunset clouds with blazing headlights (3D Gyro + Clock Depth)",
+      "badgeZh": "美漫 3D",
+      "badgeEn": "Key Art 3D",
+      "tagsZh": [
+        "海岸狂飙",
+        "粉金落日",
+        "3D 陀螺仪",
+        "景深挡时间"
+      ],
+      "tagsEn": [
+        "Coastal Outlaw",
+        "Coral Sunset",
+        "3D Gyro",
+        "Clock Depth"
+      ],
+      "transitionPreset": "flashAwaken",
+      "particlePreset": "embers",
+      "supportsClockDepth": true,
+      "depthMaskMode": "vision",
+      "accentHex": "#FF5E8E"
+    },
+    {
+      "id": "duo_coral_bay_outlaw_cruiser",
+      "posterSeedId": 18972,
+      "category": "duo",
+      "kind": "duoMorph",
+      "titleZh": "珊瑚长堤 · 海湾狂飙双屏",
+      "titleEn": "Coral Causeway · Outlaw V8 Duo",
+      "subtitleZh": "iPhone Duo 内外双屏热带海岸海报风：外屏肌肉车双人暮色特写，展开内屏尽览跨海长堤、快艇碧波与粉金落日大灯齐燃",
+      "subtitleEn": "Dual-screen tropical key-art panorama: outer muscle-car duo cover unfolding into a sweeping coral-pink & golden sunset bay causeway",
+      "badgeZh": "iPhone Duo 海岸",
+      "badgeEn": "Duo · Coral V8",
+      "tagsZh": [
+        "iPhone Duo",
+        "海岸狂飙",
+        "粉金落日",
+        "内外双屏"
+      ],
+      "tagsEn": [
+        "iPhone Duo",
+        "Coastal Outlaw",
+        "Coral Sunset",
+        "Dual Screen"
+      ],
+      "transitionPreset": "flashAwaken",
+      "particlePreset": "embers",
+      "supportsClockDepth": true,
+      "depthMaskMode": "vision",
+      "accentHex": "#FF5E8E"
     }
   ]
 }

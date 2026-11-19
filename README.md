@@ -9,7 +9,7 @@
     <strong>简体中文</strong> ·
     <a href="./README_EN.md">English</a> ·
     <a href="./docs/FEATURES.md">📖 详细介绍与技术原理</a> ·
-    <a href="./wallpapers/README.md">🎨 70 套官方壁纸图鉴</a>
+    <a href="./wallpapers/README.md">🎨 72 套官方壁纸图鉴</a>
   </p>
   <img alt="Version" src="https://img.shields.io/badge/Version-v1.3.3-6A4DF5?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS%20%2F%20iPhone%20Duo-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
@@ -28,7 +28,7 @@
     <img src="./wallpapers/previews/saturn_equinox_eclipse.webp" width="94" alt="土星春分 · 环影日食"/>
   </a>
   <br>
-  <sub>▲ 官方云端部分壁纸真实动态预览（支持锁屏 120Hz 实时试穿，点击查看全部 70 套官方作品）</sub>
+  <sub>▲ 官方云端部分壁纸真实动态预览（支持锁屏 120Hz 实时试穿，点击查看全部 72 套官方作品）</sub>
 </div>
 
 > [!WARNING]
@@ -42,7 +42,7 @@
 - **📱 原生适配 iPhone Duo 内外双屏画布（Inner + Outer）**：支持单包直编外屏封面（`466×678` pt）+ 展开横屏画布（`951×669` pt）统一 `WallpaperKit` `<wallpapers>` `ParameterizedCA` 工程，工坊实时双屏切换裁切；
 - **🎞️ 实况照片 & 短视频直出动态锁屏**：相册里的 Live Photo 或短视频直接做成无缝循环的动态锁屏，点亮即动，息屏自动休眠不耗电。
 - **🪄 裸眼 3D · 人物挡时间 · 昼夜换装 · 漫天流光**：晃动手机有 3D 视差；一键把人物或山峰叠在 `09:41` 时间前面；白天黑夜自动换壁纸；还能叠加上流星、樱花、极光、飞雪等动态光效。
-- **🏛️ 仅 ~9 MB 小体积，免费畅享 395+ 款云端壁纸**：内置 6 套获奖风光，云端免费直连 **70 套官方精选壁纸**（含 **10 套原创真机 3D 陀螺仪 + 景深挡时间「次元 3D」二次元壁纸**、**10 套 iPhone Duo 内外双屏专享壁纸**、**50 套博物馆馆藏名画意境壁纸**）与 300+ 款社区作品，App 内直接试穿、喜欢再下。
+- **🏛️ 仅 ~9 MB 小体积，免费畅享 395+ 款云端壁纸**：内置 6 套获奖风光，云端免费直连 **72 套官方精选壁纸**（含 **11 套原创真机 3D 陀螺仪 + 景深挡时间「次元 / 海岸海报 3D」壁纸**、**11 套 iPhone Duo 内外双屏专享壁纸**、**50 套博物馆馆藏名画意境壁纸**）与 300+ 款社区作品，App 内直接试穿、喜欢再下。
 
 ---
 
@@ -82,6 +82,6 @@
 ## 📚 了解更多
 
 - **[📖 完整功能详解、技术原理与源码编译指南 →](./docs/FEATURES.md)**
-- **[🎨 浏览官方 70 套云端壁纸图鉴（含 10 套次元 3D · 10 套 iPhone Duo 专享 · 50 套馆藏大师杰作）→](./wallpapers/README.md)**
+- **[🎨 浏览官方 72 套云端壁纸图鉴（含 11 套次元/海报 3D · 11 套 iPhone Duo 专享 · 50 套馆藏大师杰作）→](./wallpapers/README.md)**
 - **🛠️ 同作者开源项目**：[Erosion-CN](https://github.com/Kianuni/Erosion-CN) · [AppleFlow](https://github.com/Kianuni/AppleFlow) · [WQGuard](https://github.com/Kianuni/WQGuard)
 - **⚖️ 开源许可**：基于 **[GPLv3](./LICENSE)** 开源 · [致谢与参考项目](./docs/FEATURES.md#开源许可与致谢)
