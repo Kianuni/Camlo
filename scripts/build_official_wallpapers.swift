@@ -122,7 +122,16 @@ func extractForegroundCutout(from source1170x2532: CGImage, outWidth: Int = 780,
     }
 
     let maskBuffer = try observation.generateScaledMaskForImage(forInstances: observation.allInstances, from: handler)
-    let inputCI = CIImage(cgImage: source1170x2532)
+    return try blendVisionMask(source: source1170x2532, maskBuffer: maskBuffer, outWidth: outWidth, outHeight: outHeight)
+}
+
+private func blendVisionMask(
+    source: CGImage,
+    maskBuffer: CVPixelBuffer,
+    outWidth: Int,
+    outHeight: Int
+) throws -> (CGImage, Double) {
+    let inputCI = CIImage(cgImage: source)
     let maskCI = CIImage(cvPixelBuffer: maskBuffer)
     let clearBG = CIImage(color: .clear).cropped(to: inputCI.extent)
 
@@ -142,6 +151,30 @@ func extractForegroundCutout(from source1170x2532: CGImage, outWidth: Int = 780,
     let downscaled = try aspectFillCGImage(fullCutout, width: outWidth, height: outHeight)
     let coverage = estimateOpaqueCoverage(downscaled)
     return (downscaled, coverage)
+}
+
+func applyVisionMask(
+    from donor: CGImage,
+    to target: CGImage,
+    outWidth: Int = 780,
+    outHeight: Int = 1688
+) throws -> (donorCut: CGImage, targetCut: CGImage, covDonor: Double, covTarget: Double) {
+    guard #available(macOS 14.0, *) else {
+        throw NSError(domain: "BuildWallpapers", code: 8, userInfo: [NSLocalizedDescriptionKey: "macOS 14+ required for Vision foreground mask"])
+    }
+    let request = VNGenerateForegroundInstanceMaskRequest()
+    let handler = VNImageRequestHandler(cgImage: donor, options: [:])
+    try handler.perform([request])
+
+    guard let observation = request.results?.first,
+          !observation.allInstances.isEmpty else {
+        throw NSError(domain: "BuildWallpapers", code: 9, userInfo: [NSLocalizedDescriptionKey: "No foreground instance detected on donor frame"])
+    }
+
+    let maskBuffer = try observation.generateScaledMaskForImage(forInstances: observation.allInstances, from: handler)
+    let (donorCut, covDonor) = try blendVisionMask(source: donor, maskBuffer: maskBuffer, outWidth: outWidth, outHeight: outHeight)
+    let (targetCut, covTarget) = try blendVisionMask(source: target, maskBuffer: maskBuffer, outWidth: outWidth, outHeight: outHeight)
+    return (donorCut, targetCut, covDonor, covTarget)
 }
 
 /// Flood-fills upper sky from top border (y = 0...8%) to cleanly separate mountain peaks, arches,
@@ -221,9 +254,10 @@ func extractSkylineCutout(from source1170x2532: CGImage, outWidth: Int = 780, ou
             let refDiff = abs(Double(nr) - br) + abs(Double(ng) - bg) + abs(Double(nb) - bb)
             let localLuma = 0.299 * Double(nr) + 0.587 * Double(ng) + 0.114 * Double(nb)
             let refLuma = 0.299 * br + 0.587 * bg + 0.114 * bb
-            // Allow gradual twilight sky gradient vertically, stop at sharp silhouettes or dark mountain faces
+            // Allow smooth dawn/sunset sky gradients down to silhouettes while stopping at crisp foreground contours.
             let verticalAllowance = 42.0 + 45.0 * min(1.0, Double(ny) / Double(h))
-            if stepDiff < 48 && (refDiff < verticalAllowance || abs(localLuma - refLuma) < 32.0) {
+            let smoothUpperSky = ny < Int(Double(h) * 0.62) && stepDiff <= 22
+            if smoothUpperSky || (stepDiff < 48 && (refDiff < verticalAllowance || abs(localLuma - refLuma) < 32.0)) {
                 isSky[nIdx] = 1
                 queue.append(nIdx)
             }
@@ -267,8 +301,21 @@ func extractSkylineCutout(from source1170x2532: CGImage, outWidth: Int = 780, ou
         .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: 2.0])
         .cropped(to: CGRect(x: 0, y: 0, width: w, height: h))
     let ciContext = CIContext(options: nil)
-    guard let softMask = ciContext.createCGImage(maskCI, from: CGRect(x: 0, y: 0, width: w, height: h)) else {
+    guard let softMaskRGBA = ciContext.createCGImage(maskCI, from: CGRect(x: 0, y: 0, width: w, height: h)),
+          let grayCtx = CGContext(
+              data: nil,
+              width: w,
+              height: h,
+              bitsPerComponent: 8,
+              bytesPerRow: w,
+              space: grayCS,
+              bitmapInfo: CGImageAlphaInfo.none.rawValue
+          ) else {
         throw NSError(domain: "BuildWallpapers", code: 15, userInfo: [NSLocalizedDescriptionKey: "Failed softening skyline mask"])
+    }
+    grayCtx.draw(softMaskRGBA, in: CGRect(x: 0, y: 0, width: w, height: h))
+    guard let softMask = grayCtx.makeImage() else {
+        throw NSError(domain: "BuildWallpapers", code: 15, userInfo: [NSLocalizedDescriptionKey: "Failed extracting 8-bit grayscale skyline mask"])
     }
 
     let cutout = try compositeGrayscaleMaskCutout(source: fitted, grayscaleMask: softMask, outWidth: w, outHeight: h)
@@ -1220,30 +1267,36 @@ private func extractMorphCutoutPair(
     cutoutH: Int,
     maskMode: String
 ) -> (CGImage, CGImage, Double, Double, String)? {
-    if maskMode == "skyline" {
-        if let (cl, covL) = try? extractSkylineCutout(from: lockFit, outWidth: cutoutW, outHeight: cutoutH),
-           let (cu, covU) = try? extractSkylineCutout(from: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
-           covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
-            return (cl, cu, covL, covU, "Skyline")
-        }
-        if let (cl, covL) = try? extractForegroundCutout(from: lockFit, outWidth: cutoutW, outHeight: cutoutH),
-           let (cu, covU) = try? extractForegroundCutout(from: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
-           covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
-            return (cl, cu, covL, covU, "Vision-Fallback")
-        }
-    } else {
-        if let (cl, covL) = try? extractForegroundCutout(from: lockFit, outWidth: cutoutW, outHeight: cutoutH),
-           let (cu, covU) = try? extractForegroundCutout(from: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
-           covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
-            return (cl, cu, covL, covU, "Vision")
-        }
-        if let (cl, covL) = try? extractSkylineCutout(from: lockFit, outWidth: cutoutW, outHeight: cutoutH),
-           let (cu, covU) = try? extractSkylineCutout(from: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
-           covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78 {
-            return (cl, cu, covL, covU, "Skyline-Fallback")
-        }
+    func inRange(_ covL: Double, _ covU: Double) -> Bool {
+        covL >= 0.04 && covL <= 0.78 && covU >= 0.04 && covU <= 0.78
     }
-    return nil
+    func trySkyline(_ tag: String) -> (CGImage, CGImage, Double, Double, String)? {
+        guard let (cl, covL) = try? extractSkylineCutout(from: lockFit, outWidth: cutoutW, outHeight: cutoutH),
+              let (cu, covU) = try? extractSkylineCutout(from: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
+              inRange(covL, covU) else { return nil }
+        return (cl, cu, covL, covU, tag)
+    }
+    func tryVision(_ tag: String) -> (CGImage, CGImage, Double, Double, String)? {
+        if let (cl, covL) = try? extractForegroundCutout(from: lockFit, outWidth: cutoutW, outHeight: cutoutH),
+           let (cu, covU) = try? extractForegroundCutout(from: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
+           inRange(covL, covU) {
+            return (cl, cu, covL, covU, tag)
+        }
+        if let (cl, cu, covL, covU) = try? applyVisionMask(from: lockFit, to: unlockFit, outWidth: cutoutW, outHeight: cutoutH),
+           inRange(covL, covU) {
+            return (cl, cu, covL, covU, "\(tag)-PairedL")
+        }
+        if let (cu, cl, covU, covL) = try? applyVisionMask(from: unlockFit, to: lockFit, outWidth: cutoutW, outHeight: cutoutH),
+           inRange(covL, covU) {
+            return (cl, cu, covL, covU, "\(tag)-PairedU")
+        }
+        return nil
+    }
+
+    if maskMode == "skyline" {
+        return trySkyline("Skyline") ?? tryVision("Vision-Fallback")
+    }
+    return tryVision("Vision") ?? trySkyline("Skyline-Fallback")
 }
 
 private func duoBuildMorphSurface(

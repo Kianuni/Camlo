@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-19T10:44:53Z",
+  "generatedAt": "2026-11-19T11:16:10Z",
   "repo": "Kianuni/Camlo",
-  "packCount": 72,
+  "packCount": 76,
   "packs": [
     {
       "id": "rembrandt_cellist_reverie",
@@ -2475,6 +2475,150 @@
       "fps": null,
       "frameCount": null,
       "accentHex": "#FF5E8E"
+    },
+    {
+      "id": "ocean_neon_supercar_strip",
+      "posterSeedId": 18973,
+      "category": "anime",
+      "kind": "anime3DMorph",
+      "titleZh": "霓虹海岸 · 鸥翼夜驰",
+      "titleEn": "Ocean Neon · Gullwing Night",
+      "subtitleZh": "热带 Art Deco 霓虹海滨街区：星夜熄灯珍珠青鸥翼超跑待机 → 上滑品红/电青建筑霓虹灯管、金色座舱与车底地效全开（真机 3D 陀螺仪 + 景深挡时间）",
+      "subtitleEn": "Midnight Art Deco beachfront strip standby igniting blazing hot-magenta & electric-cyan neon architecture, golden cabin & supercar underglow (3D Gyro + Clock Depth)",
+      "badgeZh": "美漫 3D",
+      "badgeEn": "Key Art 3D",
+      "tagsZh": [
+        "滨海霓虹",
+        "鸥翼超跑",
+        "3D 陀螺仪",
+        "景深挡时间"
+      ],
+      "tagsEn": [
+        "Ocean Neon",
+        "Gullwing V12",
+        "3D Gyro",
+        "Clock Depth"
+      ],
+      "transitionPreset": "flashAwaken",
+      "particlePreset": "starlight",
+      "supportsClockDepth": true,
+      "hasClockDepthAssets": true,
+      "packagePath": "wallpapers/packages/ocean_neon_supercar_strip.tendies",
+      "thumbPath": "wallpapers/thumbs/ocean_neon_supercar_strip.jpg",
+      "previewPath": "wallpapers/previews/ocean_neon_supercar_strip.webp",
+      "sizeBytes": 2185485,
+      "sha256": "df49f10e9a75f45f3cd559d5c01642a52d19b8fa0db5338bc092f014ec73a2fe",
+      "fps": null,
+      "frameCount": null,
+      "accentHex": "#00E5FF"
+    },
+    {
+      "id": "duo_ocean_neon_supercar_strip",
+      "posterSeedId": 18974,
+      "category": "duo",
+      "kind": "duoMorph",
+      "titleZh": "霓虹海滨 · 鸥翼夜驰双屏",
+      "titleEn": "Ocean Neon · Gullwing Strip Duo",
+      "subtitleZh": "iPhone Duo 内外双屏霓虹雨夜大道：外屏鸥翼超跑雨夜待机特写，展开内屏尽览绵延 Art Deco 霓虹酒店长街与海浪倒影",
+      "subtitleEn": "Dual-screen Art Deco strip panorama: outer gullwing supercar standby unfolding into a blazing neon-lit beachfront boulevard",
+      "badgeZh": "iPhone Duo 霓虹",
+      "badgeEn": "Duo · Ocean V12",
+      "tagsZh": [
+        "iPhone Duo",
+        "滨海霓虹",
+        "鸥翼超跑",
+        "内外双屏"
+      ],
+      "tagsEn": [
+        "iPhone Duo",
+        "Ocean Neon",
+        "Gullwing V12",
+        "Dual Screen"
+      ],
+      "transitionPreset": "flashAwaken",
+      "particlePreset": "starlight",
+      "supportsClockDepth": true,
+      "hasClockDepthAssets": true,
+      "packagePath": "wallpapers/packages/duo_ocean_neon_supercar_strip.tendies",
+      "thumbPath": "wallpapers/thumbs/duo_ocean_neon_supercar_strip.jpg",
+      "previewPath": "wallpapers/previews/duo_ocean_neon_supercar_strip.webp",
+      "sizeBytes": 6496186,
+      "sha256": "0f65eab8527b328639aef4c9e3d237f7059ca6c4af7ab1e4102ae7857671d4ae",
+      "fps": null,
+      "frameCount": null,
+      "accentHex": "#00E5FF"
+    },
+    {
+      "id": "everglades_flamingo_airboat_dawn",
+      "posterSeedId": 18975,
+      "category": "anime",
+      "kind": "anime3DMorph",
+      "titleZh": "红鹤湿地 · 气垫破晓",
+      "titleEn": "Flamingo Marsh · Airboat Dawn",
+      "subtitleZh": "热带红树林湿地蓝调薄雾待机：铜金 V8 气垫船与涉水火烈鸟静候黎明 → 上滑珊瑚粉金破晓积雨云、丁达尔日光与船首探照灯唤醒（真机 3D 陀螺仪 + 景深挡时间）",
+      "subtitleEn": "Serene pre-dawn blue-hour wetland & copper V8 airboat awakening into coral-pink & molten-gold sunrise sunbeams with wading flamingos (3D Gyro + Clock Depth)",
+      "badgeZh": "美漫 3D",
+      "badgeEn": "Key Art 3D",
+      "tagsZh": [
+        "红鹤湿地",
+        "气垫破晓",
+        "3D 陀螺仪",
+        "景深挡时间"
+      ],
+      "tagsEn": [
+        "Flamingo Marsh",
+        "Airboat Dawn",
+        "3D Gyro",
+        "Clock Depth"
+      ],
+      "transitionPreset": "flashAwaken",
+      "particlePreset": "sunbeamRays",
+      "supportsClockDepth": true,
+      "hasClockDepthAssets": true,
+      "packagePath": "wallpapers/packages/everglades_flamingo_airboat_dawn.tendies",
+      "thumbPath": "wallpapers/thumbs/everglades_flamingo_airboat_dawn.jpg",
+      "previewPath": "wallpapers/previews/everglades_flamingo_airboat_dawn.webp",
+      "sizeBytes": 2023833,
+      "sha256": "f62f6eda61fa0c7d91b7a3f8ed1a8a83eca4c2e4499888e6a49d6c004a9e9df2",
+      "fps": null,
+      "frameCount": null,
+      "accentHex": "#FB7185"
+    },
+    {
+      "id": "duo_everglades_flamingo_airboat",
+      "posterSeedId": 18976,
+      "category": "duo",
+      "kind": "duoMorph",
+      "titleZh": "红鹤泽国 · 气垫破晓双屏",
+      "titleEn": "Flamingo Marsh · Airboat Duo",
+      "subtitleZh": "iPhone Duo 内外双屏热带湿地奇景：外屏垂挂苔藓风树与气垫船蓝调破晓，展开内屏尽览红鹤群涉水与金绿交织镜面湿地全景",
+      "subtitleEn": "Dual-screen wetland vista: outer mossy-cypress airboat cover unfolding into a sweeping coral-gold sunrise marsh filled with wading flamingos",
+      "badgeZh": "iPhone Duo 泽国",
+      "badgeEn": "Duo · Marsh Dawn",
+      "tagsZh": [
+        "iPhone Duo",
+        "红鹤湿地",
+        "气垫破晓",
+        "内外双屏"
+      ],
+      "tagsEn": [
+        "iPhone Duo",
+        "Flamingo Marsh",
+        "Airboat Dawn",
+        "Dual Screen"
+      ],
+      "transitionPreset": "flashAwaken",
+      "particlePreset": "sunbeamRays",
+      "supportsClockDepth": true,
+      "hasClockDepthAssets": true,
+      "packagePath": "wallpapers/packages/duo_everglades_flamingo_airboat.tendies",
+      "thumbPath": "wallpapers/thumbs/duo_everglades_flamingo_airboat.jpg",
+      "previewPath": "wallpapers/previews/duo_everglades_flamingo_airboat.webp",
+      "sizeBytes": 8366381,
+      "sha256": "6d72b30b2d7f4bc47583c955f6fc7a32a7e5c50af56b739e23ad9179317ce95a",
+      "fps": null,
+      "frameCount": null,
+      "accentHex": "#FB7185"
     }
   ]
 }
