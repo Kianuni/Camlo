@@ -11,7 +11,7 @@
     <a href="./docs/FEATURES_EN.md">📖 Full Feature & Tech Guide</a> ·
     <a href="./wallpapers/README.md">🎨 70 Official Cloud Packs</a>
   </p>
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.3.2-6A4DF5?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.3.3-6A4DF5?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/iOS%20%2F%20iPadOS%20%2F%20iPhone%20Duo-26.0%20%E2%80%93%2027.3b1-FF6B7A?style=flat-square">
   <img alt="IPA Size" src="https://img.shields.io/badge/IPA-~9%20MB-10B981?style=flat-square">
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square"></a>
@@ -65,7 +65,7 @@ https://raw.githubusercontent.com/Kianuni/Camlo/main/apps.json
 
 ### Option B: Sideload the IPA Manually
 
-Download `Camlo_v1.3.2_Bilingual.ipa` from **[Latest Releases](https://github.com/Kianuni/Camlo/releases/latest)** and install with SideStore, AltStore, Feather, ESign, or Sideloadly.
+Download `Camlo_v1.3.3_Bilingual.ipa` from **[Latest Releases](https://github.com/Kianuni/Camlo/releases/latest)** and install with SideStore, AltStore, Feather, ESign, or Sideloadly.
 
 > [!TIP]
 > Signing tools that preserve at least one `App Group` entitlement (such as SideStore, AltStore, or Feather) unlock **1-tap direct apply to iOS Lock Screen**; without it, creation, preview, and `.tendies` export still work 100%.

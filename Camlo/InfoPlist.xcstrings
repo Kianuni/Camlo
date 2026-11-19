@@ -1,0 +1,40 @@
+{
+  "sourceLanguage" : "zh-Hans",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camlo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开幕 Camlo"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camlo needs photo library access to select wallpaper photos, Live Photos, or short videos. All processing stays 100% offline on your device."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开幕 (Camlo) 需要访问相册以选择壁纸图片、实况照片 (Live Photo) 或短视频，所有处理均在手机本地离线完成。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

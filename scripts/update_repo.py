@@ -32,6 +32,13 @@ ALT_TINT_COLOR = "#6B4EFF"
 ESIGN_TINT_COLOR = "6B4EFF"
 
 DEFAULT_CHANGELOG_BY_VER: dict[str, str] = {
+    "1.3.3": (
+        "v1.3.3 Build 26 — 修复 SideStore / AltStore 个人免费 Apple ID 安装失败 (#6) | Fix SideStore / AltStore App ID Registration:\n"
+        "1. 修复使用 SideStore / AltStore 个人免费签安装时因 `CFBundleDisplayName` 含中文及空格导致 `An invalid value '开幕 Camlo' was provided for the parameter 'appIdName'` 报错的问题：将主 `Info.plist` 顶层 `CFBundleDisplayName` 与 `apps.json` `name` 统一调整为纯英文 ASCII 标识 `Camlo`，并通过 `InfoPlist.xcstrings`（`zh-Hans.lproj/InfoPlist.strings`）本地化保留简体中文系统桌面显示名称「开幕 Camlo」；\n"
+        "   (Fix SideStore / AltStore Free Apple ID `appIdName` Error (#6): sets the top-level `Info.plist` `CFBundleDisplayName` and `apps.json` `name` to pure ASCII `Camlo` so Apple's `addAppId` endpoint succeeds reliably, while preserving the localized Chinese Home Screen label `开幕 Camlo` via `InfoPlist.xcstrings`.)\n"
+        "2. 完整包含 `v1.3.2` iPhone Duo 折叠屏 `retinaMultiplier` 与内屏偏移修复、10 套原创「次元 3D」二次元交互包与金库旧包自动原地自愈。\n"
+        "   (Includes all `v1.3.2` iPhone Duo scaling/centering fixes, 10 official 3D Anime packs, and automatic Vault self-healing.)"
+    ),
     "1.3.2": (
         "v1.3.2 Build 25 — 修复 iPhone Duo（折叠屏）所有壁纸缩小为 1/3 与展开内屏偏移问题 & 金库旧包自动自愈 | Fix iPhone Duo 1/3 Shrunk Scaling & Off-Center Inner Screen Layout:\n"
         "1. 彻底修复 iPhone Duo（#4）：修正 `WallpaperKit` `<wallpapers>` `retinaMultiplier` 由 `3` 改为 `1`（解决以逻辑点坐标 `466×678` / `951×669` 编译时被按 `@3x` 缩小为 `1/3` 尺寸的问题），并将 `BACKGROUND_INNER` / `FLOATING_INNER` 图层 `position` 对齐 `__capRootLayer__` 中心（`233 339`），消除展开内屏右下方偏移；同时升级外屏素材采样至全 `@3x`（`1398×2034`）与内屏至高清（`2282×1606`）；\n"
@@ -279,14 +286,14 @@ def build_payloads(
     latest = mapped_versions[0]
 
     altstore_app = {
-        "name": "Camlo · 开幕",
+        "name": "Camlo",
         "bundleIdentifier": meta["bundle_id"],
         "developerName": "Kianuni",
-        "subtitle": "零门槛「滑动解锁变身 + 动态锁屏」壁纸工坊",
+        "subtitle": "开幕 · 零门槛「滑动解锁变身 + 动态锁屏」壁纸工坊",
         "localizedDescription": (
             "Camlo（开幕）是一款零门槛 iOS / iPadOS 原生 Core Animation (.tendies / CAML) 动态与滑动变身锁屏制作工坊。"
             "内置 120Hz 原生 `.ca` 实时交互试穿、陀螺仪 3D 裸眼视差 (ParameterizedCA)、昼夜双生壁纸 (appearanceAware)、智能时钟配色字体与主屏柔焦配套、"
-            "6 套内置获奖风光双态预设与 50 套零体积馆藏大师级官方云端壁纸、8 款异形粒子与体积流光特效、AI 主体抠图遮挡时钟、视频/实况抽帧无缝循环与免电脑一键直写 iOS 26 / iOS 27 锁屏画廊。"
+            "6 套内置获奖风光双态预设与 70 套零体积馆藏大师级官方云端壁纸、8 款异形粒子与体积流光特效、AI 主体抠图遮挡时钟、视频/实况抽帧无缝循环与免电脑一键直写 iOS 26 / iOS 27 锁屏画廊。"
         ),
         "iconURL": icon_url,
         "tintColor": ALT_TINT_COLOR,

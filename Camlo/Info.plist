@@ -9,6 +9,8 @@
 		<string>zh-Hans</string>
 		<string>en</string>
 	</array>
+	<key>LSHasLocalizedDisplayName</key>
+	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>开幕 (Camlo) 需要访问相册以选择壁纸图片、实况照片 (Live Photo) 或短视频，所有处理均在手机本地离线完成。</string>
 	<key>UIFileSharingEnabled</key>
