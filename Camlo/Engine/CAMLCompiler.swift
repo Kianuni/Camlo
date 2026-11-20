@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import CoreGraphics
 import UIKit
 
 struct MorphCompileSpec {
@@ -323,7 +324,7 @@ enum CAMLCompiler {
             )
 
             let fgScale: Double = spec.renderAboveClock
-                ? (1.0 + 0.16 * max(0.20, min(spec.gyroIntensity, 1.0)))
+                ? (1.0 + 0.095 * max(0.20, min(spec.gyroIntensity, 1.0)))
                 : 1.0
 
             let caml = wrapDuoDualRootCAML(
@@ -349,6 +350,9 @@ enum CAMLCompiler {
             return
         }
 
+        let clampedGyro = max(0.20, min(spec.gyroIntensity, 1.0))
+        let sharedOverscan = 1.0 + 0.095 * clampedGyro
+
         if spec.enableGyroParallax {
             let ca = wallpaperDir.appendingPathComponent("wallpaper.ca", isDirectory: true)
             try prepareCABundle(at: ca)
@@ -365,7 +369,7 @@ enum CAMLCompiler {
                 bgSublayersXML: spec.renderAboveClock ? "" : videoBuild.sublayersXML,
                 fgSublayersXML: spec.renderAboveClock ? videoBuild.sublayersXML : "",
                 fxSublayersXML: fxBuild.sublayersXML,
-                fgOverscanScale: spec.renderAboveClock ? (1.0 + 0.16 * max(0.20, min(spec.gyroIntensity, 1.0))) : 1.0,
+                fgOverscanScale: spec.renderAboveClock ? sharedOverscan : 1.0,
                 bgOverrides: spec.renderAboveClock ? [] : videoBuild.overrides,
                 floatingOverrides: (spec.renderAboveClock ? videoBuild.overrides : []) + fxBuild.overrides,
                 duration: 0.75,
@@ -377,7 +381,7 @@ enum CAMLCompiler {
         }
 
         let bgCA = wallpaperDir.appendingPathComponent("7400.WWDC_2022_Background-390w-844h@3x~iphone.ca", isDirectory: true)
-        let flCA = wallpaperDir.appendingPathComponent("7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca", isDirectory: true)
+        let flCA = wallpaperDir.appendingPathComponent("7400.WWDC_2022_Clownfish_Floating-390w-844h@3x~iphone.ca", isDirectory: true)
         let fgCA = wallpaperDir.appendingPathComponent("7400.WWDC_2022_Foreground-390w-844h@3x~iphone.ca", isDirectory: true)
 
         for ca in [bgCA, flCA, fgCA] {
@@ -446,7 +450,7 @@ enum CAMLCompiler {
         into wallpaperDir: URL
     ) throws {
         let bgCA = wallpaperDir.appendingPathComponent("\(prefix)_Background-390w-844h@3x~iphone.ca", isDirectory: true)
-        let flCA = wallpaperDir.appendingPathComponent("\(prefix)_Floating-390w-844h@3x~iphone.ca", isDirectory: true)
+        let flCA = wallpaperDir.appendingPathComponent("\(prefix)_Clownfish_Floating-390w-844h@3x~iphone.ca", isDirectory: true)
         let fgCA = wallpaperDir.appendingPathComponent("\(prefix)_Foreground-390w-844h@3x~iphone.ca", isDirectory: true)
 
         for ca in [bgCA, flCA, fgCA] {
@@ -523,9 +527,16 @@ enum CAMLCompiler {
         try prepareCABundle(at: ca)
         let assetsDir = ca.appendingPathComponent("assets", isDirectory: true)
 
+        let inpaintedLock = lockCutout != nil
+            ? inpaintedImageIfNeeded(lockImage, cutout: lockCutout, canvas: .standardPhone)
+            : lockImage
+        let inpaintedUnlock = unlockCutout != nil
+            ? inpaintedImageIfNeeded(unlockImage, cutout: unlockCutout, canvas: .standardPhone)
+            : unlockImage
+
         let bgBuild = try buildAndEncodeMorphBackground(
-            lockImage: lockImage,
-            unlockImage: unlockImage,
+            lockImage: inpaintedLock,
+            unlockImage: inpaintedUnlock,
             sleepImage: sleepImage,
             lockLiveSequence: lockLiveSequence,
             unlockLiveSequence: unlockLiveSequence,
@@ -545,7 +556,8 @@ enum CAMLCompiler {
             assetsDir: assetsDir
         )
 
-        let cutoutOverscan = 1.0 + 0.08 * max(0.20, min(spec.gyroIntensity, 1.0))
+        let clampedGyro = max(0.20, min(spec.gyroIntensity, 1.0))
+        let cutoutOverscan = 1.0 + 0.095 * clampedGyro
         let caml = wrapParameterizedRootCAML(
             bgSublayersXML: bgBuild.sublayersXML,
             fgSublayersXML: flBuild.sublayersXML,
@@ -586,9 +598,16 @@ enum CAMLCompiler {
         try prepareCABundle(at: ca, documentWidth: outer.width, documentHeight: outer.height)
         let assetsDir = ca.appendingPathComponent("assets", isDirectory: true)
 
+        let inpaintedOuterLock = outerLockCutout != nil
+            ? inpaintedImageIfNeeded(outerLockImage, cutout: outerLockCutout, canvas: outer)
+            : outerLockImage
+        let inpaintedOuterUnlock = outerUnlockCutout != nil
+            ? inpaintedImageIfNeeded(outerUnlockImage, cutout: outerUnlockCutout, canvas: outer)
+            : outerUnlockImage
+
         let outerBg = try buildAndEncodeMorphBackground(
-            lockImage: outerLockImage,
-            unlockImage: outerUnlockImage,
+            lockImage: inpaintedOuterLock,
+            unlockImage: inpaintedOuterUnlock,
             sleepImage: outerSleepImage,
             lockLiveSequence: outerLockLiveSequence,
             unlockLiveSequence: outerUnlockLiveSequence,
@@ -612,9 +631,16 @@ enum CAMLCompiler {
             encodeAssets: true
         )
 
+        let inpaintedInnerLock = innerLockCutout != nil
+            ? inpaintedImageIfNeeded(innerLockImage, cutout: innerLockCutout, canvas: inner)
+            : innerLockImage
+        let inpaintedInnerUnlock = innerUnlockCutout != nil
+            ? inpaintedImageIfNeeded(innerUnlockImage, cutout: innerUnlockCutout, canvas: inner)
+            : innerUnlockImage
+
         let innerBg = try buildAndEncodeMorphBackground(
-            lockImage: innerLockImage,
-            unlockImage: innerUnlockImage,
+            lockImage: inpaintedInnerLock,
+            unlockImage: inpaintedInnerUnlock,
             sleepImage: innerSleepImage,
             lockLiveSequence: innerLockLiveSequence,
             unlockLiveSequence: innerUnlockLiveSequence,
@@ -638,7 +664,8 @@ enum CAMLCompiler {
             encodeAssets: false
         )
 
-        let cutoutOverscan = 1.0 + 0.08 * max(0.20, min(spec.gyroIntensity, 1.0))
+        let clampedGyro = max(0.20, min(spec.gyroIntensity, 1.0))
+        let cutoutOverscan = 1.0 + 0.095 * clampedGyro
         let caml = wrapDuoDualRootCAML(
             outer: outer,
             inner: inner,
@@ -1974,27 +2001,77 @@ enum CAMLCompiler {
         """
     }
 
-    private static func parallaxGroupXML(
+    nonisolated private static func parallaxGroupXML(
         axis: String,
         keyPath: String,
         layerName: String,
-        minVal: Int,
-        maxVal: Int,
+        minVal: Double,
+        maxVal: Double,
         title: String,
-        view: String
+        view: String,
+        isInteger: Bool = true
     ) -> String {
-        """
+        let typeAttr = isInteger ? "integer" : "real"
+        let minStr = isInteger ? String(Int(minVal.rounded())) : String(format: "%.4f", minVal)
+        let maxStr = isInteger ? String(Int(maxVal.rounded())) : String(format: "%.4f", maxVal)
+        return """
                 <NSDictionary>
                   <axis type="string" value="\(axis)"/>
                   <image type="string" value="null"/>
                   <keyPath type="string" value="\(keyPath)"/>
                   <layerName type="string" value="\(layerName)"/>
-                  <mapMaxTo type="integer" value="\(maxVal)"/>
-                  <mapMinTo type="integer" value="\(minVal)"/>
+                  <mapMaxTo type="\(typeAttr)" value="\(maxStr)"/>
+                  <mapMinTo type="\(typeAttr)" value="\(minStr)"/>
                   <title type="string" value="\(title)"/>
                   <view type="string" value="\(view)"/>
                 </NSDictionary>
         """
+    }
+
+    nonisolated static let perspectiveSublayerTransformAttr = "sublayerTransform=\"matrix(1 0 0 0 0 1 0 0 0 0 1 -0.0010 0 0 0 1)\""
+
+    nonisolated private static func balancedParallaxEntries(
+        for canvas: CanvasMetrics,
+        gyroIntensity: Double
+    ) -> (bg: [String], fg: [String], overscanScale: Double) {
+        let clampedGyro = max(0.20, min(gyroIntensity, 1.0))
+        let bgShiftX = (10.0 * clampedGyro * canvas.scaleX).rounded()
+        let bgShiftY = (13.0 * clampedGyro * canvas.scaleY).rounded()
+        let fgShiftX = (8.0 * clampedGyro * canvas.scaleX).rounded()
+        let fgShiftY = (10.0 * clampedGyro * canvas.scaleY).rounded()
+        let fxShiftX = (22.0 * clampedGyro * canvas.scaleX).rounded()
+        let fxShiftY = (28.0 * clampedGyro * canvas.scaleY).rounded()
+
+        let bgRotY = 0.022 * clampedGyro
+        let bgRotX = 0.018 * clampedGyro
+        let fgRotY = 0.038 * clampedGyro
+        let fgRotX = 0.030 * clampedGyro
+
+        let bg = [
+            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: canvas.bgParallaxName, minVal: -bgShiftX, maxVal: bgShiftX, title: "\(canvas.namePrefix)Camlo BG X", view: "Background"),
+            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: canvas.bgParallaxName, minVal: -bgShiftY, maxVal: bgShiftY, title: "\(canvas.namePrefix)Camlo BG Y", view: "Background"),
+            parallaxGroupXML(axis: "x", keyPath: "transform.rotation.y", layerName: canvas.bgParallaxName, minVal: -bgRotY, maxVal: bgRotY, title: "\(canvas.namePrefix)Camlo BG RotY", view: "Background", isInteger: false),
+            parallaxGroupXML(axis: "y", keyPath: "transform.rotation.x", layerName: canvas.bgParallaxName, minVal: bgRotX, maxVal: -bgRotX, title: "\(canvas.namePrefix)Camlo BG RotX", view: "Background", isInteger: false)
+        ]
+        let fg = [
+            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: canvas.fgParallaxName, minVal: fgShiftX, maxVal: -fgShiftX, title: "\(canvas.namePrefix)Camlo FG X", view: "Floating"),
+            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: canvas.fgParallaxName, minVal: fgShiftY, maxVal: -fgShiftY, title: "\(canvas.namePrefix)Camlo FG Y", view: "Floating"),
+            parallaxGroupXML(axis: "x", keyPath: "transform.rotation.y", layerName: canvas.fgParallaxName, minVal: -fgRotY, maxVal: fgRotY, title: "\(canvas.namePrefix)Camlo FG RotY", view: "Floating", isInteger: false),
+            parallaxGroupXML(axis: "y", keyPath: "transform.rotation.x", layerName: canvas.fgParallaxName, minVal: fgRotX, maxVal: -fgRotX, title: "\(canvas.namePrefix)Camlo FG RotX", view: "Floating", isInteger: false),
+            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: canvas.fxParallaxName, minVal: fxShiftX, maxVal: -fxShiftX, title: "\(canvas.namePrefix)Camlo FX X", view: "Floating"),
+            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: canvas.fxParallaxName, minVal: fxShiftY, maxVal: -fxShiftY, title: "\(canvas.namePrefix)Camlo FX Y", view: "Floating")
+        ]
+        return (bg, fg, 1.0 + 0.095 * clampedGyro)
+    }
+
+    nonisolated static func healedParallaxGroupsXML(
+        for canvas: CanvasMetrics,
+        gyroIntensity: Double = 0.6842
+    ) -> (bgEntriesXML: String, fgEntriesXML: String, combinedEntriesXML: String) {
+        let px = balancedParallaxEntries(for: canvas, gyroIntensity: gyroIntensity)
+        let bgXML = px.bg.joined(separator: "\n")
+        let fgXML = px.fg.joined(separator: "\n")
+        return (bgXML, fgXML, (px.bg + px.fg).joined(separator: "\n"))
     }
 
     private static func singlePropertyGroupXML(
@@ -2047,28 +2124,14 @@ enum CAMLCompiler {
         bounce: Double,
         gyroIntensity: Double
     ) -> String {
-        let clampedGyro = max(0.20, min(gyroIntensity, 1.0))
-        let bgShiftX = Int((26.0 * clampedGyro).rounded())
-        let bgShiftY = Int((34.0 * clampedGyro).rounded())
-        let fgShiftX = Int((34.0 * clampedGyro).rounded())
-        let fgShiftY = Int((44.0 * clampedGyro).rounded())
-        let fxShiftX = Int((46.0 * clampedGyro).rounded())
-        let fxShiftY = Int((58.0 * clampedGyro).rounded())
-
-        let bgOverscan = String(format: "%.4f", 1.0 + 0.16 * clampedGyro)
+        let px = balancedParallaxEntries(for: .standardPhone, gyroIntensity: gyroIntensity)
+        let bgOverscan = String(format: "%.4f", px.overscanScale)
         let fgOverscanStr = String(format: "%.4f", max(1.0, fgOverscanScale))
         let bgInner = bgSublayersXML.isEmpty ? "" : "\n                <sublayers>\n\(bgSublayersXML)\n                </sublayers>"
         let fgInner = fgSublayersXML.isEmpty ? "" : "\n                <sublayers>\n\(fgSublayersXML)\n                </sublayers>"
         let fxInner = fxSublayersXML.isEmpty ? "" : "\n              <sublayers>\n\(fxSublayersXML)\n              </sublayers>"
 
-        let parallaxXML = [
-            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: "Camlo_BG_Parallax", minVal: -bgShiftX, maxVal: bgShiftX, title: "Camlo BG X", view: "Background"),
-            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: "Camlo_BG_Parallax", minVal: -bgShiftY, maxVal: bgShiftY, title: "Camlo BG Y", view: "Background"),
-            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: "Camlo_FG_Parallax", minVal: fgShiftX, maxVal: -fgShiftX, title: "Camlo FG X", view: "Floating"),
-            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: "Camlo_FG_Parallax", minVal: fgShiftY, maxVal: -fgShiftY, title: "Camlo FG Y", view: "Floating"),
-            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: "Camlo_FX_Parallax", minVal: fxShiftX, maxVal: -fxShiftX, title: "Camlo FX X", view: "Floating"),
-            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: "Camlo_FX_Parallax", minVal: fxShiftY, maxVal: -fxShiftY, title: "Camlo FX Y", view: "Floating")
-        ].joined(separator: "\n")
+        let parallaxXML = (px.bg + px.fg).joined(separator: "\n")
 
         let propertyEntries = bgOverrides.flatMap { propertyGroupEntriesXML(for: $0, view: "Background") }
             + floatingOverrides.flatMap { propertyGroupEntriesXML(for: $0, view: "Floating") }
@@ -2099,7 +2162,7 @@ enum CAMLCompiler {
         \(propertyGroupsXML)
             </style>
             <sublayers>
-              <CALayer id="background" name="BACKGROUND" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="0" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="background" name="BACKGROUND" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="0" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" \(perspectiveSublayerTransformAttr) allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
                   <CALayer id="camlo_bg_parallax" name="Camlo_BG_Parallax" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <sublayers>
@@ -2109,15 +2172,15 @@ enum CAMLCompiler {
                   </CALayer>
                 </sublayers>
               </CALayer>
-              <CALayer id="floating" name="FLOATING" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="10" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="floating" name="FLOATING" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="10" geometryFlipped="0" masksToBounds="1" opacity="1" \(perspectiveSublayerTransformAttr) allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
-                  <CALayer id="camlo_fg_parallax" name="Camlo_FG_Parallax" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="camlo_fg_parallax" name="Camlo_FG_Parallax" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <sublayers>
                       <CALayer id="camlo_fg_overscan" name="Camlo_FG_Overscan" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="0" opacity="1" transform="scale(\(fgOverscanStr), \(fgOverscanStr), 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fgInner)
                       </CALayer>
                     </sublayers>
                   </CALayer>
-                  <CALayer id="camlo_fx_parallax" name="Camlo_FX_Parallax" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fxInner)
+                  <CALayer id="camlo_fx_parallax" name="Camlo_FX_Parallax" bounds="0 0 \(canvasW) \(canvasH)" position="\(centerX) \(centerY)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fxInner)
                   </CALayer>
                 </sublayers>
               </CALayer>
@@ -2129,25 +2192,8 @@ enum CAMLCompiler {
     }
 
     private static func dualParallaxEntries(for canvas: CanvasMetrics, gyroIntensity: Double) -> (bg: [String], fg: [String], bgOverscan: String) {
-        let clampedGyro = max(0.20, min(gyroIntensity, 1.0))
-        let bgShiftX = Int((26.0 * clampedGyro * canvas.scaleX).rounded())
-        let bgShiftY = Int((34.0 * clampedGyro * canvas.scaleY).rounded())
-        let fgShiftX = Int((34.0 * clampedGyro * canvas.scaleX).rounded())
-        let fgShiftY = Int((44.0 * clampedGyro * canvas.scaleY).rounded())
-        let fxShiftX = Int((46.0 * clampedGyro * canvas.scaleX).rounded())
-        let fxShiftY = Int((58.0 * clampedGyro * canvas.scaleY).rounded())
-
-        let bg = [
-            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: canvas.bgParallaxName, minVal: -bgShiftX, maxVal: bgShiftX, title: "\(canvas.namePrefix)Camlo BG X", view: "Background"),
-            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: canvas.bgParallaxName, minVal: -bgShiftY, maxVal: bgShiftY, title: "\(canvas.namePrefix)Camlo BG Y", view: "Background")
-        ]
-        let fg = [
-            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: canvas.fgParallaxName, minVal: fgShiftX, maxVal: -fgShiftX, title: "\(canvas.namePrefix)Camlo FG X", view: "Floating"),
-            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: canvas.fgParallaxName, minVal: fgShiftY, maxVal: -fgShiftY, title: "\(canvas.namePrefix)Camlo FG Y", view: "Floating"),
-            parallaxGroupXML(axis: "x", keyPath: "transform.translation.x", layerName: canvas.fxParallaxName, minVal: fxShiftX, maxVal: -fxShiftX, title: "\(canvas.namePrefix)Camlo FX X", view: "Floating"),
-            parallaxGroupXML(axis: "y", keyPath: "transform.translation.y", layerName: canvas.fxParallaxName, minVal: fxShiftY, maxVal: -fxShiftY, title: "\(canvas.namePrefix)Camlo FX Y", view: "Floating")
-        ]
-        return (bg, fg, String(format: "%.4f", 1.0 + 0.16 * clampedGyro))
+        let px = balancedParallaxEntries(for: canvas, gyroIntensity: gyroIntensity)
+        return (px.bg, px.fg, String(format: "%.4f", px.overscanScale))
     }
 
     private static func displayVariantDictionaryXML(
@@ -2264,7 +2310,7 @@ enum CAMLCompiler {
             let h = canvas.height
             let cPos = canvas.centerPosString
             return """
-              <CALayer id="\(bgID)" name="\(bgName)" bounds="0 0 \(w) \(h)" position="\(rootPositionString)" zPosition="\(bgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(bgID)" name="\(bgName)" bounds="0 0 \(w) \(h)" position="\(rootPositionString)" zPosition="\(bgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" \(perspectiveSublayerTransformAttr) allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
                   <CALayer id="\(canvas.idPrefix)camlo_bg_parallax" name="\(canvas.bgParallaxName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <sublayers>
@@ -2274,15 +2320,15 @@ enum CAMLCompiler {
                   </CALayer>
                 </sublayers>
               </CALayer>
-              <CALayer id="\(fgID)" name="\(fgName)" bounds="0 0 \(w) \(h)" position="\(rootPositionString)" zPosition="\(fgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(fgID)" name="\(fgName)" bounds="0 0 \(w) \(h)" position="\(rootPositionString)" zPosition="\(fgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" \(perspectiveSublayerTransformAttr) allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
-                  <CALayer id="\(canvas.idPrefix)camlo_fg_parallax" name="\(canvas.fgParallaxName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(canvas.idPrefix)camlo_fg_parallax" name="\(canvas.fgParallaxName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <sublayers>
                       <CALayer id="\(canvas.idPrefix)camlo_fg_overscan" name="\(canvas.fgOverscanName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="0" opacity="1" transform="scale(\(fgScaleStr), \(fgScaleStr), 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fIn)
                       </CALayer>
                     </sublayers>
                   </CALayer>
-                  <CALayer id="\(canvas.idPrefix)camlo_fx_parallax" name="\(canvas.fxParallaxName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(xIn)
+                  <CALayer id="\(canvas.idPrefix)camlo_fx_parallax" name="\(canvas.fxParallaxName)" bounds="0 0 \(w) \(h)" position="\(cPos)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(xIn)
                   </CALayer>
                 </sublayers>
               </CALayer>
@@ -2396,5 +2442,371 @@ enum CAMLCompiler {
           </MicaAssetManifest>
         </caml>
         """
+    }
+
+    // MARK: - Occlusion Background Inpainting
+
+    private struct InpaintRGBAW {
+        var r: Float = 0
+        var g: Float = 0
+        var b: Float = 0
+        var w: Float = 0
+    }
+
+    private struct InpaintMipLevel {
+        let w: Int
+        let h: Int
+        var data: [InpaintRGBAW]
+    }
+
+    private static func inpaintedImageIfNeeded(
+        _ image: UIImage,
+        cutout: UIImage?,
+        canvas: CanvasMetrics
+    ) -> UIImage {
+        guard let cutout else { return image }
+        let filledBG = image.aspectFilled(to: canvas.pixelSize)
+        let filledCut = cutout.aspectFilled(to: canvas.pixelSize)
+        guard let bgCG = filledBG.cgImage,
+              let cutCG = filledCut.cgImage else {
+            return filledBG
+        }
+        return UIImage(cgImage: inpaintOccludedBackground(bg: bgCG, cutout: cutCG), scale: 1.0, orientation: .up)
+    }
+
+    /// Runs exterior-inward inpainting across `(bg, cutout)` pairs stored in a ParameterizedCA `assets` folder.
+    nonisolated static func inpaintOccludedAssetsInPlace(in assetsDir: URL) {
+        let pairs: [(bg: String, cutout: String)] = [
+            ("locked.jpg", "cutout_lock.png"),
+            ("unlock.jpg", "cutout_unlock.png"),
+            ("outer_locked.jpg", "outer_cutout_lock.png"),
+            ("outer_unlock.jpg", "outer_cutout_unlock.png"),
+            ("inner_locked.jpg", "inner_cutout_lock.png"),
+            ("inner_unlock.jpg", "inner_cutout_unlock.png")
+        ]
+        let fm = FileManager.default
+        for pair in pairs {
+            let bgURL = assetsDir.appendingPathComponent(pair.bg)
+            let cutURL = assetsDir.appendingPathComponent(pair.cutout)
+            guard fm.fileExists(atPath: bgURL.path),
+                  fm.fileExists(atPath: cutURL.path) else { continue }
+            autoreleasepool {
+                guard let bgImg = UIImage(contentsOfFile: bgURL.path),
+                      let cutImg = UIImage(contentsOfFile: cutURL.path),
+                      let bgCG = bgImg.cgImage,
+                      let cutCG = cutImg.cgImage else { return }
+                let resultCG = inpaintOccludedBackground(bg: bgCG, cutout: cutCG)
+                if let jpegData = UIImage(cgImage: resultCG, scale: 1.0, orientation: .up).jpegData(compressionQuality: 0.88) {
+                    try? jpegData.write(to: bgURL, options: .atomic)
+                }
+            }
+        }
+    }
+
+    /// Fills the background region occluded by `cutout` using a Pull-Push pyramid + smoothed scanline continuation,
+    /// leaving 100% of background pixels outside the tight cutout silhouette untouched.
+    nonisolated static func inpaintOccludedBackground(bg: CGImage, cutout: CGImage) -> CGImage {
+        let fullW = bg.width
+        let fullH = bg.height
+        guard fullW >= 64, fullH >= 64 else { return bg }
+
+        let workScale = min(1.0, 585.0 / Double(fullW))
+        let w0 = max(64, Int((Double(fullW) * workScale).rounded()))
+        let h0 = max(64, Int((Double(fullH) * workScale).rounded()))
+        let cs = CGColorSpaceCreateDeviceRGB()
+
+        var bgBytes = [UInt8](repeating: 0, count: fullW * fullH * 4)
+        guard let fullCtx = CGContext(
+            data: &bgBytes,
+            width: fullW,
+            height: fullH,
+            bitsPerComponent: 8,
+            bytesPerRow: fullW * 4,
+            space: cs,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return bg }
+        fullCtx.draw(bg, in: CGRect(x: 0, y: 0, width: fullW, height: fullH))
+
+        var workBG = [UInt8](repeating: 0, count: w0 * h0 * 4)
+        guard let workBgCtx = CGContext(
+            data: &workBG,
+            width: w0,
+            height: h0,
+            bitsPerComponent: 8,
+            bytesPerRow: w0 * 4,
+            space: cs,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return bg }
+        workBgCtx.interpolationQuality = .high
+        workBgCtx.draw(bg, in: CGRect(x: 0, y: 0, width: w0, height: h0))
+
+        var workCut = [UInt8](repeating: 0, count: w0 * h0 * 4)
+        guard let workCutCtx = CGContext(
+            data: &workCut,
+            width: w0,
+            height: h0,
+            bitsPerComponent: 8,
+            bytesPerRow: w0 * 4,
+            space: cs,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return bg }
+        workCutCtx.interpolationQuality = .high
+        workCutCtx.draw(cutout, in: CGRect(x: 0, y: 0, width: w0, height: h0))
+
+        let count0 = w0 * h0
+        var rawAlpha = [Float](repeating: 0, count: count0)
+        var opaqueCount = 0
+        for i in 0..<count0 {
+            let a = Float(workCut[i * 4 + 3]) / 255.0
+            rawAlpha[i] = a
+            if a > 0.15 { opaqueCount += 1 }
+        }
+        let coverage = Double(opaqueCount) / Double(count0)
+        if coverage < 0.005 || coverage > 0.85 {
+            return bg
+        }
+
+        func dilateMask(_ src: [Float], radius r: Int) -> [Float] {
+            var tmp = [Float](repeating: 0, count: count0)
+            var dst = [Float](repeating: 0, count: count0)
+            for y in 0..<h0 {
+                let row = y * w0
+                for x in 0..<w0 {
+                    var m: Float = 0
+                    let x0 = max(0, x - r), x1 = min(w0 - 1, x + r)
+                    for xx in x0...x1 { m = max(m, src[row + xx]) }
+                    tmp[row + x] = m
+                }
+            }
+            for y in 0..<h0 {
+                let row = y * w0
+                let y0 = max(0, y - r), y1 = min(h0 - 1, y + r)
+                for x in 0..<w0 {
+                    var m: Float = 0
+                    for yy in y0...y1 { m = max(m, tmp[yy * w0 + x]) }
+                    dst[row + x] = m
+                }
+            }
+            return dst
+        }
+
+        var binCut = [Float](repeating: 0, count: count0)
+        var tightCut = [Float](repeating: 0, count: count0)
+        for i in 0..<count0 {
+            let a = rawAlpha[i]
+            binCut[i] = a > 0.02 ? 1.0 : 0.0
+            tightCut[i] = a > 0.008 ? min(1.0, a * 2.0) : 0.0
+        }
+        let sampleExclude = dilateMask(binCut, radius: 4)
+        let replaceCore = dilateMask(tightCut, radius: 2)
+
+        var base = [InpaintRGBAW](repeating: InpaintRGBAW(), count: count0)
+        for i in 0..<count0 where sampleExclude[i] < 0.5 {
+            let idx = i * 4
+            base[i] = InpaintRGBAW(
+                r: Float(workBG[idx]) / 255.0,
+                g: Float(workBG[idx + 1]) / 255.0,
+                b: Float(workBG[idx + 2]) / 255.0,
+                w: 1.0
+            )
+        }
+
+        var levels = [InpaintMipLevel(w: w0, h: h0, data: base)]
+        while true {
+            let prev = levels[levels.count - 1]
+            if prev.w <= 4 && prev.h <= 4 { break }
+            let nw = max(1, (prev.w + 1) / 2)
+            let nh = max(1, (prev.h + 1) / 2)
+            var nextData = [InpaintRGBAW](repeating: InpaintRGBAW(), count: nw * nh)
+            for y in 0..<nh {
+                let py0 = min(prev.h - 1, y * 2)
+                let py1 = min(prev.h - 1, y * 2 + 1)
+                for x in 0..<nw {
+                    let px0 = min(prev.w - 1, x * 2)
+                    let px1 = min(prev.w - 1, x * 2 + 1)
+                    var sr: Float = 0, sg: Float = 0, sb: Float = 0, sw: Float = 0
+                    for s in [
+                        prev.data[py0 * prev.w + px0],
+                        prev.data[py0 * prev.w + px1],
+                        prev.data[py1 * prev.w + px0],
+                        prev.data[py1 * prev.w + px1]
+                    ] where s.w > 0 {
+                        sr += s.r * s.w
+                        sg += s.g * s.w
+                        sb += s.b * s.w
+                        sw += s.w
+                    }
+                    if sw > 0 {
+                        nextData[y * nw + x] = InpaintRGBAW(r: sr / sw, g: sg / sw, b: sb / sw, w: sw * 0.25)
+                    }
+                }
+            }
+            levels.append(InpaintMipLevel(w: nw, h: nh, data: nextData))
+        }
+
+        func sampleBilinear(_ lvl: InpaintMipLevel, fx: Float, fy: Float) -> InpaintRGBAW {
+            let x0 = max(0, min(lvl.w - 1, Int(floor(fx))))
+            let y0 = max(0, min(lvl.h - 1, Int(floor(fy))))
+            let x1 = max(0, min(lvl.w - 1, x0 + 1))
+            let y1 = max(0, min(lvl.h - 1, y0 + 1))
+            let tx = max(0, min(1, fx - Float(x0)))
+            let ty = max(0, min(1, fy - Float(y0)))
+
+            let p00 = lvl.data[y0 * lvl.w + x0]
+            let p10 = lvl.data[y0 * lvl.w + x1]
+            let p01 = lvl.data[y1 * lvl.w + x0]
+            let p11 = lvl.data[y1 * lvl.w + x1]
+
+            let w00 = (1 - tx) * (1 - ty)
+            let w10 = tx * (1 - ty)
+            let w01 = (1 - tx) * ty
+            let w11 = tx * ty
+
+            return InpaintRGBAW(
+                r: p00.r * w00 + p10.r * w10 + p01.r * w01 + p11.r * w11,
+                g: p00.g * w00 + p10.g * w10 + p01.g * w01 + p11.g * w11,
+                b: p00.b * w00 + p10.b * w10 + p01.b * w01 + p11.b * w11,
+                w: 1.0
+            )
+        }
+
+        for idx in stride(from: levels.count - 2, through: 0, by: -1) {
+            let coarse = levels[idx + 1]
+            var fine = levels[idx]
+            for y in 0..<fine.h {
+                let cy = (Float(y) + 0.5) * Float(coarse.h) / Float(fine.h) - 0.5
+                for x in 0..<fine.w {
+                    let p = fine.data[y * fine.w + x]
+                    if p.w < 0.999 {
+                        let cx = (Float(x) + 0.5) * Float(coarse.w) / Float(fine.w) - 0.5
+                        let up = sampleBilinear(coarse, fx: cx, fy: cy)
+                        let blend = max(0, min(1, p.w))
+                        fine.data[y * fine.w + x] = InpaintRGBAW(
+                            r: p.r * blend + up.r * (1.0 - blend),
+                            g: p.g * blend + up.g * (1.0 - blend),
+                            b: p.b * blend + up.b * (1.0 - blend),
+                            w: 1.0
+                        )
+                    }
+                }
+            }
+            levels[idx] = fine
+        }
+
+        var filled = levels[0].data
+        func sampleWindowY(x: Int, y: Int) -> InpaintRGBAW {
+            var sr: Float = 0, sg: Float = 0, sb: Float = 0, sw: Float = 0
+            for dy in -5...5 {
+                let yy = max(0, min(h0 - 1, y + dy))
+                let i = yy * w0 + x
+                if sampleExclude[i] < 0.5 {
+                    let p = base[i]
+                    sr += p.r; sg += p.g; sb += p.b; sw += 1
+                }
+            }
+            return sw > 0 ? InpaintRGBAW(r: sr / sw, g: sg / sw, b: sb / sw, w: 1) : base[y * w0 + x]
+        }
+
+        for y in 0..<h0 {
+            let row = y * w0
+            var x = 0
+            while x < w0 {
+                if sampleExclude[row + x] < 0.5 {
+                    x += 1
+                    continue
+                }
+                let startX = x
+                while x < w0 && sampleExclude[row + x] >= 0.5 { x += 1 }
+                let endX = x - 1
+                let hasL = startX > 0
+                let hasR = endX < w0 - 1
+                let leftC = hasL ? sampleWindowY(x: startX - 1, y: y) : InpaintRGBAW()
+                let rightC = hasR ? sampleWindowY(x: endX + 1, y: y) : InpaintRGBAW()
+                let span = max(1, endX - startX + 1)
+                for xx in startX...endX {
+                    let i = row + xx
+                    let prior = filled[i]
+                    let dL = Float(xx - startX + 1)
+                    let dR = Float(endX - xx + 1)
+                    let hColor: InpaintRGBAW
+                    let edgeProximity: Float
+                    if hasL && hasR {
+                        let t = dL / Float(span + 1)
+                        hColor = InpaintRGBAW(
+                            r: leftC.r * (1 - t) + rightC.r * t,
+                            g: leftC.g * (1 - t) + rightC.g * t,
+                            b: leftC.b * (1 - t) + rightC.b * t,
+                            w: 1
+                        )
+                        edgeProximity = exp(-min(dL, dR) / 28.0)
+                    } else if hasL {
+                        hColor = leftC
+                        edgeProximity = exp(-dL / 28.0)
+                    } else if hasR {
+                        hColor = rightC
+                        edgeProximity = exp(-dR / 28.0)
+                    } else {
+                        continue
+                    }
+                    let alphaH = 0.25 + 0.70 * edgeProximity
+                    filled[i] = InpaintRGBAW(
+                        r: hColor.r * alphaH + prior.r * (1 - alphaH),
+                        g: hColor.g * alphaH + prior.g * (1 - alphaH),
+                        b: hColor.b * alphaH + prior.b * (1 - alphaH),
+                        w: 1
+                    )
+                }
+            }
+        }
+
+        var nextFilled = filled
+        for _ in 0..<14 {
+            for y in 1..<(h0 - 1) {
+                let row = y * w0
+                for x in 1..<(w0 - 1) {
+                    let i = row + x
+                    if sampleExclude[i] >= 0.5 {
+                        let up = filled[i - w0], dn = filled[i + w0], lf = filled[i - 1], rt = filled[i + 1]
+                        nextFilled[i] = InpaintRGBAW(
+                            r: (lf.r + rt.r + up.r + dn.r) * 0.25,
+                            g: (lf.g + rt.g + up.g + dn.g) * 0.25,
+                            b: (lf.b + rt.b + up.b + dn.b) * 0.25,
+                            w: 1.0
+                        )
+                    }
+                }
+            }
+            filled = nextFilled
+        }
+
+        for y in 0..<fullH {
+            let fy = (Float(y) + 0.5) * Float(h0) / Float(fullH) - 0.5
+            let y0 = max(0, min(h0 - 1, Int(floor(fy))))
+            let y1 = max(0, min(h0 - 1, y0 + 1))
+            let ty = max(0, min(1, fy - Float(y0)))
+            for x in 0..<fullW {
+                let fx = (Float(x) + 0.5) * Float(w0) / Float(fullW) - 0.5
+                let x0 = max(0, min(w0 - 1, Int(floor(fx))))
+                let x1 = max(0, min(w0 - 1, x0 + 1))
+                let tx = max(0, min(1, fx - Float(x0)))
+
+                let w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty
+                let m = replaceCore[y0 * w0 + x0] * w00 + replaceCore[y0 * w0 + x1] * w10 + replaceCore[y1 * w0 + x0] * w01 + replaceCore[y1 * w0 + x1] * w11
+                if m <= 0.002 { continue }
+
+                let f00 = filled[y0 * w0 + x0], f10 = filled[y0 * w0 + x1], f01 = filled[y1 * w0 + x0], f11 = filled[y1 * w0 + x1]
+                let fr = (f00.r * w00 + f10.r * w10 + f01.r * w01 + f11.r * w11) * 255.0
+                let fg = (f00.g * w00 + f10.g * w10 + f01.g * w01 + f11.g * w11) * 255.0
+                let fb = (f00.b * w00 + f10.b * w10 + f01.b * w01 + f11.b * w11) * 255.0
+
+                let pIdx = (y * fullW + x) * 4
+                let inv = 1.0 - m
+                bgBytes[pIdx]     = UInt8(max(0, min(255, Int((Float(bgBytes[pIdx]) * inv + fr * m).rounded()))))
+                bgBytes[pIdx + 1] = UInt8(max(0, min(255, Int((Float(bgBytes[pIdx + 1]) * inv + fg * m).rounded()))))
+                bgBytes[pIdx + 2] = UInt8(max(0, min(255, Int((Float(bgBytes[pIdx + 2]) * inv + fb * m).rounded()))))
+            }
+        }
+
+        return fullCtx.makeImage() ?? bg
     }
 }

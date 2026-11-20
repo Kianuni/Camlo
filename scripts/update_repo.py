@@ -32,6 +32,15 @@ ALT_TINT_COLOR = "#6B4EFF"
 ESIGN_TINT_COLOR = "6B4EFF"
 
 DEFAULT_CHANGELOG_BY_VER: dict[str, str] = {
+    "1.3.4": (
+        "v1.3.4 Build 27 — 彻底修复真机锁屏景深破框 (#7, #3) & 3D 陀螺仪重影与立体视差重塑 (#3) | Fix On-Device Clock-Depth & 3D Gyroscope Ghosting:\n"
+        "1. 修复自制及官方壁纸在 iOS 真机锁屏不触发「人物/主体挡时间（景深破框）」的问题（#7, #3）：定位并满足 `WallpaperKit` (`supportsDepthEffect`) 对 `ParameterizedCA` 捆绑包路径与 `LayeredAnimation` `Floating.ca` 路径需包含 `Clownfish` 标记的系统白名单校验，防止系统日志触发 `collapsing floating view into foreground view` 将前景压到时间之下；覆盖 3D `ParameterizedCA` 与普通滑动/视频 `LayeredAnimation` 双引擎，并支持金库已有壁纸与外部导入包开机/直写自动原地自愈；\n"
+        "   (Fix On-Device Lock Screen Clock-Depth (#7, #3): satisfies `WallpaperKit.supportsDepthEffect`'s internal `Clownfish` path whitelist for both `ParameterizedCA` `.wallpaper` bundles and `LayeredAnimation` `Floating.ca` layers so subjects render natively in `PRPosterLevelFloating` above the clock instead of collapsing behind time, with automatic Vault & imported `.tendies` self-healing.)\n"
+        "2. 修复开启 3D 陀螺仪视差后主体背后出现「双重人物轮廓重影」及双平面生硬错位的问题（#3）：将背景与前景超采样倍率（`1.065x`）对齐为精确 1:1 居中贴合、为抠图遮挡后的背景区域自动执行金字塔与水平扫线补全修复（消除晃动时从人物背后漏出的第二张脸/兵器残影），并引入 `sublayerTransform` 3D 透视投影与 `transform.rotation.x/y` 细腻倾斜响应；\n"
+        "   (Fix 3D Gyroscope Double-Silhouette Ghosting & Flat Feel (#3): locks resting BG/FG overscan to exact 1:1 registration (`1.065x`), runs exterior-inward background occlusion inpainting behind foreground cutouts, and adds `sublayerTransform` 3D perspective projection + subtle `transform.rotation.x/y` tilt.)\n"
+        "3. 云端全部 76 套官方 `.tendies`（含「次元 3D」「海岸海报 3D」「iPhone Duo」「馆藏名画」）同步重编升级并完成 `CAPackage` 与 SHA-256 全量校验。\n"
+        "   (Upgraded all 76 official cloud `.tendies` packs OTA with full `CAPackage` and SHA-256 verification.)"
+    ),
     "1.3.3": (
         "v1.3.3 Build 26 — 修复 SideStore / AltStore 个人免费 Apple ID 安装失败 (#6) | Fix SideStore / AltStore App ID Registration:\n"
         "1. 修复使用 SideStore / AltStore 个人免费签安装时因 `CFBundleDisplayName` 含中文及空格导致 `An invalid value '开幕 Camlo' was provided for the parameter 'appIdName'` 报错的问题：将主 `Info.plist` 顶层 `CFBundleDisplayName` 与 `apps.json` `name` 统一调整为纯英文 ASCII 标识 `Camlo`，并通过 `InfoPlist.xcstrings`（`zh-Hans.lproj/InfoPlist.strings`）本地化保留简体中文系统桌面显示名称「开幕 Camlo」；\n"

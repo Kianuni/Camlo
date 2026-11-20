@@ -433,33 +433,9 @@ final class PosterBoardBridge: ObservableObject {
                 seedFileIfMissing("homescreenConfiguration.plist", to: suppDir.appendingPathComponent("com.apple.posterkit.provider.supplementURL.homescreenConfiguration.plist"))
             }
 
-            let wwdcPlist = verDir
-                .appendingPathComponent("contents/7400.WWDC_2022-390w-844h@3x~iphone.wallpaper/Wallpaper.plist")
-            if fm.fileExists(atPath: wwdcPlist.path) {
-                updatePlist(at: wwdcPlist) { dict in
-                    if var assets = dict["assets"] as? [String: Any],
-                       var lockAndHome = assets["lockAndHome"] as? [String: Any] {
-                        var mutated = false
-                        if var def = lockAndHome["default"] as? [String: Any],
-                           let bgFile = def["backgroundAnimationFileName"] as? String,
-                           bgFile.hasPrefix("7400.") {
-                            def["identifier"] = 7400
-                            lockAndHome["default"] = def
-                            mutated = true
-                        }
-                        if var dark = lockAndHome["dark"] as? [String: Any],
-                           let darkBG = dark["backgroundAnimationFileName"] as? String,
-                           darkBG.hasPrefix("7401.") {
-                            dark["identifier"] = 7401
-                            lockAndHome["dark"] = dark
-                            mutated = true
-                        }
-                        if mutated {
-                            assets["lockAndHome"] = lockAndHome
-                            dict["assets"] = assets
-                        }
-                    }
-                }
+            let contentsDir = verDir.appendingPathComponent("contents", isDirectory: true)
+            if isCollections, fm.fileExists(atPath: contentsDir.path) {
+                migrateClockDepthBundleNames(in: contentsDir, fm: fm)
             }
         }
 
@@ -567,6 +543,11 @@ final class PosterBoardBridge: ObservableObject {
                     }
                 }
                 xml = mutableXML as String
+            }
+
+            let assetsDir = camlURL.deletingLastPathComponent().appendingPathComponent("assets", isDirectory: true)
+            if healOverscanAndParallax(in: &xml, assetsDir: assetsDir, isDuo: true) {
+                duoMutated = true
             }
 
             if duoMutated {
@@ -746,9 +727,353 @@ final class PosterBoardBridge: ObservableObject {
             }
         }
 
+        let assetsDir = camlURL.deletingLastPathComponent().appendingPathComponent("assets", isDirectory: true)
+        if healOverscanAndParallax(in: &xml, assetsDir: assetsDir, isDuo: false) {
+            mutated = true
+        }
+
         if mutated {
             try? xml.data(using: .utf8)?.write(to: camlURL, options: .atomic)
         }
+    }
+
+    // MARK: - Clock-Depth Whitelist & Parallax Self-Healing Helpers
+
+    nonisolated private static func insertClownfishToken(into bundleName: String) -> String {
+        if bundleName.localizedStandardContains("Clownfish") {
+            return bundleName
+        }
+        if let dashIdx = bundleName.firstIndex(of: "-") {
+            var copy = bundleName
+            copy.insert(contentsOf: "_Clownfish", at: dashIdx)
+            return copy
+        }
+        if let dotIdx = bundleName.lastIndex(of: ".") {
+            var copy = bundleName
+            copy.insert(contentsOf: "_Clownfish", at: dotIdx)
+            return copy
+        }
+        return "\(bundleName)_Clownfish"
+    }
+
+    nonisolated private static func caBundleHasFloatingCutout(at caURL: URL, fm: FileManager) -> Bool {
+        let camlURL = caURL.appendingPathComponent("main.caml")
+        if let xml = try? String(contentsOf: camlURL, encoding: .utf8) {
+            if xml.contains("id=\"float_lock\"")
+                || xml.contains("id=\"float_unlock\"")
+                || xml.contains("cutout_")
+                || xml.range(of: "<view\\s+type=\"string\"\\s+value=\"Floating\"\\s*/>", options: [.regularExpression, .caseInsensitive]) != nil {
+                return true
+            }
+            if let regex = try? NSRegularExpression(pattern: "<CA[A-Za-z]*Layer\\b"),
+               regex.numberOfMatches(in: xml, range: NSRange(location: 0, length: (xml as NSString).length)) > 2,
+               caURL.lastPathComponent.lowercased().contains("floating") {
+                return true
+            }
+        }
+        let assetsDir = caURL.appendingPathComponent("assets", isDirectory: true)
+        if let files = try? fm.contentsOfDirectory(atPath: assetsDir.path),
+           files.contains(where: { $0.localizedCaseInsensitiveContains("cutout") }) {
+            return true
+        }
+        return false
+    }
+
+    nonisolated private static func migrateClockDepthBundleNames(in contentsDir: URL, fm: FileManager) {
+        guard let children = try? fm.contentsOfDirectory(
+            at: contentsDir,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return }
+
+        let wpDirs = children.filter { url in
+            url.pathExtension.lowercased() == "wallpaper"
+                && (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        }
+
+        for wpDir in wpDirs {
+            var hasParameterizedFloating = false
+            let plistURL = wpDir.appendingPathComponent("Wallpaper.plist")
+            if fm.fileExists(atPath: plistURL.path) {
+                updatePlist(at: plistURL) { dict in
+                    guard var assets = dict["assets"] as? [String: Any],
+                          var lockAndHome = assets["lockAndHome"] as? [String: Any] else {
+                        return
+                    }
+                    var mutated = false
+                    for key in ["default", "dark"] {
+                        guard var entry = lockAndHome[key] as? [String: Any] else { continue }
+                        let type = (entry["type"] as? String) ?? ""
+                        if type == "ParameterizedCA" || entry["assetFileName"] != nil {
+                            if let assetName = entry["assetFileName"] as? String {
+                                let caURL = wpDir.appendingPathComponent(assetName, isDirectory: true)
+                                if caBundleHasFloatingCutout(at: caURL, fm: fm) {
+                                    hasParameterizedFloating = true
+                                }
+                            }
+                            continue
+                        }
+
+                        if key == "default",
+                           let bgFile = entry["backgroundAnimationFileName"] as? String,
+                           bgFile.hasPrefix("7400.") {
+                            if (entry["identifier"] as? Int) != 7400 {
+                                entry["identifier"] = 7400
+                                mutated = true
+                            }
+                        } else if key == "dark",
+                                  let darkBG = entry["backgroundAnimationFileName"] as? String,
+                                  darkBG.hasPrefix("7401.") {
+                            if (entry["identifier"] as? Int) != 7401 {
+                                entry["identifier"] = 7401
+                                mutated = true
+                            }
+                        }
+
+                        let rawFloating = (entry["floatingAnimationFileNameKey"] as? String)
+                            ?? (entry["floatingAnimationFileName"] as? String)
+                        if let flName = rawFloating,
+                           !flName.localizedStandardContains("Clownfish") {
+                            let oldFLURL = wpDir.appendingPathComponent(flName, isDirectory: true)
+                            let isLegacyCamloName = flName.hasPrefix("7400.WWDC_2022_Floating")
+                                || flName.hasPrefix("7401.WWDC_2022_Dark_Floating")
+                            if fm.fileExists(atPath: oldFLURL.path),
+                               isLegacyCamloName || caBundleHasFloatingCutout(at: oldFLURL, fm: fm) {
+                                let newFlName: String
+                                if flName.hasPrefix("7400.WWDC_2022_Floating") {
+                                    newFlName = flName.replacingOccurrences(of: "7400.WWDC_2022_Floating", with: "7400.WWDC_2022_Clownfish_Floating")
+                                } else if flName.hasPrefix("7401.WWDC_2022_Dark_Floating") {
+                                    newFlName = flName.replacingOccurrences(of: "7401.WWDC_2022_Dark_Floating", with: "7401.WWDC_2022_Dark_Clownfish_Floating")
+                                } else {
+                                    newFlName = insertClownfishToken(into: flName)
+                                }
+                                let newFLURL = wpDir.appendingPathComponent(newFlName, isDirectory: true)
+                                if newFLURL.path != oldFLURL.path {
+                                    if fm.fileExists(atPath: newFLURL.path) {
+                                        try? fm.removeItem(at: newFLURL)
+                                    }
+                                    try? fm.moveItem(at: oldFLURL, to: newFLURL)
+                                }
+                                entry["floatingAnimationFileNameKey"] = newFlName
+                                if entry["floatingAnimationFileName"] != nil {
+                                    entry["floatingAnimationFileName"] = newFlName
+                                }
+                                mutated = true
+                            }
+                        }
+                        lockAndHome[key] = entry
+                    }
+                    if mutated {
+                        assets["lockAndHome"] = lockAndHome
+                        dict["assets"] = assets
+                    }
+                }
+            }
+
+            let wpName = wpDir.lastPathComponent
+            let newWPName: String?
+            if wpName == "7920.Camlo_3D-390w-844h@3x~iphone.wallpaper" {
+                newWPName = "7920.Camlo_Clownfish_3D-390w-844h@3x~iphone.wallpaper"
+            } else if wpName == "7400.WWDC_2022-390w-844h@3x~iphone.wallpaper" {
+                newWPName = "7400.Clownfish_WWDC_2022-390w-844h@3x~iphone.wallpaper"
+            } else if hasParameterizedFloating && !wpName.localizedStandardContains("Clownfish") {
+                newWPName = insertClownfishToken(into: wpName)
+            } else {
+                newWPName = nil
+            }
+
+            if let targetName = newWPName, targetName != wpName {
+                let targetDir = contentsDir.appendingPathComponent(targetName, isDirectory: true)
+                if fm.fileExists(atPath: targetDir.path) {
+                    try? fm.removeItem(at: targetDir)
+                }
+                if (try? fm.moveItem(at: wpDir, to: targetDir)) != nil {
+                    let userInfoURL = contentsDir.appendingPathComponent("com.apple.posterkit.provider.contents.userInfo")
+                    if fm.fileExists(atPath: userInfoURL.path) {
+                        updatePlist(at: userInfoURL) { dict in
+                            let current = (dict["wallpaperRepresentingFileName"] as? String) ?? ""
+                            if current == wpName || current.isEmpty || wpDirs.count == 1 {
+                                dict["wallpaperRepresentingFileName"] = targetName
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    nonisolated private static func healOverscanAndParallax(
+        in xml: inout String,
+        assetsDir: URL,
+        isDuo: Bool
+    ) -> Bool {
+        let alreadyUpgraded = xml.contains("transform.rotation.y")
+            && xml.contains("sublayerTransform=")
+            && !xml.contains("transform=\"scale(1.1040")
+            && !xml.contains("transform=\"scale(1.0520")
+            && !xml.contains("transform=\"scale(1.0400")
+        if alreadyUpgraded {
+            return false
+        }
+
+        let hasLegacyOverscan = xml.contains("scale(1.1040")
+            || xml.contains("scale(1.0520")
+            || xml.contains("scale(1.0400")
+            || (!xml.contains("transform.rotation.y") && xml.contains("_overscan"))
+
+        if hasLegacyOverscan && !xml.contains("transform.rotation.y") {
+            CAMLCompiler.inpaintOccludedAssetsInPlace(in: assetsDir)
+        }
+
+        var changed = false
+
+        // 1. Add perspective sublayerTransform on BACKGROUND / FLOATING (+ Duo INNER containers)
+        if let rootPlaneRegex = try? NSRegularExpression(
+            pattern: "<CALayer\\b[^>]*\\bid=\"(?:background|floating|background_inner|floating_inner)\"[^>]*>"
+        ) {
+            let nsXML = xml as NSString
+            let matches = rootPlaneRegex.matches(in: xml, range: NSRange(location: 0, length: nsXML.length))
+            var mutable = xml as NSString
+            for match in matches.reversed() {
+                let tag = mutable.substring(with: match.range)
+                guard !tag.contains("sublayerTransform=") else { continue }
+                let updated = tag.replacingOccurrences(
+                    of: "allowsEdgeAntialiasing=\"1\"",
+                    with: "\(CAMLCompiler.perspectiveSublayerTransformAttr) allowsEdgeAntialiasing=\"1\""
+                )
+                if updated != tag {
+                    mutable = mutable.replacingCharacters(in: match.range, with: updated) as NSString
+                    changed = true
+                }
+            }
+            xml = mutable as String
+        }
+
+        // 2. Normalize fg_parallax / fx_parallax zPosition="10"/"20" -> zPosition="0" so sublayerTransform m34=1:1 at rest
+        if let pxZRegex = try? NSRegularExpression(
+            pattern: "(<CALayer\\b[^>]*\\bid=\"(?:inner_)?camlo_(?:fg|fx)_parallax\"[^>]*?\\bzPosition=\")(?:10|20)(\"[^>]*>)"
+        ) {
+            let nsXML = xml as NSString
+            let replaced = pxZRegex.stringByReplacingMatches(
+                in: xml,
+                range: NSRange(location: 0, length: nsXML.length),
+                withTemplate: "$10$2"
+            )
+            if replaced != xml {
+                xml = replaced
+                changed = true
+            }
+        }
+
+        // 3. Match BG & non-empty FG overscans to 1.0650 (empty FG -> 1.0000)
+        func updateOverscanLayer(id: String, targetScale: String) {
+            let pattern = "(<CALayer\\b[^>]*\\bid=\"\(NSRegularExpression.escapedPattern(for: id))\"[^>]*?\\btransform=\"scale\\()[^)]+(\\)\"[^>]*>)"
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
+            let nsXML = xml as NSString
+            let replaced = regex.stringByReplacingMatches(
+                in: xml,
+                range: NSRange(location: 0, length: nsXML.length),
+                withTemplate: "$1\(targetScale), \(targetScale), 1$2"
+            )
+            if replaced != xml {
+                xml = replaced
+                changed = true
+            }
+        }
+
+        func overscanHasChildren(id: String) -> Bool {
+            let openPattern = "<CALayer\\b[^>]*\\bid=\"\(NSRegularExpression.escapedPattern(for: id))\"[^>]*>"
+            let nsXML = xml as NSString
+            guard let regex = try? NSRegularExpression(pattern: openPattern),
+                  let m = regex.firstMatch(in: xml, range: NSRange(location: 0, length: nsXML.length)),
+                  let openRange = Range(m.range, in: xml) else {
+                return false
+            }
+            if xml[openRange].hasSuffix("/>") {
+                return false
+            }
+            let afterOpen = xml[openRange.upperBound...]
+            guard let nextClose = afterOpen.range(of: "</CALayer>") else { return false }
+            return afterOpen[..<nextClose.lowerBound].contains("<sublayers>")
+        }
+
+        updateOverscanLayer(id: "camlo_bg_overscan", targetScale: "1.0650")
+        updateOverscanLayer(id: "camlo_fg_overscan", targetScale: overscanHasChildren(id: "camlo_fg_overscan") ? "1.0650" : "1.0000")
+        if isDuo {
+            updateOverscanLayer(id: "inner_camlo_bg_overscan", targetScale: "1.0650")
+            updateOverscanLayer(id: "inner_camlo_fg_overscan", targetScale: overscanHasChildren(id: "inner_camlo_fg_overscan") ? "1.0650" : "1.0000")
+        }
+
+        // 4. Upgrade legacy parallax groups to balanced translation + 3D perspective rotation
+        if !xml.contains("transform.rotation.y") {
+            let outerPx = CAMLCompiler.healedParallaxGroupsXML(for: isDuo ? .duoOuterCover : .standardPhone)
+            if let topPxRegex = try? NSRegularExpression(
+                pattern: "<wallpaperParallaxGroups\\s+type=\"NSArray\">[\\s\\S]*?</wallpaperParallaxGroups>"
+            ) {
+                let nsXML = xml as NSString
+                let replacement = """
+                <wallpaperParallaxGroups type="NSArray">
+                \(outerPx.combinedEntriesXML)
+                      </wallpaperParallaxGroups>
+                """
+                let replaced = topPxRegex.stringByReplacingMatches(
+                    in: xml,
+                    range: NSRange(location: 0, length: nsXML.length),
+                    withTemplate: NSRegularExpression.escapedTemplate(for: replacement)
+                )
+                if replaced != xml {
+                    xml = replaced
+                    changed = true
+                }
+            }
+
+            if isDuo {
+                let innerPx = CAMLCompiler.healedParallaxGroupsXML(for: .duoInnerUnfolded)
+                func replaceVariantParallax(screenName: String, px: (bgEntriesXML: String, fgEntriesXML: String, combinedEntriesXML: String)) {
+                    let screenMarker = "<screenName type=\"string\" value=\"\(screenName)\"/>"
+                    guard let screenRange = xml.range(of: screenMarker),
+                          let dictEnd = xml.range(of: "\n        </NSDictionary>", range: screenRange.upperBound..<xml.endIndex) else {
+                        return
+                    }
+                    var block = String(xml[screenRange.lowerBound..<dictEnd.lowerBound])
+                    if let bgRegex = try? NSRegularExpression(
+                        pattern: "<backgroundParallaxGroups\\s+type=\"NSArray\">[\\s\\S]*?</backgroundParallaxGroups>"
+                    ) {
+                        let rep = """
+                        <backgroundParallaxGroups type="NSArray">
+                        \(px.bgEntriesXML)
+                                  </backgroundParallaxGroups>
+                        """
+                        block = bgRegex.stringByReplacingMatches(
+                            in: block,
+                            range: NSRange(location: 0, length: (block as NSString).length),
+                            withTemplate: NSRegularExpression.escapedTemplate(for: rep)
+                        )
+                    }
+                    if let fgRegex = try? NSRegularExpression(
+                        pattern: "<floatingParallaxGroups\\s+type=\"NSArray\">[\\s\\S]*?</floatingParallaxGroups>"
+                    ) {
+                        let rep = """
+                        <floatingParallaxGroups type="NSArray">
+                        \(px.fgEntriesXML)
+                                  </floatingParallaxGroups>
+                        """
+                        block = fgRegex.stringByReplacingMatches(
+                            in: block,
+                            range: NSRange(location: 0, length: (block as NSString).length),
+                            withTemplate: NSRegularExpression.escapedTemplate(for: rep)
+                        )
+                    }
+                    xml.replaceSubrange(screenRange.lowerBound..<dictEnd.lowerBound, with: block)
+                    changed = true
+                }
+
+                replaceVariantParallax(screenName: "Outer", px: outerPx)
+                replaceVariantParallax(screenName: "Inner", px: innerPx)
+            }
+        }
+
+        return changed
     }
 
     nonisolated static func synchronizeCollectionsIdentifier(

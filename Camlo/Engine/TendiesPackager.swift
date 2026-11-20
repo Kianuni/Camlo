@@ -44,12 +44,53 @@ final class TendiesVaultStore: ObservableObject {
         let fm = FileManager.default
         guard let enumerator = fm.enumerator(
             at: root,
-            includingPropertiesForKeys: [.isRegularFileKey],
+            includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey],
             options: []
         ) else { return }
-        for case let fileURL as URL in enumerator where fileURL.lastPathComponent == "main.caml" {
-            PosterBoardBridge.healParameterizedCAMLIfNeeded(at: fileURL)
+
+        var descriptorDirs: [URL] = []
+        var camlFiles: [URL] = []
+
+        for case let fileURL as URL in enumerator {
+            let name = fileURL.lastPathComponent
+            if name == "com.apple.posterkit.provider.descriptor.identifier" {
+                descriptorDirs.append(fileURL.deletingLastPathComponent())
+            } else if name == "main.caml" {
+                camlFiles.append(fileURL)
+            }
         }
+
+        for descrDir in descriptorDirs {
+            let extID = inferredExtensionIdentifier(for: descrDir, fm: fm)
+            PosterBoardBridge.normalizeDescriptorForCurrentOS(in: descrDir, extensionBundleID: extID)
+        }
+
+        for camlURL in camlFiles where fm.fileExists(atPath: camlURL.path) {
+            PosterBoardBridge.healParameterizedCAMLIfNeeded(at: camlURL)
+        }
+    }
+
+    nonisolated private static func inferredExtensionIdentifier(for descriptorDir: URL, fm: FileManager) -> String {
+        let components = descriptorDir.pathComponents
+        for (idx, part) in components.enumerated() where part.caseInsensitiveCompare("extensions") == .orderedSame {
+            if idx + 1 < components.count {
+                let candidate = components[idx + 1]
+                if candidate.contains(".") {
+                    return candidate
+                }
+            }
+        }
+        let versionsDir = descriptorDir.appendingPathComponent("versions", isDirectory: true)
+        if let versions = try? fm.contentsOfDirectory(at: versionsDir, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
+            for ver in versions {
+                let contentsDir = ver.appendingPathComponent("contents", isDirectory: true)
+                if let items = try? fm.contentsOfDirectory(at: contentsDir, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]),
+                   items.contains(where: { $0.pathExtension.lowercased() == "wallpaper" }) {
+                    return PBExtensionTarget.wpKit.extensionIdentifier
+                }
+            }
+        }
+        return PBExtensionTarget.wpKit.extensionIdentifier
     }
 
     func saveCatalog() {
@@ -917,8 +958,8 @@ final class TendiesVaultStore: ObservableObject {
         let baseIDInt = useParameterized ? 7920 : 7400
         let baseIDString = String(baseIDInt)
         let wallpaperBundleName = useParameterized
-            ? "7920.Camlo_3D-390w-844h@3x~iphone.wallpaper"
-            : "7400.WWDC_2022-390w-844h@3x~iphone.wallpaper"
+            ? "7920.Camlo_Clownfish_3D-390w-844h@3x~iphone.wallpaper"
+            : "7400.Clownfish_WWDC_2022-390w-844h@3x~iphone.wallpaper"
         let wallpaperDir = contentsDir.appendingPathComponent(wallpaperBundleName, isDirectory: true)
         try fm.createDirectory(at: wallpaperDir, withIntermediateDirectories: true)
         try fm.createDirectory(at: supplements0Dir, withIntermediateDirectories: true)
@@ -1022,7 +1063,7 @@ final class TendiesVaultStore: ObservableObject {
         } else {
             lockAndHomeDict["default"] = [
                 "backgroundAnimationFileName": "7400.WWDC_2022_Background-390w-844h@3x~iphone.ca",
-                "floatingAnimationFileNameKey": "7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca",
+                "floatingAnimationFileNameKey": "7400.WWDC_2022_Clownfish_Floating-390w-844h@3x~iphone.ca",
                 "foregroundAnimationFileName": "7400.WWDC_2022_Foreground-390w-844h@3x~iphone.ca",
                 "identifier": 7400,
                 "name": "WWDC 2022",
@@ -1031,7 +1072,7 @@ final class TendiesVaultStore: ObservableObject {
             if enableDayNight {
                 lockAndHomeDict["dark"] = [
                     "backgroundAnimationFileName": "7401.WWDC_2022_Dark_Background-390w-844h@3x~iphone.ca",
-                    "floatingAnimationFileNameKey": "7401.WWDC_2022_Dark_Floating-390w-844h@3x~iphone.ca",
+                    "floatingAnimationFileNameKey": "7401.WWDC_2022_Dark_Clownfish_Floating-390w-844h@3x~iphone.ca",
                     "foregroundAnimationFileName": "7401.WWDC_2022_Dark_Foreground-390w-844h@3x~iphone.ca",
                     "identifier": 7401,
                     "name": "WWDC 2022 Dark",

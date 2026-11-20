@@ -1034,8 +1034,8 @@ func scaffoldDescriptor(pack: PackMetadata, in workRoot: URL) throws -> URL {
     let contentsDir = ver1Dir.appendingPathComponent("contents", isDirectory: true)
     let suppDir = ver1Dir.appendingPathComponent("supplements/0", isDirectory: true)
     let wallpaperBundleName = (pack.category == "duo" || pack.category == "anime")
-        ? "7920.Camlo_3D-390w-844h@3x~iphone.wallpaper"
-        : "7400.WWDC_2022-390w-844h@3x~iphone.wallpaper"
+        ? "7920.Camlo_Clownfish_3D-390w-844h@3x~iphone.wallpaper"
+        : "7400.Clownfish_WWDC_2022-390w-844h@3x~iphone.wallpaper"
     let wallpaperBundleDir = contentsDir.appendingPathComponent(wallpaperBundleName, isDirectory: true)
 
     try fm.createDirectory(at: wallpaperBundleDir, withIntermediateDirectories: true)
@@ -1107,7 +1107,7 @@ func scaffoldDescriptor(pack: PackMetadata, in workRoot: URL) throws -> URL {
                 "lockAndHome": [
                     "default": [
                         "backgroundAnimationFileName": "7400.WWDC_2022_Background-390w-844h@3x~iphone.ca",
-                        "floatingAnimationFileNameKey": "7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca",
+                        "floatingAnimationFileNameKey": "7400.WWDC_2022_Clownfish_Floating-390w-844h@3x~iphone.ca",
                         "foregroundAnimationFileName": "7400.WWDC_2022_Foreground-390w-844h@3x~iphone.ca",
                         "identifier": 7400,
                         "name": "WWDC 2022",
@@ -1216,20 +1216,241 @@ private struct DuoCanvasSpec {
 
 private func duoParallaxXML(
     axis: String, keyPath: String, layerName: String,
-    minVal: Int, maxVal: Int, title: String, view: String
+    minVal: Double, maxVal: Double, title: String, view: String, isInteger: Bool = true
 ) -> String {
-    """
+    let typeAttr = isInteger ? "integer" : "real"
+    let minStr = isInteger ? String(Int(minVal.rounded())) : String(format: "%.4f", minVal)
+    let maxStr = isInteger ? String(Int(maxVal.rounded())) : String(format: "%.4f", maxVal)
+    return """
             <NSDictionary>
               <axis type="string" value="\(axis)"/>
               <image type="string" value="null"/>
               <keyPath type="string" value="\(keyPath)"/>
               <layerName type="string" value="\(layerName)"/>
-              <mapMaxTo type="integer" value="\(maxVal)"/>
-              <mapMinTo type="integer" value="\(minVal)"/>
+              <mapMaxTo type="\(typeAttr)" value="\(maxStr)"/>
+              <mapMinTo type="\(typeAttr)" value="\(minStr)"/>
               <title type="string" value="\(title)"/>
               <view type="string" value="\(view)"/>
             </NSDictionary>
     """
+}
+
+private let duoPerspectiveSublayerTransformAttr = "sublayerTransform=\"matrix(1 0 0 0 0 1 0 0 0 0 1 -0.0010 0 0 0 1)\""
+
+private func duoBalancedParallax(for c: DuoCanvasSpec, gyroIntensity: Double = 0.6842) -> (bg: [String], fg: [String]) {
+    let clampedGyro = max(0.20, min(gyroIntensity, 1.0))
+    let bx = (10.0 * clampedGyro * c.sx).rounded(), by = (13.0 * clampedGyro * c.sy).rounded()
+    let fx = (8.0 * clampedGyro * c.sx).rounded(), fy = (10.0 * clampedGyro * c.sy).rounded()
+    let xx = (22.0 * clampedGyro * c.sx).rounded(), xy = (28.0 * clampedGyro * c.sy).rounded()
+    let bRotY = 0.022 * clampedGyro, bRotX = 0.018 * clampedGyro
+    let fRotY = 0.038 * clampedGyro, fRotX = 0.030 * clampedGyro
+    return (
+        [
+            duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.bgParallaxName, minVal: -bx, maxVal: bx, title: "\(c.namePrefix)Camlo BG X", view: "Background"),
+            duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.bgParallaxName, minVal: -by, maxVal: by, title: "\(c.namePrefix)Camlo BG Y", view: "Background"),
+            duoParallaxXML(axis: "x", keyPath: "transform.rotation.y", layerName: c.bgParallaxName, minVal: -bRotY, maxVal: bRotY, title: "\(c.namePrefix)Camlo BG RotY", view: "Background", isInteger: false),
+            duoParallaxXML(axis: "y", keyPath: "transform.rotation.x", layerName: c.bgParallaxName, minVal: bRotX, maxVal: -bRotX, title: "\(c.namePrefix)Camlo BG RotX", view: "Background", isInteger: false)
+        ],
+        [
+            duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.fgParallaxName, minVal: fx, maxVal: -fx, title: "\(c.namePrefix)Camlo FG X", view: "Floating"),
+            duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.fgParallaxName, minVal: fy, maxVal: -fy, title: "\(c.namePrefix)Camlo FG Y", view: "Floating"),
+            duoParallaxXML(axis: "x", keyPath: "transform.rotation.y", layerName: c.fgParallaxName, minVal: -fRotY, maxVal: fRotY, title: "\(c.namePrefix)Camlo FG RotY", view: "Floating", isInteger: false),
+            duoParallaxXML(axis: "y", keyPath: "transform.rotation.x", layerName: c.fgParallaxName, minVal: fRotX, maxVal: -fRotX, title: "\(c.namePrefix)Camlo FG RotX", view: "Floating", isInteger: false),
+            duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.fxParallaxName, minVal: xx, maxVal: -xx, title: "\(c.namePrefix)Camlo FX X", view: "Floating"),
+            duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.fxParallaxName, minVal: xy, maxVal: -xy, title: "\(c.namePrefix)Camlo FX Y", view: "Floating")
+        ]
+    )
+}
+
+private struct ScriptRGBAW { var r: Float = 0; var g: Float = 0; var b: Float = 0; var w: Float = 0 }
+private struct ScriptMipLevel { let w: Int; let h: Int; var data: [ScriptRGBAW] }
+
+private func scriptInpaintOccludedBackground(bg: CGImage, cutout: CGImage) -> CGImage {
+    let fullW = bg.width, fullH = bg.height
+    guard fullW >= 64, fullH >= 64 else { return bg }
+    let workScale = min(1.0, 585.0 / Double(fullW))
+    let w0 = max(64, Int((Double(fullW) * workScale).rounded()))
+    let h0 = max(64, Int((Double(fullH) * workScale).rounded()))
+    let cs = CGColorSpaceCreateDeviceRGB()
+
+    var bgBytes = [UInt8](repeating: 0, count: fullW * fullH * 4)
+    guard let fullCtx = CGContext(data: &bgBytes, width: fullW, height: fullH, bitsPerComponent: 8, bytesPerRow: fullW * 4, space: cs, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return bg }
+    fullCtx.draw(bg, in: CGRect(x: 0, y: 0, width: fullW, height: fullH))
+
+    var workBG = [UInt8](repeating: 0, count: w0 * h0 * 4)
+    guard let workBgCtx = CGContext(data: &workBG, width: w0, height: h0, bitsPerComponent: 8, bytesPerRow: w0 * 4, space: cs, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return bg }
+    workBgCtx.interpolationQuality = .high
+    workBgCtx.draw(bg, in: CGRect(x: 0, y: 0, width: w0, height: h0))
+
+    var workCut = [UInt8](repeating: 0, count: w0 * h0 * 4)
+    guard let workCutCtx = CGContext(data: &workCut, width: w0, height: h0, bitsPerComponent: 8, bytesPerRow: w0 * 4, space: cs, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return bg }
+    workCutCtx.interpolationQuality = .high
+    workCutCtx.draw(cutout, in: CGRect(x: 0, y: 0, width: w0, height: h0))
+
+    let count0 = w0 * h0
+    var rawAlpha = [Float](repeating: 0, count: count0)
+    var opaqueCount = 0
+    for i in 0..<count0 {
+        let a = Float(workCut[i * 4 + 3]) / 255.0
+        rawAlpha[i] = a
+        if a > 0.15 { opaqueCount += 1 }
+    }
+    let cov = Double(opaqueCount) / Double(count0)
+    if cov < 0.005 || cov > 0.85 { return bg }
+
+    func dilate(_ src: [Float], radius r: Int) -> [Float] {
+        var tmp = [Float](repeating: 0, count: count0), dst = [Float](repeating: 0, count: count0)
+        for y in 0..<h0 {
+            let row = y * w0
+            for x in 0..<w0 {
+                var m: Float = 0
+                for xx in max(0, x - r)...min(w0 - 1, x + r) { m = max(m, src[row + xx]) }
+                tmp[row + x] = m
+            }
+        }
+        for y in 0..<h0 {
+            let row = y * w0
+            for x in 0..<w0 {
+                var m: Float = 0
+                for yy in max(0, y - r)...min(h0 - 1, y + r) { m = max(m, tmp[yy * w0 + x]) }
+                dst[row + x] = m
+            }
+        }
+        return dst
+    }
+
+    var binCut = [Float](repeating: 0, count: count0), tightCut = [Float](repeating: 0, count: count0)
+    for i in 0..<count0 {
+        let a = rawAlpha[i]
+        binCut[i] = a > 0.02 ? 1.0 : 0.0
+        tightCut[i] = a > 0.008 ? min(1.0, a * 2.0) : 0.0
+    }
+    let sampleExclude = dilate(binCut, radius: 4)
+    let replaceCore = dilate(tightCut, radius: 2)
+
+    var base = [ScriptRGBAW](repeating: ScriptRGBAW(), count: count0)
+    for i in 0..<count0 where sampleExclude[i] < 0.5 {
+        let idx = i * 4
+        base[i] = ScriptRGBAW(r: Float(workBG[idx]) / 255.0, g: Float(workBG[idx + 1]) / 255.0, b: Float(workBG[idx + 2]) / 255.0, w: 1.0)
+    }
+
+    var levels = [ScriptMipLevel(w: w0, h: h0, data: base)]
+    while true {
+        let prev = levels[levels.count - 1]
+        if prev.w <= 4 && prev.h <= 4 { break }
+        let nw = max(1, (prev.w + 1) / 2), nh = max(1, (prev.h + 1) / 2)
+        var nextData = [ScriptRGBAW](repeating: ScriptRGBAW(), count: nw * nh)
+        for y in 0..<nh {
+            let py0 = min(prev.h - 1, y * 2), py1 = min(prev.h - 1, y * 2 + 1)
+            for x in 0..<nw {
+                let px0 = min(prev.w - 1, x * 2), px1 = min(prev.w - 1, x * 2 + 1)
+                var sr: Float = 0, sg: Float = 0, sb: Float = 0, sw: Float = 0
+                for s in [prev.data[py0 * prev.w + px0], prev.data[py0 * prev.w + px1], prev.data[py1 * prev.w + px0], prev.data[py1 * prev.w + px1]] where s.w > 0 {
+                    sr += s.r * s.w; sg += s.g * s.w; sb += s.b * s.w; sw += s.w
+                }
+                if sw > 0 { nextData[y * nw + x] = ScriptRGBAW(r: sr / sw, g: sg / sw, b: sb / sw, w: sw * 0.25) }
+            }
+        }
+        levels.append(ScriptMipLevel(w: nw, h: nh, data: nextData))
+    }
+
+    func sampleBilinear(_ lvl: ScriptMipLevel, fx: Float, fy: Float) -> ScriptRGBAW {
+        let x0 = max(0, min(lvl.w - 1, Int(floor(fx)))), y0 = max(0, min(lvl.h - 1, Int(floor(fy))))
+        let x1 = max(0, min(lvl.w - 1, x0 + 1)), y1 = max(0, min(lvl.h - 1, y0 + 1))
+        let tx = max(0, min(1, fx - Float(x0))), ty = max(0, min(1, fy - Float(y0)))
+        let p00 = lvl.data[y0 * lvl.w + x0], p10 = lvl.data[y0 * lvl.w + x1], p01 = lvl.data[y1 * lvl.w + x0], p11 = lvl.data[y1 * lvl.w + x1]
+        let w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty
+        return ScriptRGBAW(r: p00.r * w00 + p10.r * w10 + p01.r * w01 + p11.r * w11, g: p00.g * w00 + p10.g * w10 + p01.g * w01 + p11.g * w11, b: p00.b * w00 + p10.b * w10 + p01.b * w01 + p11.b * w11, w: 1)
+    }
+
+    for idx in stride(from: levels.count - 2, through: 0, by: -1) {
+        let coarse = levels[idx + 1]
+        var fine = levels[idx]
+        for y in 0..<fine.h {
+            let cy = (Float(y) + 0.5) * Float(coarse.h) / Float(fine.h) - 0.5
+            for x in 0..<fine.w {
+                let p = fine.data[y * fine.w + x]
+                if p.w < 0.999 {
+                    let cx = (Float(x) + 0.5) * Float(coarse.w) / Float(fine.w) - 0.5
+                    let up = sampleBilinear(coarse, fx: cx, fy: cy)
+                    let bl = max(0, min(1, p.w))
+                    fine.data[y * fine.w + x] = ScriptRGBAW(r: p.r * bl + up.r * (1 - bl), g: p.g * bl + up.g * (1 - bl), b: p.b * bl + up.b * (1 - bl), w: 1)
+                }
+            }
+        }
+        levels[idx] = fine
+    }
+
+    var filled = levels[0].data
+    func sampleWindowY(x: Int, y: Int) -> ScriptRGBAW {
+        var sr: Float = 0, sg: Float = 0, sb: Float = 0, sw: Float = 0
+        for dy in -5...5 {
+            let i = max(0, min(h0 - 1, y + dy)) * w0 + x
+            if sampleExclude[i] < 0.5 { let p = base[i]; sr += p.r; sg += p.g; sb += p.b; sw += 1 }
+        }
+        return sw > 0 ? ScriptRGBAW(r: sr / sw, g: sg / sw, b: sb / sw, w: 1) : base[y * w0 + x]
+    }
+
+    for y in 0..<h0 {
+        let row = y * w0; var x = 0
+        while x < w0 {
+            if sampleExclude[row + x] < 0.5 { x += 1; continue }
+            let startX = x; while x < w0 && sampleExclude[row + x] >= 0.5 { x += 1 }
+            let endX = x - 1; let hasL = startX > 0, hasR = endX < w0 - 1
+            let lC = hasL ? sampleWindowY(x: startX - 1, y: y) : ScriptRGBAW()
+            let rC = hasR ? sampleWindowY(x: endX + 1, y: y) : ScriptRGBAW()
+            let span = max(1, endX - startX + 1)
+            for xx in startX...endX {
+                let i = row + xx; let pr = filled[i]; let dL = Float(xx - startX + 1), dR = Float(endX - xx + 1)
+                let hC: ScriptRGBAW; let edgeP: Float
+                if hasL && hasR {
+                    let t = dL / Float(span + 1)
+                    hC = ScriptRGBAW(r: lC.r * (1 - t) + rC.r * t, g: lC.g * (1 - t) + rC.g * t, b: lC.b * (1 - t) + rC.b * t, w: 1)
+                    edgeP = exp(-min(dL, dR) / 28.0)
+                } else if hasL { hC = lC; edgeP = exp(-dL / 28.0) }
+                else if hasR { hC = rC; edgeP = exp(-dR / 28.0) }
+                else { continue }
+                let aH = 0.25 + 0.70 * edgeP
+                filled[i] = ScriptRGBAW(r: hC.r * aH + pr.r * (1 - aH), g: hC.g * aH + pr.g * (1 - aH), b: hC.b * aH + pr.b * (1 - aH), w: 1)
+            }
+        }
+    }
+
+    var nextFilled = filled
+    for _ in 0..<14 {
+        for y in 1..<(h0 - 1) {
+            let row = y * w0
+            for x in 1..<(w0 - 1) {
+                let i = row + x
+                if sampleExclude[i] >= 0.5 {
+                    let up = filled[i - w0], dn = filled[i + w0], lf = filled[i - 1], rt = filled[i + 1]
+                    nextFilled[i] = ScriptRGBAW(r: (lf.r + rt.r + up.r + dn.r) * 0.25, g: (lf.g + rt.g + up.g + dn.g) * 0.25, b: (lf.b + rt.b + up.b + dn.b) * 0.25, w: 1)
+                }
+            }
+        }
+        filled = nextFilled
+    }
+
+    for y in 0..<fullH {
+        let fy = (Float(y) + 0.5) * Float(h0) / Float(fullH) - 0.5
+        let y0 = max(0, min(h0 - 1, Int(floor(fy)))), y1 = max(0, min(h0 - 1, y0 + 1)), ty = max(0, min(1, fy - Float(y0)))
+        for x in 0..<fullW {
+            let fx = (Float(x) + 0.5) * Float(w0) / Float(fullW) - 0.5
+            let x0 = max(0, min(w0 - 1, Int(floor(fx)))), x1 = max(0, min(w0 - 1, x0 + 1)), tx = max(0, min(1, fx - Float(x0)))
+            let w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty
+            let m = replaceCore[y0 * w0 + x0] * w00 + replaceCore[y0 * w0 + x1] * w10 + replaceCore[y1 * w0 + x0] * w01 + replaceCore[y1 * w0 + x1] * w11
+            if m <= 0.002 { continue }
+            let f00 = filled[y0 * w0 + x0], f10 = filled[y0 * w0 + x1], f01 = filled[y1 * w0 + x0], f11 = filled[y1 * w0 + x1]
+            let fr = (f00.r * w00 + f10.r * w10 + f01.r * w01 + f11.r * w11) * 255.0
+            let fg = (f00.g * w00 + f10.g * w10 + f01.g * w01 + f11.g * w11) * 255.0
+            let fb = (f00.b * w00 + f10.b * w10 + f01.b * w01 + f11.b * w11) * 255.0
+            let pIdx = (y * fullW + x) * 4, inv = 1.0 - m
+            bgBytes[pIdx]     = UInt8(max(0, min(255, Int((Float(bgBytes[pIdx]) * inv + fr * m).rounded()))))
+            bgBytes[pIdx + 1] = UInt8(max(0, min(255, Int((Float(bgBytes[pIdx + 1]) * inv + fg * m).rounded()))))
+            bgBytes[pIdx + 2] = UInt8(max(0, min(255, Int((Float(bgBytes[pIdx + 2]) * inv + fb * m).rounded()))))
+        }
+    }
+    return fullCtx.makeImage() ?? bg
 }
 
 private func duoPropXML(
@@ -1317,8 +1538,25 @@ private func duoBuildMorphSurface(
     let idP = canvas.idPrefix
     let nP = canvas.namePrefix
 
-    try writeJPEG(lockFit, to: assetsDir.appendingPathComponent("\(aP)locked.jpg"), quality: jpegQuality)
-    try writeJPEG(unlockFit, to: assetsDir.appendingPathComponent("\(aP)unlock.jpg"), quality: jpegQuality)
+    var lockBGOut = lockFit
+    var unlockBGOut = unlockFit
+    var cutPairResult: (CGImage, CGImage, Double, Double, String)? = nil
+    if supportsCutout && maskMode != "none" {
+        cutPairResult = extractMorphCutoutPair(
+            lockFit: lockFit,
+            unlockFit: unlockFit,
+            cutoutW: canvas.cutoutW,
+            cutoutH: canvas.cutoutH,
+            maskMode: maskMode
+        )
+        if let (cutL, cutU, _, _, _) = cutPairResult {
+            lockBGOut = scriptInpaintOccludedBackground(bg: lockFit, cutout: cutL)
+            unlockBGOut = scriptInpaintOccludedBackground(bg: unlockFit, cutout: cutU)
+        }
+    }
+
+    try writeJPEG(lockBGOut, to: assetsDir.appendingPathComponent("\(aP)locked.jpg"), quality: jpegQuality)
+    try writeJPEG(unlockBGOut, to: assetsDir.appendingPathComponent("\(aP)unlock.jpg"), quality: jpegQuality)
 
     let uId = "\(idP)unlock_layer", uName = "\(nP)Unlock Layer"
     let lId = "\(idP)locked_layer", lName = "\(nP)Locked Layer"
@@ -1388,14 +1626,7 @@ private func duoBuildMorphSurface(
     var fgXML = ""
     var fgOvs: [DuoOverride] = []
     if supportsCutout && maskMode != "none" {
-        let cutPair = extractMorphCutoutPair(
-            lockFit: lockFit,
-            unlockFit: unlockFit,
-            cutoutW: canvas.cutoutW,
-            cutoutH: canvas.cutoutH,
-            maskMode: maskMode
-        )
-        if let (cutL, cutU, covL, covU, tag) = cutPair {
+        if let (cutL, cutU, covL, covU, tag) = cutPairResult {
             try writePNG(cutL, to: assetsDir.appendingPathComponent("\(aP)cutout_lock.png"))
             try writePNG(cutU, to: assetsDir.appendingPathComponent("\(aP)cutout_unlock.png"))
             let fuId = "\(idP)float_unlock", fuName = "\(nP)Floating Unlock Subject"
@@ -1587,26 +1818,8 @@ func buildDuoDualPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) throws {
         iBgXML = iM.bgXML; iBgOvs = iM.bgOvs; iFgXML = iM.fgXML; iFgOvs = iM.fgOvs
     }
 
-    func parallaxFor(_ c: DuoCanvasSpec) -> (bg: [String], fg: [String]) {
-        let bx = Int((16.0 * c.sx).rounded()), by = Int((22.0 * c.sy).rounded())
-        let fx = Int((22.0 * c.sx).rounded()), fy = Int((28.0 * c.sy).rounded())
-        let xx = Int((30.0 * c.sx).rounded()), xy = Int((36.0 * c.sy).rounded())
-        return (
-            [
-                duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.bgParallaxName, minVal: -bx, maxVal: bx, title: "\(c.namePrefix)Camlo BG X", view: "Background"),
-                duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.bgParallaxName, minVal: -by, maxVal: by, title: "\(c.namePrefix)Camlo BG Y", view: "Background")
-            ],
-            [
-                duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.fgParallaxName, minVal: fx, maxVal: -fx, title: "\(c.namePrefix)Camlo FG X", view: "Floating"),
-                duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.fgParallaxName, minVal: fy, maxVal: -fy, title: "\(c.namePrefix)Camlo FG Y", view: "Floating"),
-                duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.fxParallaxName, minVal: xx, maxVal: -xx, title: "\(c.namePrefix)Camlo FX X", view: "Floating"),
-                duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.fxParallaxName, minVal: xy, maxVal: -xy, title: "\(c.namePrefix)Camlo FX Y", view: "Floating")
-            ]
-        )
-    }
-
-    let oPx = parallaxFor(outer)
-    let iPx = parallaxFor(inner)
+    let oPx = duoBalancedParallax(for: outer)
+    let iPx = duoBalancedParallax(for: inner)
     let oBgProps = oBgOvs.flatMap { duoPropEntries(for: $0, view: "Background") }
     let oFgProps = (oFgOvs + outerFX.ovs).flatMap { duoPropEntries(for: $0, view: "Floating") }
     let iBgProps = iBgOvs.flatMap { duoPropEntries(for: $0, view: "Background") }
@@ -1639,26 +1852,27 @@ func buildDuoDualPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) throws {
         let bIn = bgXML.isEmpty ? "" : "\n                <sublayers>\n\(bgXML)\n                </sublayers>"
         let fIn = flXML.isEmpty ? "" : "\n                <sublayers>\n\(flXML)\n                </sublayers>"
         let xIn = fxXML.isEmpty ? "" : "\n              <sublayers>\n\(fxXML)\n              </sublayers>"
+        let fgScaleStr = flXML.isEmpty ? "1.0000" : "1.0650"
         return """
-              <CALayer id="\(bgId)" name="\(bgN)" bounds="0 0 \(c.w) \(c.h)" position="\(rootCenterPos)" zPosition="\(bgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(bgId)" name="\(bgN)" bounds="0 0 \(c.w) \(c.h)" position="\(rootCenterPos)" zPosition="\(bgZ)" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" \(duoPerspectiveSublayerTransformAttr) allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
                   <CALayer id="\(c.idPrefix)camlo_bg_parallax" name="\(c.bgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <sublayers>
-                      <CALayer id="\(c.idPrefix)camlo_bg_overscan" name="\(c.bgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="0" opacity="1" transform="scale(1.1040, 1.1040, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bIn)
+                      <CALayer id="\(c.idPrefix)camlo_bg_overscan" name="\(c.bgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="0" opacity="1" transform="scale(1.0650, 1.0650, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bIn)
                       </CALayer>
                     </sublayers>
                   </CALayer>
                 </sublayers>
               </CALayer>
-              <CALayer id="\(flId)" name="\(flN)" bounds="0 0 \(c.w) \(c.h)" position="\(rootCenterPos)" zPosition="\(flZ)" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="\(flId)" name="\(flN)" bounds="0 0 \(c.w) \(c.h)" position="\(rootCenterPos)" zPosition="\(flZ)" geometryFlipped="0" masksToBounds="1" opacity="1" \(duoPerspectiveSublayerTransformAttr) allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
-                  <CALayer id="\(c.idPrefix)camlo_fg_parallax" name="\(c.fgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+                  <CALayer id="\(c.idPrefix)camlo_fg_parallax" name="\(c.fgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                     <sublayers>
-                      <CALayer id="\(c.idPrefix)camlo_fg_overscan" name="\(c.fgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="0" opacity="1" transform="scale(1.0400, 1.0400, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fIn)
+                      <CALayer id="\(c.idPrefix)camlo_fg_overscan" name="\(c.fgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="0" opacity="1" transform="scale(\(fgScaleStr), \(fgScaleStr), 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fIn)
                       </CALayer>
                     </sublayers>
                   </CALayer>
-                  <CALayer id="\(c.idPrefix)camlo_fx_parallax" name="\(c.fxParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(xIn)
+                  <CALayer id="\(c.idPrefix)camlo_fx_parallax" name="\(c.fxParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.centerPos)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(xIn)
                   </CALayer>
                 </sublayers>
               </CALayer>
@@ -1772,14 +1986,8 @@ func buildAnime3DMorphPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) thr
         requireCutout: true
     )
 
-    let parallaxXML = [
-        duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.bgParallaxName, minVal: -17, maxVal: 17, title: "Camlo BG X", view: "Background"),
-        duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.bgParallaxName, minVal: -22, maxVal: 22, title: "Camlo BG Y", view: "Background"),
-        duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.fgParallaxName, minVal: 22, maxVal: -22, title: "Camlo FG X", view: "Floating"),
-        duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.fgParallaxName, minVal: 29, maxVal: -29, title: "Camlo FG Y", view: "Floating"),
-        duoParallaxXML(axis: "x", keyPath: "transform.translation.x", layerName: c.fxParallaxName, minVal: 30, maxVal: -30, title: "Camlo FX X", view: "Floating"),
-        duoParallaxXML(axis: "y", keyPath: "transform.translation.y", layerName: c.fxParallaxName, minVal: 38, maxVal: -38, title: "Camlo FX Y", view: "Floating")
-    ].joined(separator: "\n")
+    let aPx = duoBalancedParallax(for: c)
+    let parallaxXML = (aPx.bg + aPx.fg).joined(separator: "\n")
 
     let propEntries = morph.bgOvs.flatMap { duoPropEntries(for: $0, view: "Background") }
         + (morph.fgOvs + fxBuilt.ovs).flatMap { duoPropEntries(for: $0, view: "Floating") }
@@ -1825,25 +2033,25 @@ func buildAnime3DMorphPack(pack: PackMetadata, wpDir: URL, thumbOutURL: URL) thr
     \(propGroupsXML)
         </style>
         <sublayers>
-          <CALayer id="background" name="BACKGROUND" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+          <CALayer id="background" name="BACKGROUND" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" geometryFlipped="0" masksToBounds="1" opacity="1" backgroundColor="0 0 0" \(duoPerspectiveSublayerTransformAttr) allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
             <sublayers>
               <CALayer id="camlo_bg_parallax" name="\(c.bgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
-                  <CALayer id="camlo_bg_overscan" name="\(c.bgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" transform="scale(1.1040, 1.1040, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bgIn)
+                  <CALayer id="camlo_bg_overscan" name="\(c.bgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" transform="scale(1.0650, 1.0650, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(bgIn)
                   </CALayer>
                 </sublayers>
               </CALayer>
             </sublayers>
           </CALayer>
-          <CALayer id="floating" name="FLOATING" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="10" geometryFlipped="0" masksToBounds="1" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+          <CALayer id="floating" name="FLOATING" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="10" geometryFlipped="0" masksToBounds="1" opacity="1" \(duoPerspectiveSublayerTransformAttr) allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
             <sublayers>
-              <CALayer id="camlo_fg_parallax" name="\(c.fgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="10" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
+              <CALayer id="camlo_fg_parallax" name="\(c.fgParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">
                 <sublayers>
-                  <CALayer id="camlo_fg_overscan" name="\(c.fgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" transform="scale(1.0520, 1.0520, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fgIn)
+                  <CALayer id="camlo_fg_overscan" name="\(c.fgOverscanName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" transform="scale(1.0650, 1.0650, 1)" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fgIn)
                   </CALayer>
                 </sublayers>
               </CALayer>
-              <CALayer id="camlo_fx_parallax" name="\(c.fxParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="20" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fxIn)
+              <CALayer id="camlo_fx_parallax" name="\(c.fxParallaxName)" bounds="0 0 \(c.w) \(c.h)" position="\(c.cx) \(c.cy)" zPosition="0" opacity="1" allowsEdgeAntialiasing="1" allowsGroupOpacity="1" contentsFormat="RGBA8" cornerCurve="circular">\(fxIn)
               </CALayer>
             </sublayers>
           </CALayer>
@@ -1916,7 +2124,7 @@ func buildAll() throws {
         }
 
         let bgCA = wpDir.appendingPathComponent("7400.WWDC_2022_Background-390w-844h@3x~iphone.ca", isDirectory: true)
-        let flCA = wpDir.appendingPathComponent("7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca", isDirectory: true)
+        let flCA = wpDir.appendingPathComponent("7400.WWDC_2022_Clownfish_Floating-390w-844h@3x~iphone.ca", isDirectory: true)
         let fgCA = wpDir.appendingPathComponent("7400.WWDC_2022_Foreground-390w-844h@3x~iphone.ca", isDirectory: true)
         for ca in [bgCA, flCA, fgCA] {
             try fm.createDirectory(at: ca.appendingPathComponent("assets", isDirectory: true), withIntermediateDirectories: true)

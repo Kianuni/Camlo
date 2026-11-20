@@ -52,18 +52,18 @@ def verify_tendies_zip(tendies_path: Path, is_duo: bool = False) -> dict[str, ob
                 raise ValueError(f"Unsafe zip entry path (Zip-Slip risk): {name}")
             if name.startswith("descriptors/") and name.endswith("com.apple.posterkit.provider.descriptor.identifier"):
                 has_descriptor = True
-            if name.endswith("7400.WWDC_2022_Background-390w-844h@3x~iphone.ca/main.caml"):
+            if name.endswith("Background-390w-844h@3x~iphone.ca/main.caml"):
                 has_bg_caml = True
-            if name.endswith("7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca/main.caml"):
+            if name.endswith("Clownfish_Floating-390w-844h@3x~iphone.ca/main.caml"):
                 has_floating_caml = True
-            if name.endswith("7400.WWDC_2022_Foreground-390w-844h@3x~iphone.ca/main.caml"):
+            if name.endswith("Foreground-390w-844h@3x~iphone.ca/main.caml"):
                 has_fg_caml = True
-            if name.endswith("wallpaper.ca/main.caml"):
+            if "Clownfish" in name and name.endswith(".wallpaper/wallpaper.ca/main.caml"):
                 has_param_caml = True
                 caml_text = zf.read(info).decode("utf-8", errors="ignore")
                 if "<wallpapers" in caml_text and "BACKGROUND_INNER" in caml_text:
                     has_duo_inner = True
-            if ("7400.WWDC_2022_Floating-390w-844h@3x~iphone.ca/assets/" in name or "wallpaper.ca/assets/" in name) and (
+            if ("Clownfish_Floating-390w-844h@3x~iphone.ca/assets/" in name or "wallpaper.ca/assets/" in name) and (
                 "cutout" in Path(name).name and (name.endswith(".png") or name.endswith(".jpg"))
             ):
                 has_cutout = True
