@@ -84,5 +84,6 @@ Download `Camlo_v1.3.4_Bilingual.ipa` from **[Latest Releases](https://github.co
 
 - **[📖 Full Features, Rendering Architecture & Build Guide →](./docs/FEATURES_EN.md)**
 - **[🎨 Browse All 76 Official Cloud Wallpapers (13 Original 3D Anime & Graphic Poster · 13 iPhone Duo Exclusives · 50 Fine Art Masterworks) →](./wallpapers/README.md)**
-- **🛠️ Related Open-Source Tools**: [Lokey (Native-Feel Offline Chinese Keyboard)](https://kianuni.github.io/Lokey-Audit/) · [Erosion-CN](https://github.com/Kianuni/Erosion-CN) · [AppleFlow](https://github.com/Kianuni/AppleFlow) · [WQGuard](https://github.com/Kianuni/WQGuard)
+- **⌨️ Companion iOS Keyboard — [Lokey](https://kianuni.github.io/Lokey-Audit/)**: Offline, physically zero-network 26-key Full Pinyin & Shuangpin Chinese keyboard with 1:1 native ergonomics (zero learning curve), powered by the on-device Inkstone engine (adaptive 26-key heatmap, bidirectional neural sentence semantics, inline CN-EN mixed input, word-level OpenCC & local user-phrase memory) and zero networking frameworks or tracking ([Audit Repo](https://github.com/Kianuni/Lokey-Audit) · [553k Frost Pack](https://github.com/Kianuni/lokey-frost-pack))
+- **🛠️ Related Open-Source Tools**: [Erosion-CN](https://github.com/Kianuni/Erosion-CN) · [AppleFlow](https://github.com/Kianuni/AppleFlow) · [WQGuard](https://github.com/Kianuni/WQGuard)
 - **⚖️ License**: Released under **[GPLv3](./LICENSE)** · [Credits & Acknowledgements](./docs/FEATURES_EN.md#license--credits)

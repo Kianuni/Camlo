@@ -87,4 +87,4 @@ These `.tendies` wallpaper packs are stored outside `Camlo/` so they add **0 byt
 
 ---
 
-> 📱 **返回 [Camlo · 开幕 主页](https://github.com/Kianuni/Camlo)** · 同作者 iOS 26 液态玻璃原生手感、物理零联网离线中文输入法：**[Lokey · 落键](https://kianuni.github.io/Lokey-Audit/)**
+> 📱 **返回 [Camlo · 开幕 主页](https://github.com/Kianuni/Camlo)** · 同作者新品 **[Lokey](https://kianuni.github.io/Lokey-Audit/)** —— 1:1 原生手感（零学习适应成本）、纯离线物理零联网的 iOS 26 键全拼/双拼中文输入法，内置落墨引擎（26 键盲打热区校准 · 双向神经长句语义 · 句内中英混输 · OpenCC 简繁 · 本地自造词记忆）
