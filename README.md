@@ -83,5 +83,5 @@
 
 - **[📖 完整功能详解、技术原理与源码编译指南 →](./docs/FEATURES.md)**
 - **[🎨 浏览官方 76 套云端壁纸图鉴（含 13 套次元/海报 3D · 13 套 iPhone Duo 专享 · 50 套馆藏大师杰作）→](./wallpapers/README.md)**
-- **🛠️ 同作者开源项目**：[Erosion-CN](https://github.com/Kianuni/Erosion-CN) · [AppleFlow](https://github.com/Kianuni/AppleFlow) · [WQGuard](https://github.com/Kianuni/WQGuard)
+- **🛠️ 同作者开源项目**：[Lokey · 落键（iOS 26 原生手感零联网输入法）](https://kianuni.github.io/Lokey-Audit/) · [Erosion-CN](https://github.com/Kianuni/Erosion-CN) · [AppleFlow](https://github.com/Kianuni/AppleFlow) · [WQGuard](https://github.com/Kianuni/WQGuard)
 - **⚖️ 开源许可**：基于 **[GPLv3](./LICENSE)** 开源 · [致谢与参考项目](./docs/FEATURES.md#开源许可与致谢)
