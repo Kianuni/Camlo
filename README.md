@@ -83,6 +83,6 @@
 
 - **[📖 完整功能详解、技术原理与源码编译指南 →](./docs/FEATURES.md)**
 - **[🎨 浏览官方 76 套云端壁纸图鉴（含 13 套次元/海报 3D · 13 套 iPhone Duo 专享 · 50 套馆藏大师杰作）→](./wallpapers/README.md)**
-- **⌨️ 推荐同作者输入法 — [Lokey](https://kianuni.github.io/Lokey-Audit/)**：1:1 原生手感（零学习适应成本）、纯离线物理级零联网的 iOS 26 键全拼与双拼中文输入法；内置自研「落墨 · Inkstone」引擎（26 键盲打热区自适应校准、双向神经网络长句语义、句内中英混输、OpenCC 词级简繁与本地自造词记忆），源码与二进制均不含任何网络框架或数据采集（[审计仓库](https://github.com/Kianuni/Lokey-Audit) · [55.3 万词白霜 `.lokeypack`](https://github.com/Kianuni/lokey-frost-pack)）
-- **🛠️ 同作者开源项目**：[Erosion-CN](https://github.com/Kianuni/Erosion-CN) · [AppleFlow](https://github.com/Kianuni/AppleFlow) · [WQGuard](https://github.com/Kianuni/WQGuard)
+- **⌨️ 同作者纯离线输入法 — [Lokey](https://kianuni.github.io/Lokey-Audit/)**：1:1 贴合 iOS 26 液态玻璃几何与无级震动，上手零适应成本；端侧「落墨」全拼/双拼引擎聪明好打，且源码级物理零联网（[TestFlight 体验](https://testflight.apple.com/join/Bx9gxXTN) · [审计仓库](https://github.com/Kianuni/Lokey-Audit) · [55.3 万词白霜包](https://github.com/Kianuni/lokey-frost-pack)）
+- **🛠️ 同作者开源项目**：[Erosion-CN](https://github.com/Kianuni/Erosion-CN) · [AppleFlow](https://github.com/Kianuni/AppleFlow) · [AppleLens](https://github.com/Kianuni/AppleLens) · [WQGuard](https://github.com/Kianuni/WQGuard) · [Enkard](https://github.com/Kianuni/Enkard)
 - **⚖️ 开源许可**：基于 **[GPLv3](./LICENSE)** 开源 · [致谢与参考项目](./docs/FEATURES.md#开源许可与致谢)

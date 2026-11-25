@@ -73,8 +73,9 @@ Produces `Camlo_v1.3.0_Bilingual.ipa` and refreshes [`apps.json`](../apps.json),
 Companion iOS / iPadOS 26–27 open-source tools by the same author:
 
 - **[Erosion-CN](https://github.com/Kianuni/Erosion-CN)**: Bilingual, bootloop-hardened iOS / iPadOS `MobileGestalt` & cross-container customization toolkit (Apple Intelligence & overseas eSIM unlock on `CH/A` devices, app data backup, cache cleaner, and PosterBoard tweaks);
-- **[AppleFlow](https://github.com/Kianuni/AppleFlow)**: Zero-MitM routing modules, rule-sets, and local Config Doctor for Apple Intelligence, PCC High-Quality Clean Up, and Mandarin Siri;
-- **[WQGuard](https://github.com/Kianuni/WQGuard)**: Zero-dependency, 100% read-only iOS sandbox escape detector, Mach-O static analyzer, and firmware CVE guard.
+- **[Lokey](https://kianuni.github.io/Lokey-Audit/)**: Air-gapped, physically zero-network iOS 26-key Full Pinyin & Shuangpin keyboard pairing 1:1 native Liquid Glass feel with the on-device Inkstone engine ([TestFlight](https://testflight.apple.com/join/Bx9gxXTN) · [`Lokey-Audit`](https://github.com/Kianuni/Lokey-Audit) · [`lokey-frost-pack`](https://github.com/Kianuni/lokey-frost-pack));
+- **[AppleFlow](https://github.com/Kianuni/AppleFlow)** & **[AppleLens](https://github.com/Kianuni/AppleLens)**: Zero-MitM routing rulesets and local Config Doctor for Apple Intelligence, PCC, and Mandarin Siri, paired with a read-only macOS diagnostics suite;
+- **[WQGuard](https://github.com/Kianuni/WQGuard)** & **[Enkard](https://github.com/Kianuni/Enkard)**: 100% read-only iOS sandbox escape detector, Mach-O static analyzer & CVE guard, alongside a pure-offline Secure Enclave card vault.
 
 ---
 

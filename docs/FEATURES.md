@@ -97,8 +97,9 @@ chmod +x ./ipabuild.sh
 同作者维护的 iOS / iPadOS 26–27 配套开源工具矩阵：
 
 - **[Erosion-CN](https://github.com/Kianuni/Erosion-CN)**：基于 `worse_query` 的 iOS / iPadOS 系统配置、跨容器管理与防白苹果安全加固版 `MobileGestalt` 研究工具箱（中英双语，支持国行 Apple 智能与海外 eSIM 解锁、应用存档备份、缓存清理与锁屏自定义）；
-- **[AppleFlow](https://github.com/Kianuni/AppleFlow)**：零 MitM 的 Apple Intelligence、PCC 相册「高质量消除」与中文 Siri 极简分流方案及在线配置体检工作台；
-- **[WQGuard](https://github.com/Kianuni/WQGuard)**：面向 iOS 26.2+ / 27.x 的零依赖、100% 物理只读沙盒逃逸静态审计与固件 CVE 防护系统。
+- **[Lokey](https://kianuni.github.io/Lokey-Audit/)**：1:1 复刻 iOS 26 液态玻璃原生手感的纯离线全拼/双拼输入法，搭载端侧「落墨」引擎与只读 `mmap` 词库扩展，源码级物理零联网（[TestFlight](https://testflight.apple.com/join/Bx9gxXTN) · [审计仓](https://github.com/Kianuni/Lokey-Audit) · [白霜包](https://github.com/Kianuni/lokey-frost-pack)）；
+- **[AppleFlow](https://github.com/Kianuni/AppleFlow)** & **[AppleLens](https://github.com/Kianuni/AppleLens)**：零 MitM 的 Apple Intelligence、PCC 相册「高质量消除」与中文 Siri 极简分流方案，搭配 macOS 真机日志排障工作台；
+- **[WQGuard](https://github.com/Kianuni/WQGuard)** & **[Enkard](https://github.com/Kianuni/Enkard)**：100% 物理只读侧载 IPA 静态审计与固件 CVE 防护系统，以及绑定 Apple Secure Enclave 硬件安全芯片的纯离线私人卡包。
 
 ---
 
